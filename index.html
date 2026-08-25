@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bugmeister — SPAIA x Kiezwald</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #1D9E75;
+    --green-dark: #0F6E56;
+    --green-light: #E1F5EE;
+    --green-mid: #9FE1CB;
+    --amber: #BA7517;
+    --amber-light: #FAEEDA;
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --border-strong: rgba(0,0,0,0.2);
+    --text: #1a1a18;
+    --text-muted: #6b6b68;
+    --text-faint: #9e9e9a;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 16px 40px;
+    color: var(--text);
+  }
+
+  .nav-bar {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    justify-content: center; margin-bottom: 20px;
+    width: 100%; max-width: 600px;
+  }
+  .nav-btn {
+    background: var(--surface); border: 0.5px solid var(--border-strong);
+    border-radius: 20px; padding: 5px 12px; font-size: 11px;
+    font-family: 'DM Sans', sans-serif; cursor: pointer; color: var(--text-muted);
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { background: var(--green-light); color: var(--green-dark); border-color: var(--green); }
+  .nav-btn.active { background: var(--green); color: white; border-color: var(--green); }
+
+  .phone {
+    width: 100%; max-width: 360px;
+    background: var(--surface);
+    border-radius: 28px;
+    border: 0.5px solid var(--border-strong);
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+    min-height: 620px;
+    position: relative;
+  }
+
+  .status-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 20px 0; font-size: 11px; color: var(--text-muted);
+  }
+
+  .screen { display: none; padding: 20px; flex-direction: column; gap: 14px; }
+  .screen.active { display: flex; }
+
+  .tag { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
+  .h1 { font-size: 24px; font-weight: 500; color: var(--text); line-height: 1.15; }
+  .h2 { font-size: 18px; font-weight: 500; color: var(--text); }
+  .body { font-size: 13px; color: var(--text-muted); line-height: 1.6; }
+  .small { font-size: 11px; color: var(--text-faint); }
+
+  .btn-primary {
+    background: var(--green); color: white; border: none;
+    border-radius: var(--radius); padding: 14px 20px;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    width: 100%; text-align: center; font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--green-dark); }
+
+  .btn-secondary {
+    background: var(--surface); border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius); padding: 12px 20px;
+    font-size: 13px; color: var(--text); cursor: pointer;
+    width: 100%; text-align: center; font-family: 'DM Sans', sans-serif;
+    transition: background 0.15s;
+  }
+  .btn-secondary:hover { background: var(--bg); }
+
+  .btn-ghost {
+    background: none; border: none; font-size: 12px;
+    color: var(--text-faint); cursor: pointer; width: 100%;
+    text-align: center; padding: 4px; font-family: 'DM Sans', sans-serif;
+  }
+
+  /* HERO */
+  .hero-banner {
+    background: var(--green-dark); border-radius: var(--radius);
+    padding: 20px 18px; position: relative; overflow: hidden;
+  }
+  .hero-banner .bg-text {
+    position: absolute; right: -12px; top: -12px;
+    font-size: 90px; opacity: 0.07; line-height: 1; pointer-events: none;
+  }
+  .hero-title { font-size: 24px; font-weight: 500; color: white; line-height: 1.15; }
+  .hero-sub { font-size: 12px; color: var(--green-mid); margin-top: 8px; line-height: 1.5; }
+  .badge-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: rgba(255,255,255,0.15); border-radius: 20px;
+    padding: 3px 9px; font-size: 10px; font-weight: 500; color: white;
+  }
+
+  /* LEADERBOARD */
+  .kiez-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 11px 14px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .kiez-card.yours { border-color: var(--green); background: var(--green-light); }
+  .kiez-rank { font-size: 16px; font-weight: 500; color: var(--text-faint); width: 20px; text-align: center; flex-shrink: 0; }
+  .kiez-rank.gold { color: #BA7517; }
+  .kiez-rank.silver { color: #888780; }
+  .kiez-rank.bronze { color: #854F0B; }
+  .kiez-info { flex: 1; }
+  .kiez-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .kiez-bar-wrap { margin-top: 4px; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .kiez-bar { height: 100%; background: var(--green); border-radius: 2px; }
+  .kiez-score { font-size: 12px; font-weight: 500; color: var(--green); flex-shrink: 0; }
+
+  /* SETUP */
+  .timer-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+  .timer-btn {
+    background: var(--surface); border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-sm); padding: 10px 4px;
+    font-size: 12px; font-weight: 500; color: var(--text);
+    cursor: pointer; text-align: center; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .timer-btn.selected { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
+
+  .weather-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; }
+  .weather-btn {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 8px 4px;
+    text-align: center; cursor: pointer; font-size: 10px;
+    color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .weather-btn .wi { font-size: 16px; display: block; margin-bottom: 2px; }
+  .weather-btn.selected { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
+
+  input[type="text"], input[type="email"] {
+    width: 100%; font-size: 13px; padding: 11px 13px;
+    border-radius: var(--radius-sm); border: 0.5px solid var(--border-strong);
+    font-family: 'DM Sans', sans-serif; color: var(--text);
+    background: var(--surface); outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus { border-color: var(--green); }
+
+  /* OBSERVE */
+  .timer-display {
+    text-align: center; padding: 12px; background: var(--bg);
+    border-radius: var(--radius); border: 0.5px solid var(--border);
+  }
+  .timer-big { font-size: 36px; font-weight: 500; color: var(--green); line-height: 1; font-family: 'DM Mono', monospace; }
+  .progress-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 1s linear; }
+
+  .insect-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .insect-btn {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px 8px;
+    cursor: pointer; display: flex; flex-direction: column;
+    align-items: center; gap: 5px; position: relative;
+    transition: transform 0.1s, background 0.15s;
+  }
+  .insect-btn:active { transform: scale(0.93); }
+  .insect-btn.tapped { background: var(--green-light); border-color: var(--green); }
+  .insect-btn.rare-btn { border-color: var(--amber); background: var(--amber-light); }
+  .insect-icon { font-size: 24px; }
+  .insect-name { font-size: 10px; color: var(--text-muted); text-align: center; font-weight: 500; }
+  .insect-count {
+    position: absolute; top: 7px; right: 7px;
+    background: var(--green); color: white; font-size: 10px;
+    font-weight: 500; border-radius: 10px; padding: 1px 5px;
+    min-width: 16px; text-align: center;
+  }
+  .rare-badge {
+    position: absolute; top: 7px; left: 7px; background: var(--amber);
+    color: white; font-size: 9px; font-weight: 500; border-radius: 4px; padding: 1px 4px;
+  }
+
+  /* CARDS */
+  .stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .stat-card {
+    background: var(--bg); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 6px; text-align: center;
+  }
+  .stat-num { font-size: 22px; font-weight: 500; color: var(--green); }
+  .stat-label { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+
+  .cards-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+  .insect-card {
+    border-radius: var(--radius); padding: 14px 10px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 5px; position: relative; border: 0.5px solid var(--border);
+    background: var(--surface);
+  }
+  .insect-card.common { border-color: var(--green); background: var(--green-light); }
+  .insect-card.rare { border-color: var(--amber); background: var(--amber-light); }
+  .insect-card.epic { border-color: var(--purple); background: var(--purple-light); }
+  .card-icon { font-size: 32px; }
+  .card-name { font-size: 11px; font-weight: 500; color: var(--text); text-align: center; }
+  .card-count { font-size: 10px; color: var(--text-muted); }
+  .card-rarity { font-size: 9px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
+  .card-rarity.common { background: var(--green); color: white; }
+  .card-rarity.rare { background: var(--amber); color: white; }
+  .card-rarity.epic { background: var(--purple); color: white; }
+  .card-xp { position: absolute; top: 8px; right: 8px; font-size: 10px; font-weight: 500; color: var(--text-faint); }
+
+  /* CLOSE */
+  .closing-hero {
+    background: var(--green-dark); border-radius: var(--radius);
+    padding: 18px 16px; text-align: center;
+  }
+  .closing-hero .big { font-size: 18px; font-weight: 500; color: white; line-height: 1.3; }
+  .closing-hero .sub { font-size: 12px; color: var(--green-mid); margin-top: 8px; line-height: 1.5; }
+
+  /* EXPLORE MAP */
+  .map-placeholder {
+    background: #e8f5e2; border-radius: var(--radius);
+    height: 155px; position: relative; overflow: hidden;
+    border: 0.5px solid #9FE1CB;
+  }
+  .map-grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(0,0,0,0.06) 1px,transparent 1px), linear-gradient(90deg,rgba(0,0,0,0.06) 1px,transparent 1px);
+    background-size: 24px 24px;
+  }
+  .map-pin { position: absolute; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+  .pin-dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .pin-dot.you { background: var(--green); }
+  .pin-dot.hub { background: var(--green-dark); }
+  .pin-dot.museum { background: var(--purple); }
+  .pin-label {
+    font-size: 8px; font-weight: 500; color: var(--text);
+    margin-top: 2px; background: white; padding: 1px 4px;
+    border-radius: 3px; white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .location-card {
+    background: var(--surface); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 11px 12px;
+    display: flex; align-items: center; gap: 10px; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-decoration: none;
+  }
+  .location-card:hover { border-color: var(--green); background: var(--green-light); }
+  .location-card.featured { border-color: var(--purple); }
+  .loc-icon { font-size: 22px; flex-shrink: 0; }
+  .loc-info { flex: 1; }
+  .loc-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .loc-meta { font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+  .loc-nav { font-size: 12px; color: var(--green); font-weight: 500; flex-shrink: 0; }
+
+  /* HUB */
+  .pack-card {
+    background: var(--bg); border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+  }
+  .pack-item { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+  .pack-item:last-child { margin-bottom: 0; }
+  .pack-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+  .pack-text { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+  .pack-text strong { color: var(--text); font-weight: 500; }
+
+  .price-row { display: flex; align-items: baseline; gap: 6px; }
+  .price-big { font-size: 32px; font-weight: 500; color: var(--green); }
+
+  .step-row { display: flex; }
+  .step { flex: 1; text-align: center; position: relative; }
+  .step:not(:last-child):after { content: '→'; position: absolute; right: -6px; top: 10px; font-size: 11px; color: var(--text-faint); }
+  .step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); font-size: 11px; font-weight: 500; display: flex; align-items: center; justify-content: center; margin: 0 auto 4px; }
+  .step-label { font-size: 9px; color: var(--text-faint); line-height: 1.3; }
+
+  /* TOAST */
+  .unlock-toast {
+    position: absolute; top: 58px; left: 16px; right: 16px;
+    background: var(--amber); color: white; border-radius: var(--radius-sm);
+    padding: 9px 13px; font-size: 12px; font-weight: 500;
+    text-align: center; opacity: 0; transition: opacity 0.3s; z-index: 10;
+  }
+  .unlock-toast.show { opacity: 1; }
+
+  /* NAV DOTS */
+  .nav-dots { display: flex; justify-content: center; gap: 5px; padding: 10px 0 14px; }
+  .dot { width: 6px; height: 6px; border-radius: 3px; background: var(--border-strong); transition: all 0.2s; }
+  .dot.active { background: var(--green); width: 14px; }
+
+  .pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .info-row {
+    display: flex; gap: 10px; align-items: center;
+    background: var(--bg); border: 0.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px;
+  }
+
+  .highlight-box {
+    background: var(--green-light); border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+
+  .share-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+</style>
+</head>
+<body>
+
+<div class="nav-bar">
+  <button class="nav-btn active" onclick="goTo(0)">Welcome</button>
+  <button class="nav-btn" onclick="goTo(1)">Leaderboard</button>
+  <button class="nav-btn" onclick="goTo(2)">Setup</button>
+  <button class="nav-btn" onclick="goTo(3)">Observe</button>
+  <button class="nav-btn" onclick="goTo(4)">Cards</button>
+  <button class="nav-btn" onclick="goTo(5)">Close</button>
+  <button class="nav-btn" onclick="goTo(6)">Explore</button>
+  <button class="nav-btn" onclick="goTo(7)">Hub pack</button>
+</div>
+
+<div class="phone">
+  <div class="status-bar">
+    <span>9:41</span>
+    <span style="display:flex;gap:5px;align-items:center;"><span class="pulse"></span> Moabit</span>
+  </div>
+  <div class="unlock-toast" id="toast"></div>
+
+  <!-- 0: WELCOME -->
+  <div class="screen active" id="s0">
+    <div class="hero-banner">
+      <div class="bg-text">🐝</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <div class="badge-pill">Moawald</div>
+        <div class="badge-pill">#4 Berlin</div>
+      </div>
+      <div class="hero-title">Moabit needs<br>a Bugmeister.</div>
+      <div class="hero-sub">Wedding is beating you.<br>10 minutes. Prove them wrong.</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="info-row"><span style="font-size:18px;">👁</span><div class="body">Find a spot. Sit still. Tap every creature you see.</div></div>
+      <div class="info-row"><span style="font-size:18px;">🃏</span><div class="body">Collect insect cards. Rare sightings unlock special finds.</div></div>
+      <div class="info-row"><span style="font-size:18px;">📍</span><div class="body">Every tap lifts Moabit's ranking on the Berlin leaderboard.</div></div>
+    </div>
+    <button class="btn-primary" onclick="goTo(1)">See where Moabit stands</button>
+    <div class="small" style="text-align:center;">Anonymous · Free · 10 minutes</div>
+  </div>
+
+  <!-- 1: LEADERBOARD -->
+  <div class="screen" id="s1">
+    <div class="tag">Berlin Kiez Rankings</div>
+    <div class="h2">Who has more life?</div>
+    <div class="body">Ranked by insect sightings this month.</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div class="kiez-card"><div class="kiez-rank gold">1</div><div class="kiez-info"><div class="kiez-name">Tiergarten</div><div class="kiez-bar-wrap"><div class="kiez-bar" style="width:100%"></div></div></div><div class="kiez-score">1,204</div></div>
+      <div class="kiez-card"><div class="kiez-rank silver">2</div><div class="kiez-info"><div class="kiez-name">Wedding</div><div class="kiez-bar-wrap"><div class="kiez-bar" style="width:82%"></div></div></div><div class="kiez-score">987</div></div>
+      <div class="kiez-card"><div class="kiez-rank bronze">3</div><div class="kiez-info"><div class="kiez-name">Friedrichshain</div><div class="kiez-bar-wrap"><div class="kiez-bar" style="width:62%"></div></div></div><div class="kiez-score">743</div></div>
+      <div class="kiez-card yours"><div class="kiez-rank" style="color:var(--green);">4</div><div class="kiez-info"><div class="kiez-name">Moabit <span style="font-size:10px;color:var(--green-dark);">← you</span></div><div class="kiez-bar-wrap"><div class="kiez-bar" style="width:41%"></div></div></div><div class="kiez-score">247</div></div>
+      <div class="kiez-card"><div class="kiez-rank">5</div><div class="kiez-info"><div class="kiez-name">Neukölln</div><div class="kiez-bar-wrap"><div class="kiez-bar" style="width:30%"></div></div></div><div class="kiez-score">198</div></div>
+    </div>
+    <div class="highlight-box"><div style="font-size:12px;color:var(--green-dark);font-weight:500;">740 sightings behind Wedding. One session won't close the gap. But it's a start.</div></div>
+    <button class="btn-primary" onclick="goTo(2)">Start observing for Moabit</button>
+  </div>
+
+  <!-- 2: SETUP -->
+  <div class="screen" id="s2">
+    <div class="tag">Your mission</div>
+    <div class="h2">Set up your observation</div>
+    <div class="timer-row">
+      <div class="timer-btn" onclick="selTimer(this,1)">1 min</div>
+      <div class="timer-btn" onclick="selTimer(this,3)">3 min</div>
+      <div class="timer-btn" onclick="selTimer(this,5)">5 min</div>
+      <div class="timer-btn selected" onclick="selTimer(this,10)">10 min</div>
+    </div>
+    <div class="weather-row">
+      <div class="weather-btn selected" onclick="selW(this)"><span class="wi">☀️</span>Sunny</div>
+      <div class="weather-btn" onclick="selW(this)"><span class="wi">⛅</span>Partly</div>
+      <div class="weather-btn" onclick="selW(this)"><span class="wi">☁️</span>Overcast</div>
+      <div class="weather-btn" onclick="selW(this)"><span class="wi">🌧️</span>Rainy</div>
+    </div>
+    <input type="text" placeholder="Where? e.g. leaf litter, bark, sunny clearing" />
+    <button class="btn-primary" onclick="goTo(3);startTimer()">Begin — Moabit is counting on you</button>
+  </div>
+
+  <!-- 3: OBSERVE -->
+  <div class="screen" id="s3">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+      <div class="timer-display" style="flex:1;padding:10px;">
+        <div class="timer-big" id="tdisp">10:00</div>
+        <div class="small">remaining</div>
+        <div class="progress-bar"><div class="progress-fill" id="pfill" style="width:100%"></div></div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:28px;font-weight:500;color:var(--green);" id="tcnt">0</div>
+        <div class="small">tapped</div>
+        <div style="font-size:10px;color:var(--amber);margin-top:2px;" id="xpdisp">+0 XP</div>
+      </div>
+    </div>
+    <div class="insect-grid">
+      <div class="insect-btn" onclick="tap(this,'Bees',false,10)"><div class="insect-icon">🐝</div><div class="insect-name">Bees & Bumblebees</div></div>
+      <div class="insect-btn" onclick="tap(this,'Butterflies',false,10)"><div class="insect-icon">🦋</div><div class="insect-name">Butterflies & Moths</div></div>
+      <div class="insect-btn" onclick="tap(this,'Flies',false,8)"><div class="insect-icon">🪰</div><div class="insect-name">Flies & Hoverflies</div></div>
+      <div class="insect-btn" onclick="tap(this,'Beetles',true,20)"><div class="rare-badge">RARE</div><div class="insect-icon">🪲</div><div class="insect-name">Beetles</div></div>
+      <div class="insect-btn" onclick="tap(this,'Ants',false,5)"><div class="insect-icon">🐜</div><div class="insect-name">Ants</div></div>
+      <div class="insect-btn" onclick="tap(this,'Wasps',false,10)"><div class="insect-icon">🐝</div><div class="insect-name">Wasps</div></div>
+      <div class="insect-btn" onclick="tap(this,'Spiders',true,20)"><div class="rare-badge">RARE</div><div class="insect-icon">🕷️</div><div class="insect-name">Spiders</div></div>
+      <div class="insect-btn rare-btn" onclick="tap(this,'Other',true,50)"><div class="rare-badge">EPIC</div><div class="insect-icon">🦗</div><div class="insect-name">Other / Unknown</div></div>
+    </div>
+    <button class="btn-ghost" onclick="goTo(4)">Finish early →</button>
+  </div>
+
+  <!-- 4: CARDS -->
+  <div class="screen" id="s4">
+    <div class="tag">Session complete</div>
+    <div class="h2">Your collection</div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-num" id="rtotal">0</div><div class="stat-label">sightings</div></div>
+      <div class="stat-card"><div class="stat-num" id="rtypes">0</div><div class="stat-label">types found</div></div>
+      <div class="stat-card"><div class="stat-num" id="rxp">0</div><div class="stat-label">XP earned</div></div>
+    </div>
+    <div class="cards-grid" id="cgrid"></div>
+    <div class="highlight-box"><div style="font-size:12px;color:var(--green-dark);font-weight:500;" id="kimpact">Your sightings have been added to Moabit's total.</div></div>
+    <button class="btn-primary" onclick="goTo(5)">Finish session</button>
+    <button class="btn-secondary" onclick="goTo(6)">Explore other locations</button>
+  </div>
+
+  <!-- 5: CLOSE -->
+  <div class="screen" id="s5">
+    <div class="closing-hero">
+      <div class="big">You just saw<br>what they missed.</div>
+      <div class="sub">Most people walked past this spot and never stopped. You found <span id="ccnt">0</span> creatures living in plain sight.</div>
+    </div>
+    <div style="background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:13px;font-weight:500;">Save your collection. Keep building it.</div>
+      <div class="body">Observe at home, at work, anywhere in Berlin. Your cards travel with you.</div>
+      <input type="email" placeholder="your@email.com" />
+      <button class="btn-primary" style="padding:11px;">Save my collection</button>
+      <button class="btn-ghost">Skip for now</button>
+    </div>
+    <div class="share-row">
+      <button class="btn-secondary" style="font-size:12px;">Share session</button>
+      <button class="btn-secondary" style="font-size:12px;" onclick="goTo(6)">Find more spots</button>
+    </div>
+    <div class="small" style="text-align:center;">#Bugmeister #Moawald #SPAIA</div>
+  </div>
+
+  <!-- 6: EXPLORE -->
+  <div class="screen" id="s6">
+    <div class="tag">Explore Berlin</div>
+    <div class="h2">Find your next spot</div>
+    <div class="map-placeholder">
+      <div class="map-grid"></div>
+      <div class="map-pin" style="top:28px;left:55px;">
+        <div class="pin-dot you">🌿</div><div class="pin-label">Moawald ← you</div>
+      </div>
+      <div class="map-pin" style="top:16px;left:155px;" onclick="openMaps('Naturkundemuseum Berlin')">
+        <div class="pin-dot museum">🏛️</div><div class="pin-label">Naturkundemuseum</div>
+      </div>
+      <div class="map-pin" style="top:75px;left:32px;" onclick="openMaps('Kleingarten Moabit Berlin')">
+        <div class="pin-dot hub">🌻</div><div class="pin-label">Kleingarten</div>
+      </div>
+      <div class="map-pin" style="top:85px;left:190px;" onclick="openMaps('Tiergarten Berlin')">
+        <div class="pin-dot hub">🌳</div><div class="pin-label">Tiergarten</div>
+      </div>
+      <div class="map-pin" style="top:48px;left:258px;" onclick="openMaps('Volkspark Humboldthain Berlin')">
+        <div class="pin-dot hub">🌿</div><div class="pin-label">Humboldthain</div>
+      </div>
+      <div style="position:absolute;bottom:8px;right:10px;font-size:9px;color:var(--green-dark);font-weight:500;">Tap pin → open in Maps</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px;">
+      <div class="location-card featured" onclick="openMaps('Naturkundemuseum Insektengarten Berlin')">
+        <div class="loc-icon">🏛️</div>
+        <div class="loc-info"><div class="loc-name">Naturkundemuseum</div><div class="loc-meta">Insect garden · Wedding · 0.8km</div></div>
+        <div class="loc-nav">→ Maps</div>
+      </div>
+      <div class="location-card" onclick="openMaps('Tiergarten Berlin')">
+        <div class="loc-icon">🌳</div>
+        <div class="loc-info"><div class="loc-name">Tiergarten</div><div class="loc-meta">#1 Berlin · 1,204 sightings · 1.2km</div></div>
+        <div class="loc-nav">→ Maps</div>
+      </div>
+      <div class="location-card" onclick="openMaps('Kleingarten Moabit Berlin')">
+        <div class="loc-icon">🌻</div>
+        <div class="loc-info"><div class="loc-name">Kleingarten Moabit</div><div class="loc-meta">New hub · 0.3km away</div></div>
+        <div class="loc-nav">→ Maps</div>
+      </div>
+      <div class="location-card" onclick="openMaps('Volkspark Humboldthain Berlin')">
+        <div class="loc-icon">🌿</div>
+        <div class="loc-info"><div class="loc-name">Volkspark Humboldthain</div><div class="loc-meta">Active this week · 1.8km away</div></div>
+        <div class="loc-nav">→ Maps</div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="goTo(7)">Create your own hub</button>
+  </div>
+
+  <!-- 7: HUB PACK -->
+  <div class="screen" id="s7">
+    <div class="hero-banner">
+      <div class="bg-text">📍</div>
+      <div class="hero-title">Put your spot<br>on the map.</div>
+      <div class="hero-sub">One poster. One QR. Your location on the Berlin leaderboard.</div>
+    </div>
+    <div class="pack-card">
+      <div class="pack-item"><div class="pack-icon">🖨️</div><div class="pack-text"><strong>Printable A3 poster (PDF)</strong> with your location name and unique QR code. Print it and put it up anywhere.</div></div>
+      <div class="pack-item"><div class="pack-icon">📲</div><div class="pack-text"><strong>Unique QR code</strong> — every scan counts towards your location's ranking on the Berlin leaderboard.</div></div>
+      <div class="pack-item"><div class="pack-icon">🗺️</div><div class="pack-text"><strong>Listed on the Berlin map</strong> — discoverable to all Bugmeister users across the city.</div></div>
+      <div class="pack-item"><div class="pack-icon">📊</div><div class="pack-text"><strong>Your own dashboard</strong> — see who's observing and what they're finding at your hub.</div></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;">
+      <div>
+        <div class="price-row"><div class="price-big">Pay what you want</div><div style="font-size:12px;color:var(--text-faint);">one time</div></div>
+        <div class="small" style="margin-top:2px;">Supports hosting</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:11px;color:var(--green-dark);font-weight:500;">Instant download</div>
+        <div class="small">Available anywhere</div>
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step"><div class="step-num">1</div><div class="step-label">Get your pack</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-label">Name your hub</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-label">Print it</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-label">Watch it grow</div></div>
+    </div>
+    <button class="btn-primary">Order my hub pack</button>
+    <div class="small" style="text-align:center;">Proceeds support urban biodiversity research in Berlin</div>
+    <button class="btn-ghost" onclick="goTo(6)">← Back to map</button>
+  </div>
+
+  <div class="nav-dots" id="dots"></div>
+</div>
+
+<script>
+const N = 8;
+let counts={}, total=0, xp=0, timerSec=600, timerMax=600, timerInt=null;
+
+const insectMeta = {
+  Bees:{icon:'🐝',rarity:'common',xp:10},
+  Butterflies:{icon:'🦋',rarity:'common',xp:10},
+  Flies:{icon:'🪰',rarity:'common',xp:8},
+  Beetles:{icon:'🪲',rarity:'rare',xp:20},
+  Ants:{icon:'🐜',rarity:'common',xp:5},
+  Wasps:{icon:'🐝',rarity:'common',xp:10},
+  Spiders:{icon:'🕷️',rarity:'rare',xp:20},
+  Other:{icon:'🦗',rarity:'epic',xp:50}
+};
+
+function buildDots() {
+  const d = document.getElementById('dots');
+  d.innerHTML = '';
+  for(let i=0;i<N;i++){
+    const dot = document.createElement('div');
+    dot.className = 'dot'; dot.id = 'd'+i; d.appendChild(dot);
+  }
+}
+
+function goTo(i) {
+  document.querySelectorAll('.nav-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+  for(let j=0;j<N;j++){
+    document.getElementById('s'+j).classList.toggle('active', j===i);
+    document.getElementById('d'+j).classList.toggle('active', j===i);
+  }
+  if(i===4) buildCards();
+  if(i===5) document.getElementById('ccnt').textContent = total;
+}
+
+function openMaps(q) {
+  window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q), '_blank');
+}
+
+function selTimer(el, m) {
+  document.querySelectorAll('.timer-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  timerSec=m*60; timerMax=timerSec;
+}
+
+function selW(el) {
+  document.querySelectorAll('.weather-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function startTimer() {
+  if(timerInt) clearInterval(timerInt);
+  timerInt = setInterval(()=>{
+    timerSec--;
+    if(timerSec<=0){ clearInterval(timerInt); timerInt=null; goTo(4); return; }
+    const m=Math.floor(timerSec/60), s=timerSec%60;
+    document.getElementById('tdisp').textContent = m+':'+String(s).padStart(2,'0');
+    document.getElementById('pfill').style.width = Math.round(timerSec/timerMax*100)+'%';
+  },1000);
+}
+
+function tap(el, name, isRare, pts) {
+  counts[name]=(counts[name]||0)+1; total++; xp+=pts;
+  el.classList.add('tapped');
+  let b=el.querySelector('.insect-count');
+  if(!b){b=document.createElement('div');b.className='insect-count';el.appendChild(b);}
+  b.textContent=counts[name];
+  document.getElementById('tcnt').textContent=total;
+  document.getElementById('xpdisp').textContent='+'+xp+' XP';
+  el.style.transform='scale(0.88)';
+  setTimeout(()=>{el.style.transform='';},120);
+  if(isRare&&counts[name]===1) showToast(name+' unlocked! +'+pts+' XP');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function buildCards(){
+  document.getElementById('rtotal').textContent=total;
+  document.getElementById('rtypes').textContent=Object.keys(counts).filter(k=>counts[k]>0).length;
+  document.getElementById('rxp').textContent=xp;
+  const g=document.getElementById('cgrid'); g.innerHTML='';
+  const found=Object.keys(counts).filter(k=>counts[k]>0);
+  if(!found.length){
+    g.innerHTML='<div style="grid-column:span 2;text-align:center;color:#9e9e9a;font-size:13px;padding:20px;">Tap insects on the Observe screen to collect cards.</div>';
+    return;
+  }
+  found.forEach(name=>{
+    const m=insectMeta[name]||{icon:'🦗',rarity:'common',xp:10};
+    const c=document.createElement('div');
+    c.className='insect-card '+m.rarity;
+    c.innerHTML=`<div class="card-xp">+${m.xp} XP</div><div class="card-icon">${m.icon}</div><div class="card-name">${name}</div><div class="card-count">${counts[name]} spotted</div><div class="card-rarity ${m.rarity}">${m.rarity}</div>`;
+    g.appendChild(c);
+  });
+  const gap=Math.max(0,1204-(247+total));
+  document.getElementById('kimpact').textContent='Your '+total+' sightings added to Moabit. Still '+gap+' behind Tiergarten.';
+}
+
+buildDots();
+goTo(0);
+</script>
+</body>
+</html>

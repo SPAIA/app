@@ -1,0 +1,2 @@
+ALTER TABLE profiles ADD COLUMN bio TEXT;
+ALTER TABLE profiles ADD COLUMN avatar_url TEXT;

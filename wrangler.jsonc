@@ -1,0 +1,32 @@
+{
+  "name": "bugmeister",
+  "compatibility_date": "2024-09-23",
+  "routes": [
+    { "pattern": "bugmeister.spaia.earth", "custom_domain": true }
+  ],
+  "compatibility_flags": ["nodejs_compat"],
+  "account_id": "6d433cb64672aac195ab8cbbca1c03e8",
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "assets": {
+    "directory": ".svelte-kit/cloudflare",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bugmeister",
+      "database_id": "4704d307-637c-4217-b4f2-6a2b959099e6",
+      "remote": false,
+    },
+  ],
+  "r2_buckets": [
+    {
+      "binding": "AVATARS",
+      "bucket_name": "bugmeister-avatars",
+    },
+    {
+      "binding": "MEDIA",
+      "bucket_name": "bugmeister-media",
+    },
+  ],
+}

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bugmeister</title>
+</head>
+<body>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: 'DM Sans', sans-serif; }
+
+.phone {
+  width: 320px; margin: 0 auto;
+  background: #f8f7f4;
+  border-radius: 28px;
+  border: 0.5px solid rgba(0,0,0,0.15);
+  overflow: hidden;
+  min-height: 620px;
+}
+
+.screen { display: none; padding: 20px; flex-direction: column; gap: 14px; }
+.screen.active { display: flex; }
+
+.status-bar { display:flex; justify-content:space-between; align-items:center; padding:12px 20px 0; font-size:11px; color:#9e9e9a; }
+
+.tag { font-size:10px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:#9e9e9a; }
+.h1 { font-size:22px; font-weight:500; color:#1a1a18; line-height:1.2; }
+.h2 { font-size:17px; font-weight:500; color:#1a1a18; }
+.body { font-size:13px; color:#6b6b68; line-height:1.6; }
+.small { font-size:11px; color:#9e9e9a; }
+
+.btn-primary { background:#1D9E75; color:white; border:none; border-radius:12px; padding:13px 20px; font-size:14px; font-weight:500; cursor:pointer; width:100%; text-align:center; }
+.btn-secondary { background:white; border:0.5px solid rgba(0,0,0,0.2); border-radius:12px; padding:11px 20px; font-size:13px; color:#1a1a18; cursor:pointer; width:100%; text-align:center; }
+.btn-ghost { background:none; border:none; font-size:12px; color:#9e9e9a; cursor:pointer; width:100%; text-align:center; padding:4px; }
+
+.pulse { display:inline-block; width:7px; height:7px; border-radius:50%; background:#1D9E75; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.nav-dots { display:flex; justify-content:center; gap:5px; padding:10px 0 14px; }
+.dot { width:6px; height:6px; border-radius:3px; background:rgba(0,0,0,0.15); transition:all 0.2s; }
+.dot.active { background:#1D9E75; width:14px; }
+
+/* ── SHARE CARD ── */
+.share-card {
+  background: #0F6E56;
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.share-card .bg-bug {
+  position:absolute; right:-20px; bottom:-20px;
+  font-size:120px; opacity:0.06; line-height:1;
+  pointer-events:none; transform:rotate(-15deg);
+}
+.share-card-top {
+  display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;
+}
+.share-location { font-size:11px; font-weight:500; color:rgba(255,255,255,0.6); letter-spacing:0.08em; text-transform:uppercase; }
+.share-date { font-size:11px; color:rgba(255,255,255,0.4); }
+.share-headline { font-size:22px; font-weight:500; color:white; line-height:1.2; margin-bottom:4px; }
+.share-sub { font-size:12px; color:#9FE1CB; margin-bottom:16px; }
+
+.share-stats {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:16px;
+}
+.share-stat {
+  background:rgba(255,255,255,0.1); border-radius:8px; padding:10px 6px; text-align:center;
+}
+.share-stat-num { font-size:20px; font-weight:500; color:white; }
+.share-stat-label { font-size:9px; color:rgba(255,255,255,0.5); margin-top:2px; text-transform:uppercase; letter-spacing:0.06em; }
+
+.share-finds { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+.find-pill {
+  display:inline-flex; align-items:center; gap:4px;
+  background:rgba(255,255,255,0.12); border-radius:20px;
+  padding:4px 10px; font-size:11px; color:white;
+}
+.find-pill.epic { background:rgba(83,74,183,0.4); }
+.find-pill.rare { background:rgba(186,117,23,0.4); }
+
+.share-kiez {
+  background:rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px;
+  display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;
+}
+.share-kiez-label { font-size:11px; color:rgba(255,255,255,0.5); }
+.share-kiez-value { font-size:13px; font-weight:500; color:white; }
+
+.share-footer { display:flex; justify-content:space-between; align-items:center; }
+.share-hashtags { font-size:10px; color:rgba(255,255,255,0.4); line-height:1.6; }
+.share-qr {
+  width:44px; height:44px; background:white; border-radius:6px;
+  display:flex; align-items:center; justify-content:center; font-size:10px; color:#1a1a18; font-weight:500;
+  flex-shrink:0;
+}
+
+.share-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.share-action-btn {
+  background:white; border:0.5px solid rgba(0,0,0,0.15);
+  border-radius:10px; padding:10px; text-align:center;
+  cursor:pointer; font-size:12px; color:#1a1a18; font-weight:500;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.share-action-icon { font-size:18px; }
+
+/* ── COLLECTION ── */
+.collection-header {
+  background:#0F6E56; border-radius:14px; padding:16px;
+  display:flex; align-items:center; gap:12px;
+}
+.avatar {
+  width:44px; height:44px; border-radius:50%;
+  background:rgba(255,255,255,0.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+}
+.avatar-info { flex:1; }
+.avatar-name { font-size:14px; font-weight:500; color:white; }
+.avatar-title { font-size:11px; color:#9FE1CB; margin-top:2px; }
+.level-badge {
+  background:rgba(255,255,255,0.15); border-radius:20px;
+  padding:4px 10px; font-size:11px; font-weight:500; color:white;
+}
+
+.xp-bar-wrap {
+  background:white; border-radius:12px; padding:12px 14px;
+  border:0.5px solid rgba(0,0,0,0.08);
+}
+.xp-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.xp-label { font-size:11px; color:#9e9e9a; }
+.xp-value { font-size:11px; font-weight:500; color:#1D9E75; }
+.xp-bar { width:100%; height:6px; background:#E1F5EE; border-radius:3px; overflow:hidden; }
+.xp-fill { height:100%; background:#1D9E75; border-radius:3px; width:68%; }
+
+.global-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.gstat {
+  background:white; border:0.5px solid rgba(0,0,0,0.08);
+  border-radius:10px; padding:10px 6px; text-align:center;
+}
+.gstat-num { font-size:18px; font-weight:500; color:#1D9E75; }
+.gstat-label { font-size:9px; color:#9e9e9a; margin-top:2px; text-transform:uppercase; letter-spacing:0.05em; }
+
+.section-header { display:flex; justify-content:space-between; align-items:center; }
+.section-title { font-size:13px; font-weight:500; color:#1a1a18; }
+.section-link { font-size:11px; color:#1D9E75; cursor:pointer; }
+
+.location-set {
+  background:white; border:0.5px solid rgba(0,0,0,0.08);
+  border-radius:14px; overflow:hidden;
+}
+.location-set-header {
+  padding:12px 14px; display:flex; align-items:center; gap:10px;
+  border-bottom:0.5px solid rgba(0,0,0,0.06); cursor:pointer;
+}
+.location-set-header:hover { background:#f8f7f4; }
+.loc-set-icon { font-size:20px; flex-shrink:0; }
+.loc-set-info { flex:1; }
+.loc-set-name { font-size:13px; font-weight:500; color:#1a1a18; }
+.loc-set-meta { font-size:10px; color:#9e9e9a; margin-top:2px; }
+.loc-set-count { font-size:12px; font-weight:500; color:#1D9E75; flex-shrink:0; }
+
+.loc-cards { display:flex; gap:6px; padding:10px 12px; overflow-x:auto; scrollbar-width:none; }
+.loc-cards::-webkit-scrollbar { display:none; }
+.mini-card {
+  flex-shrink:0; width:64px; border-radius:10px; padding:10px 6px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  border:0.5px solid rgba(0,0,0,0.08);
+}
+.mini-card.common { background:#E1F5EE; border-color:#1D9E75; }
+.mini-card.rare { background:#FAEEDA; border-color:#BA7517; }
+.mini-card.epic { background:#EEEDFE; border-color:#534AB7; }
+.mini-card.locked { background:#f0f0ee; border-color:rgba(0,0,0,0.08); }
+.mini-icon { font-size:20px; }
+.mini-name { font-size:8px; color:#6b6b68; text-align:center; font-weight:500; line-height:1.2; }
+.mini-lock { font-size:16px; color:#c0c0bc; }
+
+.rare-finds {
+  background:white; border:0.5px solid rgba(0,0,0,0.08);
+  border-radius:12px; padding:12px 14px;
+}
+.rare-find-row { display:flex; align-items:center; gap:10px; padding:6px 0; border-bottom:0.5px solid rgba(0,0,0,0.05); }
+.rare-find-row:last-child { border-bottom:none; padding-bottom:0; }
+.rf-icon { font-size:20px; flex-shrink:0; }
+.rf-info { flex:1; }
+.rf-name { font-size:12px; font-weight:500; color:#1a1a18; }
+.rf-location { font-size:10px; color:#9e9e9a; margin-top:1px; }
+.rf-badge { font-size:9px; font-weight:500; padding:2px 6px; border-radius:4px; flex-shrink:0; }
+.rf-badge.rare { background:#FAEEDA; color:#633806; }
+.rf-badge.epic { background:#EEEDFE; color:#3C3489; }
+
+.streak-bar {
+  background:white; border:0.5px solid rgba(0,0,0,0.08);
+  border-radius:12px; padding:12px 14px;
+  display:flex; align-items:center; gap:12px;
+}
+.streak-num { font-size:28px; font-weight:500; color:#1D9E75; flex-shrink:0; }
+.streak-info { flex:1; }
+.streak-label { font-size:12px; font-weight:500; color:#1a1a18; }
+.streak-sub { font-size:10px; color:#9e9e9a; margin-top:2px; }
+.streak-days { display:flex; gap:4px; margin-top:6px; }
+.streak-day { width:20px; height:20px; border-radius:4px; background:#E1F5EE; display:flex; align-items:center; justify-content:center; font-size:10px; }
+.streak-day.done { background:#1D9E75; color:white; font-size:9px; }
+.streak-day.today { background:#1D9E75; color:white; font-size:9px; border:2px solid #0F6E56; }
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet">
+
+<div style="padding:1rem 0;">
+  <div style="display:flex;justify-content:center;gap:6px;margin-bottom:16px;">
+    <button onclick="goTo(0)" id="nb0" style="background:#1D9E75;color:white;border:none;border-radius:20px;padding:5px 14px;font-size:11px;cursor:pointer;">Share card</button>
+    <button onclick="goTo(1)" id="nb1" style="background:white;border:0.5px solid rgba(0,0,0,0.2);border-radius:20px;padding:5px 14px;font-size:11px;cursor:pointer;color:#6b6b68;">My collection</button>
+  </div>
+
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <span style="display:flex;gap:4px;align-items:center;"><span class="pulse"></span> Moabit</span>
+    </div>
+
+    <!-- SHARE SCREEN -->
+    <div class="screen active" id="s0" style="padding:16px;">
+      <div class="tag">Session complete · share your find</div>
+
+      <div class="share-card">
+        <div class="bg-bug">🐝</div>
+        <div class="share-card-top">
+          <div>
+            <div class="share-location">Moawald · Moabit</div>
+            <div class="share-date">29 March 2026</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.15);border-radius:6px;padding:3px 7px;font-size:10px;color:white;font-weight:500;">#4 Berlin</div>
+        </div>
+
+        <div class="share-headline">12 creatures.<br>10 minutes.<br>Plain sight.</div>
+        <div class="share-sub">Moawald, Moabit · Spring session</div>
+
+        <div class="share-stats">
+          <div class="share-stat"><div class="share-stat-num">12</div><div class="share-stat-label">Sightings</div></div>
+          <div class="share-stat"><div class="share-stat-num">4</div><div class="share-stat-label">Types</div></div>
+          <div class="share-stat"><div class="share-stat-num">85</div><div class="share-stat-label">XP</div></div>
+        </div>
+
+        <div class="share-finds">
+          <div class="find-pill epic">🦗 Epic find</div>
+          <div class="find-pill rare">🪲 Rare</div>
+          <div class="find-pill">🐝 ×5</div>
+          <div class="find-pill">🐜 ×3</div>
+        </div>
+
+        <div class="share-kiez">
+          <div>
+            <div class="share-kiez-label">Contribution to Moabit</div>
+            <div class="share-kiez-value">+12 sightings · now #4 Berlin</div>
+          </div>
+          <div style="font-size:18px;">📍</div>
+        </div>
+
+        <div class="share-footer">
+          <div class="share-hashtags">
+            #Bugmeister<br>#Moawald<br>#SPAIA
+          </div>
+          <div class="share-qr">QR</div>
+        </div>
+      </div>
+
+      <div class="share-actions">
+        <div class="share-action-btn"><div class="share-action-icon">🖼️</div>Save as image</div>
+        <div class="share-action-btn"><div class="share-action-icon">📤</div>Share to stories</div>
+        <div class="share-action-btn"><div class="share-action-icon">📋</div>Copy link</div>
+        <div class="share-action-btn"><div class="share-action-icon">💬</div>Send to friend</div>
+      </div>
+
+      <div class="small" style="text-align:center;">Sharing your session helps grow the Berlin network</div>
+    </div>
+
+    <!-- COLLECTION SCREEN -->
+    <div class="screen" id="s1">
+      <div class="collection-header">
+        <div class="avatar">🐛</div>
+        <div class="avatar-info">
+          <div class="avatar-name">Moabit Bugmeister</div>
+          <div class="avatar-title">Field observer · Berlin</div>
+        </div>
+        <div class="level-badge">Lv. 4</div>
+      </div>
+
+      <div class="xp-bar-wrap">
+        <div class="xp-row">
+          <div class="xp-label">Progress to Level 5</div>
+          <div class="xp-value">340 / 500 XP</div>
+        </div>
+        <div class="xp-bar"><div class="xp-fill"></div></div>
+      </div>
+
+      <div class="global-stats">
+        <div class="gstat"><div class="gstat-num">47</div><div class="gstat-label">Sightings</div></div>
+        <div class="gstat"><div class="gstat-num">3</div><div class="gstat-label">Locations</div></div>
+        <div class="gstat"><div class="gstat-num">6</div><div class="gstat-label">Card types</div></div>
+      </div>
+
+      <div class="streak-bar">
+        <div class="streak-num">5</div>
+        <div class="streak-info">
+          <div class="streak-label">Day streak</div>
+          <div class="streak-sub">Observe today to keep it going</div>
+          <div class="streak-days">
+            <div class="streak-day done">✓</div>
+            <div class="streak-day done">✓</div>
+            <div class="streak-day done">✓</div>
+            <div class="streak-day done">✓</div>
+            <div class="streak-day today">✓</div>
+            <div class="streak-day"></div>
+            <div class="streak-day"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Your locations</div>
+        <div class="section-link">See all</div>
+      </div>
+
+      <div class="location-set">
+        <div class="location-set-header">
+          <div class="loc-set-icon">🌿</div>
+          <div class="loc-set-info">
+            <div class="loc-set-name">Moawald</div>
+            <div class="loc-set-meta">3 sessions · last visited today</div>
+          </div>
+          <div class="loc-set-count">24 sightings</div>
+        </div>
+        <div class="loc-cards">
+          <div class="mini-card common"><div class="mini-icon">🐝</div><div class="mini-name">Bees</div></div>
+          <div class="mini-card common"><div class="mini-icon">🐜</div><div class="mini-name">Ants</div></div>
+          <div class="mini-card rare"><div class="mini-icon">🪲</div><div class="mini-name">Beetles</div></div>
+          <div class="mini-card epic"><div class="mini-icon">🦗</div><div class="mini-name">Other</div></div>
+          <div class="mini-card locked"><div class="mini-lock">🔒</div><div class="mini-name">???</div></div>
+          <div class="mini-card locked"><div class="mini-lock">🔒</div><div class="mini-name">???</div></div>
+        </div>
+      </div>
+
+      <div class="location-set">
+        <div class="location-set-header">
+          <div class="loc-set-icon">🌳</div>
+          <div class="loc-set-info">
+            <div class="loc-set-name">Tiergarten</div>
+            <div class="loc-set-meta">1 session · last visited 3 days ago</div>
+          </div>
+          <div class="loc-set-count">15 sightings</div>
+        </div>
+        <div class="loc-cards">
+          <div class="mini-card common"><div class="mini-icon">🐝</div><div class="mini-name">Bees</div></div>
+          <div class="mini-card common"><div class="mini-icon">🦋</div><div class="mini-name">Butterflies</div></div>
+          <div class="mini-card common"><div class="mini-icon">🪰</div><div class="mini-name">Flies</div></div>
+          <div class="mini-card rare"><div class="mini-icon">🕷️</div><div class="mini-name">Spiders</div></div>
+          <div class="mini-card locked"><div class="mini-lock">🔒</div><div class="mini-name">???</div></div>
+          <div class="mini-card locked"><div class="mini-lock">🔒</div><div class="mini-name">???</div></div>
+        </div>
+      </div>
+
+      <div class="location-set">
+        <div class="location-set-header">
+          <div class="loc-set-icon">🏠</div>
+          <div class="loc-set-info">
+            <div class="loc-set-name">My balcony</div>
+            <div class="loc-set-meta">2 sessions · last visited yesterday</div>
+          </div>
+          <div class="loc-set-count">8 sightings</div>
+        </div>
+        <div class="loc-cards">
+          <div class="mini-card common"><div class="mini-icon">🐝</div><div class="mini-name">Bees</div></div>
+          <div class="mini-card common"><div class="mini-icon">🪰</div><div class="mini-name">Flies</div></div>
+          <div class="mini-card locked"><div class="mini-lock">🔒</div><div class="mini-name">???</div></div>
+          <div class="mini-card locked"><div class="mini-lock">🔒</div><div class="mini-name">???</div></div>
+          <div class="mini-card locked"><div class="mini-lock">🔒</div><div class="mini-name">???</div></div>
+          <div class="mini-card locked"><div class="mini-lock">🔒</div><div class="mini-name">???</div></div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">Rarest finds</div>
+      </div>
+
+      <div class="rare-finds">
+        <div class="rare-find-row">
+          <div class="rf-icon">🦗</div>
+          <div class="rf-info">
+            <div class="rf-name">Unknown · possibly dragonfly</div>
+            <div class="rf-location">Moawald · today</div>
+          </div>
+          <div class="rf-badge epic">Epic</div>
+        </div>
+        <div class="rare-find-row">
+          <div class="rf-icon">🪲</div>
+          <div class="rf-info">
+            <div class="rf-name">Beetle</div>
+            <div class="rf-location">Moawald · 2 days ago</div>
+          </div>
+          <div class="rf-badge rare">Rare</div>
+        </div>
+        <div class="rare-find-row">
+          <div class="rf-icon">🕷️</div>
+          <div class="rf-info">
+            <div class="rf-name">Spider</div>
+            <div class="rf-location">Tiergarten · 3 days ago</div>
+          </div>
+          <div class="rf-badge rare">Rare</div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="goTo(0)">Share your latest session</button>
+      <div class="small" style="text-align:center;padding-bottom:4px;">Your data contributes to Berlin biodiversity research</div>
+    </div>
+
+    <div class="nav-dots">
+      <div class="dot active" id="d0"></div>
+      <div class="dot" id="d1"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function goTo(i) {
+  [0,1].forEach(j => {
+    document.getElementById('s'+j).classList.toggle('active', j===i);
+    document.getElementById('d'+j).classList.toggle('active', j===i);
+    const nb = document.getElementById('nb'+j);
+    nb.style.background = j===i ? '#1D9E75' : 'white';
+    nb.style.color = j===i ? 'white' : '#6b6b68';
+    nb.style.border = j===i ? 'none' : '0.5px solid rgba(0,0,0,0.2)';
+  });
+}
+</script>
+</body>
+</html>

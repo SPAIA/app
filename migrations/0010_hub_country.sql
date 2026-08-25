@@ -1,0 +1,1 @@
+ALTER TABLE hubs ADD COLUMN country TEXT;
