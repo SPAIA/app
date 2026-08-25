@@ -227,5 +227,7 @@
   "spot.edit.saved": "Spot opgeslagen",
   "spot.edit.submit": "Wijzigingen opslaan",
   "spot.edit.name.label": "Spotnaam",
-  "spot.edit.icon.label": "Icoon"
+  "spot.edit.icon.label": "Icoon",
+  "spot.edit.cover.label": "Coverfoto",
+  "spot.edit.cover.change": "Coverfoto wijzigen"
 }

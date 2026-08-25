@@ -9,9 +9,7 @@
 	const userLocality = 'Moabit';
 
 	const rankStyles: Record<number, string> = {
-		1: 'text-accent font-bold',
-		2: 'text-base-content/50 font-semibold',
-		3: 'font-semibold text-[#854F0B]'
+		1: 'text-primary font-bold'
 	};
 
 	$: leader = data.leaderboard[0];

@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
 	import { onMount, onDestroy, tick } from 'svelte';
+	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
 	import type { PageData, ActionData } from './$types';
+	import type { Media, SpotVisionResult } from '$lib/types';
 
 	export let data: PageData;
 	export let form: ActionData;
@@ -34,6 +37,13 @@
 	let mapReady = false;
 
 	let submitting = false;
+
+	let cover: Media | null = data.cover;
+	let coverPreview = cover ? `/api/media/${cover.id}` : '';
+	let coverUploading = false;
+	let coverError = '';
+	let coverInput: HTMLInputElement;
+	let coverVision: SpotVisionResult | null = null;
 
 	function applyLocation(newLat: number, newLng: number) {
 		lat = newLat;
@@ -116,6 +126,56 @@
 	onDestroy(() => {
 		mapInstance?.remove();
 	});
+
+	// Uploads via the spot's photo endpoint (not the generic /api/media one) so
+	// the new cover also runs through DeepSeek Vision, which records habitat
+	// features and plant observations for this spot and may rename it.
+	async function handleCoverChange(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+
+		coverUploading = true;
+		coverError = '';
+		coverVision = null;
+		coverPreview = URL.createObjectURL(file);
+
+		const body = new FormData();
+		body.append('file', file);
+
+		const res = await fetch(`/api/spot/${data.spot.id}/photo`, { method: 'POST', body });
+
+		if (!res.ok) {
+			const detail = await res.json().catch(() => ({ message: 'Upload failed' }));
+			coverError = detail.message ?? 'Upload failed';
+			coverUploading = false;
+			return;
+		}
+
+		const result = (await res.json()) as {
+			media: { id: string; url: string };
+			spot: { id: number; slug: string; name: string };
+			vision: SpotVisionResult | null;
+		};
+
+		const previous = cover;
+		cover = { id: result.media.id } as Media;
+		coverPreview = result.media.url;
+		coverUploading = false;
+		coverVision = result.vision;
+
+		if (previous) {
+			await fetch(`/api/media/${previous.id}`, { method: 'DELETE' });
+		}
+
+		if (result.spot.slug !== data.spot.slug) {
+			await goto(`/space/${data.space.slug}/spot/${result.spot.slug}/edit`, { invalidateAll: true });
+			return;
+		}
+
+		if (result.vision) {
+			spotName = result.spot.name;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -134,6 +194,46 @@
 	{#if form?.error}
 		<div class="alert alert-error text-sm">{form.error}</div>
 	{/if}
+
+	<!-- Cover image -->
+	<div class="flex flex-col gap-2">
+		<div class="label pb-0"><span class="label-text">{$_('spot.edit.cover.label')}</span></div>
+		<div class="relative">
+			<div class="flex h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-base-200 ring-1 ring-base-300">
+				{#if coverPreview}
+					<img src={coverPreview} alt="" class="h-full w-full object-cover" />
+				{:else}
+					<span class="text-3xl">{spotIcon}</span>
+				{/if}
+			</div>
+			{#if coverUploading}
+				<div class="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40">
+					<span class="loading loading-spinner loading-sm text-white"></span>
+				</div>
+			{/if}
+		</div>
+		{#if coverError}
+			<p class="text-xs text-error">{coverError}</p>
+		{/if}
+		{#if coverVision?.scene}
+			<p class="text-xs text-base-content/50">{coverVision.scene}</p>
+		{/if}
+		<button
+			type="button"
+			class="btn btn-ghost btn-sm self-start text-primary"
+			onclick={() => coverInput.click()}
+			disabled={coverUploading}
+		>
+			{$_('spot.edit.cover.change')}
+		</button>
+		<input
+			bind:this={coverInput}
+			type="file"
+			accept="image/*"
+			class="hidden"
+			onchange={handleCoverChange}
+		/>
+	</div>
 
 	<form method="POST" action="?/save" use:enhance={() => {
 		submitting = true;
@@ -156,26 +256,13 @@
 		<div class="flex flex-col gap-2">
 			<div class="label pb-0"><span class="label-text">{$_('space.new.location.label')}</span></div>
 
-			<div class="flex gap-2">
-				<button
-					type="button"
-					class="btn btn-sm flex-1"
-					class:btn-primary={mode === 'search'}
-					class:btn-outline={mode !== 'search'}
-					onclick={() => (mode = 'search')}
-				>
-					{$_('space.new.location.search')}
-				</button>
-				<button
-					type="button"
-					class="btn btn-sm flex-1"
-					class:btn-primary={mode === 'pin'}
-					class:btn-outline={mode !== 'pin'}
-					onclick={() => (mode = 'pin')}
-				>
-					{$_('space.new.location.pin')}
-				</button>
-			</div>
+			<SegmentedToggle
+				value={mode}
+				options={[
+					{ value: 'search', label: $_('space.new.location.search'), onSelect: () => (mode = 'search') },
+					{ value: 'pin', label: $_('space.new.location.pin'), onSelect: () => (mode = 'pin') }
+				]}
+			/>
 
 			{#if mode === 'search'}
 				<div class="relative">
@@ -190,7 +277,7 @@
 						<span class="loading loading-spinner loading-xs absolute right-3 top-3"></span>
 					{/if}
 					{#if searchResults.length > 0}
-						<ul class="absolute z-10 mt-1 w-full rounded-lg border border-base-300 bg-base-100 shadow-lg">
+						<ul class="absolute z-10 mt-1 w-full rounded-lg border border-base-300 bg-base-100">
 							{#each searchResults as r}
 								<li>
 									<button

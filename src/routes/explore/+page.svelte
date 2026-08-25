@@ -114,7 +114,7 @@
 
 					const el = document.createElement('div');
 					el.className =
-						'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#0F6E56] text-sm shadow-md';
+						'flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-primary text-sm';
 					el.textContent = spot.icon;
 					el.onclick = () => selectSpot(spot);
 					new mapLib.Marker({ element: el }).setLngLat([spot.lng, spot.lat]).addTo(map);
@@ -140,11 +140,11 @@
 	<div bind:this={mapContainer} class="h-full w-full"></div>
 
 	<div class="pointer-events-none absolute inset-x-4 top-4 flex items-start justify-between gap-2">
-		<span class="pointer-events-auto rounded-full bg-base-100/90 px-3 py-1.5 text-xs font-medium uppercase tracking-widest text-base-content/70 shadow-md backdrop-blur">
+		<span class="pointer-events-auto rounded-full border border-base-300 bg-base-100 px-3 py-1.5 text-xs font-medium uppercase tracking-widest text-base-content/70">
 			{$_('explore.title')}
 		</span>
 		<button
-			class="pointer-events-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-base-100/90 text-primary shadow-md backdrop-blur disabled:opacity-50"
+			class="pointer-events-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-100 text-primary disabled:opacity-50"
 			disabled={locating}
 			aria-label={$_('explore.nearMe.cta')}
 			onclick={findNearestSpot}
@@ -160,13 +160,13 @@
 	</div>
 
 	{#if locateError}
-		<p class="pointer-events-none absolute inset-x-4 top-16 rounded-lg bg-error/90 px-3 py-1.5 text-center text-xs text-white shadow-md">
+		<p class="pointer-events-none absolute inset-x-4 top-16 rounded-lg bg-error px-3 py-1.5 text-center text-xs text-white">
 			{$_('explore.nearMe.error')}
 		</p>
 	{/if}
 
 	{#if !selectedSpot}
-		<button class="absolute inset-x-4 bottom-24 z-10 btn btn-outline btn-sm w-full bg-base-100/90 shadow-md backdrop-blur" onclick={() => goto('/space-pack')}>
+		<button class="absolute inset-x-4 bottom-24 z-10 btn btn-outline btn-sm w-full bg-base-100" onclick={() => goto('/space-pack')}>
 			{$_('explore.cta.space')}
 		</button>
 	{/if}
@@ -175,7 +175,7 @@
 <!-- Spot detail bottom sheet -->
 {#if selectedSpot}
 	<button class="fixed inset-0 z-40 w-full bg-black/40" aria-label={$_('explore.spot.close')} onclick={closeCard}></button>
-	<div class="fixed bottom-0 left-1/2 z-50 max-h-[80vh] w-full max-w-105 -translate-x-1/2 overflow-y-auto rounded-t-2xl bg-base-100 shadow-xl">
+	<div class="fixed bottom-0 left-1/2 z-50 max-h-[80vh] w-full max-w-105 -translate-x-1/2 overflow-y-auto rounded-t-2xl border-t border-base-300 bg-base-100">
 		{#if summary?.cover}
 			<img src="/api/media/{summary.cover.id}" alt="" class="h-40 w-full rounded-t-2xl object-cover" />
 		{/if}

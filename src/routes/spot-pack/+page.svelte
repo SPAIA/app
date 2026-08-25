@@ -64,7 +64,7 @@
 
 <div class="flex flex-col gap-5 px-5 py-6">
 	<!-- Hero -->
-	<div class="relative overflow-hidden rounded-xl bg-[#0F6E56] px-5 py-6">
+	<div class="relative overflow-hidden rounded-xl bg-base-content px-5 py-6">
 		<div class="pointer-events-none absolute -right-4 -bottom-4 text-[100px] leading-none opacity-[0.07]">📍</div>
 		<h1 class="text-2xl font-medium leading-tight text-white">{$_('spot_pack.title')}</h1>
 		<p class="mt-2 text-sm text-green-mid">{$_('spot_pack.subtitle')}</p>

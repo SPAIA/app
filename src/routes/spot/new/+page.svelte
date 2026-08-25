@@ -5,6 +5,7 @@
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { reverseGeocodeLocality } from '$lib/geocode';
 	import { resizeImageFile } from '$lib/media/resizeImage';
+	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
 	import type { SpotVisionResult } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -265,24 +266,13 @@
 					{$_('spot.add.location.label')}
 				</p>
 
-				<div class="flex gap-2">
-					<button
-						class="btn btn-sm flex-1"
-						class:btn-primary={mode === 'gps'}
-						class:btn-outline={mode !== 'gps'}
-						onclick={locateWithGps}
-					>
-						{$_('spot.add.location.gps')}
-					</button>
-					<button
-						class="btn btn-sm flex-1"
-						class:btn-primary={mode === 'pin'}
-						class:btn-outline={mode !== 'pin'}
-						onclick={() => (mode = 'pin')}
-					>
-						{$_('spot.add.location.pin')}
-					</button>
-				</div>
+				<SegmentedToggle
+					value={mode}
+					options={[
+						{ value: 'gps', label: $_('spot.add.location.gps'), onSelect: locateWithGps },
+						{ value: 'pin', label: $_('spot.add.location.pin'), onSelect: () => (mode = 'pin') }
+					]}
+				/>
 
 				{#if mode === 'gps'}
 					{#if gpsStatus === 'acquiring'}

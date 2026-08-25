@@ -54,8 +54,8 @@
 			<div class="flex items-center justify-around gap-2">
 				{#each tabs as tab}
 					<button
-						class="flex flex-1 items-center justify-center rounded-xl py-3 transition-all duration-200 {isActive(tab.href)
-							? 'bg-primary text-primary-content shadow-md'
+						class="flex flex-1 items-center justify-center rounded-lg py-3 transition-colors {isActive(tab.href)
+							? 'bg-primary text-primary-content'
 							: 'bg-base-200 text-base-content/50 hover:bg-base-300 hover:text-base-content'}"
 						onclick={() => goto(tab.href)}
 						aria-label={$_(tab.labelKey)}

@@ -38,6 +38,8 @@ For habitat_features, use "groundcover" for the surface plants grow in/on (leaf 
 for logs/branches/deadwood, "water" for any standing/flowing water, "nesting_feature" for anything that looks
 like it could shelter a nest or burrow, "vegetation_structure" for the shape/layers of plant growth (dense
 shrub layer, open canopy, etc.), and "other" for anything that doesn't fit those.
+If you see a grey plastic box mounted on a pole, that is the citizen-scientist's own SPAIA insect monitor, not
+a birdhouse or nest box — label it "SPAIA insect monitor" under the "other" category, not "nesting_feature".
 Keep "plants" and "habitat_features" to at most 6 items each. If you can't identify something precisely, still
 include your best general guess rather than leaving a list empty.
 "name" is only used the first time a spot is photographed — still fill it in, but don't worry about it once a

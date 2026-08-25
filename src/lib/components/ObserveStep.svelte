@@ -95,17 +95,19 @@
 		{#each insectTypes as insect}
 			{@const count = $sessionStore.counts[insect.name] ?? 0}
 			<button
-				class="relative flex flex-col items-center gap-1.5 rounded-xl border border-base-300 bg-base-100 py-4 transition-all"
+				class="relative aspect-square overflow-hidden rounded-xl border border-base-300 transition-all"
 				style="transform: scale({buttonScales[insect.name] ?? 1})"
 				onclick={() => tapInsect(insect)}
 			>
 				{#if count > 0}
-					<span class="absolute right-1.5 top-1.5 min-w-[18px] rounded-full bg-primary px-1 py-px text-center text-[9px] font-medium text-white">
+					<span class="absolute right-1.5 top-1.5 z-10 min-w-[18px] rounded-full bg-primary px-1 py-px text-center text-[9px] font-medium text-white">
 						{count}
 					</span>
 				{/if}
-				<img src={insectImage(insect.name)} alt="" class="h-9 w-9 rounded-lg object-cover" />
-				<span class="text-[10px] font-medium text-base-content/60">{$_(`insect.${insect.name}`)}</span>
+				<img src={insectImage(insect.name)} alt="" class="absolute inset-0 h-full w-full object-cover" />
+				<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent pt-4">
+					<span class="block px-2 pb-1.5 text-[10px] font-medium text-white">{$_(`insect.${insect.name}`)}</span>
+				</div>
 			</button>
 		{/each}
 	</div>

@@ -47,7 +47,7 @@
 {:else}
 	<div class="flex flex-col gap-4 px-5 py-6">
 		<!-- Collection header -->
-		<div class="flex items-center gap-3 rounded-xl bg-[#0F6E56] p-4">
+		<div class="flex items-center gap-3 rounded-xl bg-base-content p-4">
 			<button
 				onclick={() => goto('/profile/edit')}
 				class="shrink-0 overflow-hidden rounded-full ring-2 ring-white/30 focus:outline-none"

@@ -239,5 +239,7 @@
   "spot.edit.saved": "Spot saved",
   "spot.edit.submit": "Save changes",
   "spot.edit.name.label": "Spot name",
-  "spot.edit.icon.label": "Icon"
+  "spot.edit.icon.label": "Icon",
+  "spot.edit.cover.label": "Cover image",
+  "spot.edit.cover.change": "Change cover image"
 }

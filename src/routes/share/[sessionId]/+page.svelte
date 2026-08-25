@@ -44,7 +44,7 @@
 	</p>
 
 	<!-- Share card -->
-	<div id="share-card" class="relative overflow-hidden rounded-2xl bg-[#0F6E56] p-5">
+	<div id="share-card" class="relative overflow-hidden rounded-2xl bg-base-content p-5">
 		<div class="pointer-events-none absolute -right-5 -bottom-5 text-[120px] leading-none opacity-[0.06]">🐝</div>
 
 		<div class="mb-4 flex items-start justify-between">

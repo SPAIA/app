@@ -227,5 +227,7 @@
   "spot.edit.saved": "Spot gespeichert",
   "spot.edit.submit": "Änderungen speichern",
   "spot.edit.name.label": "Spot-Name",
-  "spot.edit.icon.label": "Symbol"
+  "spot.edit.icon.label": "Symbol",
+  "spot.edit.cover.label": "Titelbild",
+  "spot.edit.cover.change": "Titelbild ändern"
 }

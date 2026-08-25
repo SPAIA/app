@@ -7,26 +7,25 @@
 @plugin "daisyui/theme" {
   name: "bugmeister";
   default: true;
-  /* SPAIA palette: deep navy + spring-green accent on white, warm peach highlight */
-  --color-primary:          #0C2464;
-  --color-primary-content:  #ffffff;
+  /* Neutral base, single spring-green accent */
+  --color-primary:          #3CF4A2;
+  --color-primary-content:  #18181B;
   --color-secondary:        #3CF4A2;
-  --color-secondary-content:#0C2464;
-  --color-accent:           #FF8044;
-  --color-accent-content:   #ffffff;
+  --color-secondary-content:#18181B;
+  --color-accent:           #3CF4A2;
+  --color-accent-content:   #18181B;
   --color-base-100:         #ffffff;
-  --color-base-200:         #f5f7ff;
-  --color-base-300:         #e2e2e2;
-  --color-base-content:     #14142B;
-  --radius-btn:             0.75rem;
-  --radius-box:             0.75rem;
+  --color-base-200:         #F4F4F5;
+  --color-base-300:         #E4E4E7;
+  --color-base-content:     #18181B;
+  --radius-field:           0.5rem;
+  --radius-selector:        0.5rem;
+  --radius-box:             0.5rem;
 }
 
 @theme {
-  --font-sans: 'DM Sans', sans-serif;
-  --font-mono: 'DM Mono', monospace;
-  --color-green-light:  #E0FCEF;
-  --color-green-mid:    #3CF4A2;
-  --color-amber-light:  #FEF3E5;
-  --color-purple-light: #F5F7FF;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, monospace;
+  --color-green-light: #E0FCEF;
+  --color-green-mid:   #3CF4A2;
 }

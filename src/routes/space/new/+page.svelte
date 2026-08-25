@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { reverseGeocode } from '$lib/geocode';
+	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -233,32 +234,14 @@
 		<div class="flex flex-col gap-2">
 			<div class="label pb-0"><span class="label-text">{$_('space.new.location.label')}</span></div>
 
-			<div class="flex gap-2">
-				<button
-					class="btn btn-sm flex-1"
-					class:btn-primary={mode === 'gps'}
-					class:btn-outline={mode !== 'gps'}
-					onclick={locateWithGps}
-				>
-					{$_('space.new.location.gps')}
-				</button>
-				<button
-					class="btn btn-sm flex-1"
-					class:btn-primary={mode === 'search'}
-					class:btn-outline={mode !== 'search'}
-					onclick={() => (mode = 'search')}
-				>
-					{$_('space.new.location.search')}
-				</button>
-				<button
-					class="btn btn-sm flex-1"
-					class:btn-primary={mode === 'pin'}
-					class:btn-outline={mode !== 'pin'}
-					onclick={switchToPin}
-				>
-					{$_('space.new.location.pin')}
-				</button>
-			</div>
+			<SegmentedToggle
+				value={mode}
+				options={[
+					{ value: 'gps', label: $_('space.new.location.gps'), onSelect: locateWithGps },
+					{ value: 'search', label: $_('space.new.location.search'), onSelect: () => (mode = 'search') },
+					{ value: 'pin', label: $_('space.new.location.pin'), onSelect: switchToPin }
+				]}
+			/>
 
 			{#if mode === 'gps'}
 				{#if gpsStatus === 'locating'}
@@ -279,7 +262,7 @@
 						<span class="loading loading-spinner loading-xs absolute right-3 top-3"></span>
 					{/if}
 					{#if searchResults.length > 0}
-						<ul class="absolute z-10 mt-1 w-full rounded-lg border border-base-300 bg-base-100 shadow-lg">
+						<ul class="absolute z-10 mt-1 w-full rounded-lg border border-base-300 bg-base-100">
 							{#each searchResults as r}
 								<li>
 									<button

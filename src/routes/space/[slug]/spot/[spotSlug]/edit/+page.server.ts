@@ -1,6 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { getSpaceBySlug, getSpotBySlug, updateSpotFields } from '$lib/db/queries';
+import { getMediaForEntity, getSpaceBySlug, getSpotBySlug, updateSpotFields } from '$lib/db/queries';
 
 export const load: PageServerLoad = async ({ params, locals, platform }) => {
 	const db = platform?.env?.DB;
@@ -19,7 +19,10 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 	// owner (spots created for free during a session have no owner of their own).
 	if (space.owner_id !== user.id && spot.owner_id !== user.id) throw error(403, 'Forbidden');
 
-	return { space, spot, stadiaApiKey: platform?.env?.STADIA_API_KEY ?? '' };
+	const media = await getMediaForEntity(db, 'spot', String(spot.id));
+	const cover = media.find((m) => m.media_type === 'header_image') ?? null;
+
+	return { space, spot, cover, stadiaApiKey: platform?.env?.STADIA_API_KEY ?? '' };
 };
 
 export const actions: Actions = {
