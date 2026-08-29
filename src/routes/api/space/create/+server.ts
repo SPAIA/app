@@ -10,6 +10,8 @@ interface CreateSpaceBody {
 	spaceOrderId: string;
 	lat?: number | null;
 	lng?: number | null;
+	/** GeoJSON Polygon/MultiPolygon geometry (as a JSON string) traced on the map, if any. */
+	boundaryGeojson?: string | null;
 }
 
 export const POST: RequestHandler = async ({ request, locals, platform }) => {
@@ -20,10 +22,21 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
 
 	const body = (await request.json()) as CreateSpaceBody;
-	const { spaceName, locality, country, spaceOrderId, lat, lng } = body;
+	const { spaceName, locality, country, spaceOrderId, lat, lng, boundaryGeojson } = body;
 
 	if (!spaceName || !spaceOrderId) {
 		return json({ error: 'Missing required fields' }, { status: 400 });
+	}
+
+	if (boundaryGeojson) {
+		try {
+			const geom = JSON.parse(boundaryGeojson);
+			if (geom?.type !== 'Polygon' && geom?.type !== 'MultiPolygon') {
+				return json({ error: 'Invalid boundary' }, { status: 400 });
+			}
+		} catch {
+			return json({ error: 'Invalid boundary' }, { status: 400 });
+		}
 	}
 
 	const order = await getSpaceOrder(db, spaceOrderId);
@@ -42,7 +55,8 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		icon: '🌿',
 		lat: lat ?? null,
 		lng: lng ?? null,
-		owner_id: user.id
+		owner_id: user.id,
+		boundary_geojson: boundaryGeojson ?? null
 	});
 
 	await updateSpaceOrderSpaceId(db, spaceOrderId, spaceId);

@@ -4,29 +4,37 @@
 	import { sessionStore } from '$lib/stores/session';
 	import { nowISO } from '$lib/time';
 	import { insectImage } from '$lib/insectImage';
+	import { autosaveSession } from '$lib/sessionSave';
 	import type { InsectType } from '$lib/types';
 
 	export let insectTypes: InsectType[] = [];
 
-	let timeLeft = 0;
-	let totalSeconds = 0;
+	/** Autosave fires on every tap; while idle it also fires on this heartbeat. */
+	const IDLE_SAVE_MS = 15000;
+
+	let timeLeft = $sessionStore.durationMin * 60;
+	let totalSeconds = timeLeft;
 	let interval: ReturnType<typeof setInterval>;
+	let idleSaveTimer: ReturnType<typeof setTimeout>;
 	let buttonScales: Record<string, number> = {};
 
-	$: {
-		totalSeconds = $sessionStore.durationMin * 60;
-		if (timeLeft === 0) timeLeft = totalSeconds;
-	}
-
 	onMount(() => {
-		timeLeft = $sessionStore.durationMin * 60;
-		totalSeconds = timeLeft;
 		interval = setInterval(tick, 1000);
+		scheduleIdleSave();
 	});
 
 	onDestroy(() => {
 		clearInterval(interval);
+		clearTimeout(idleSaveTimer);
 	});
+
+	function scheduleIdleSave() {
+		clearTimeout(idleSaveTimer);
+		idleSaveTimer = setTimeout(() => {
+			void autosaveSession();
+			scheduleIdleSave();
+		}, IDLE_SAVE_MS);
+	}
 
 	function tick() {
 		if (timeLeft > 0) {
@@ -38,7 +46,8 @@
 	}
 
 	function advance() {
-		sessionStore.update((s) => ({ ...s, step: 'cards' }));
+		void autosaveSession();
+		sessionStore.update((s) => ({ ...s, step: 'thankyou' }));
 	}
 
 	function tapInsect(insect: InsectType) {
@@ -51,6 +60,9 @@
 			taps: [...s.taps, { name: insect.name, tappedAt: nowISO() }],
 			totalCount: s.totalCount + 1
 		}));
+
+		void autosaveSession();
+		scheduleIdleSave();
 
 		// Animate button
 		buttonScales[insect.name] = 0.93;

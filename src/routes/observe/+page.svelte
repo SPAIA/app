@@ -2,13 +2,14 @@
 	import { _ } from 'svelte-i18n';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { directionsUrl, formatDistanceKm } from '$lib/geo';
+	import { directionsUrl, formatDistanceRange } from '$lib/geo';
 	import type { Spot } from '$lib/types';
 
 	type Phase = 'locating' | 'found' | 'none' | 'error';
 	let phase: Phase = 'locating';
 	let nearest: Spot | null = null;
 	let distanceKm: number | null = null;
+	let accuracy: number | null = null;
 
 	function locate() {
 		phase = 'locating';
@@ -20,6 +21,7 @@
 
 		navigator.geolocation.getCurrentPosition(
 			async (pos) => {
+				accuracy = pos.coords.accuracy;
 				try {
 					const res = await fetch(`/api/spot/nearest?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);
 					const result = (await res.json()) as { spot: Spot | null; distanceKm: number | null };
@@ -66,7 +68,7 @@
 			<h2 class="text-xl font-medium text-base-content">{nearest.name}</h2>
 			{#if distanceKm != null}
 				<p class="mt-1 text-sm text-base-content/50">
-					{$_('observe.nearest.distance', { values: { distance: formatDistanceKm(distanceKm) } })}
+					{$_('observe.nearest.distance', { values: { distance: formatDistanceRange(distanceKm, accuracy) } })}
 				</p>
 			{/if}
 		</div>

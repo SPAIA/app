@@ -1,9 +1,14 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { onMount, onDestroy, tick } from 'svelte';
+	import area from '@turf/area';
 	import { reverseGeocode } from '$lib/geocode';
 	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
+	import { setBoundaryDraft, takeBoundaryResult } from '$lib/boundaryHandoff';
+	import { formatArea } from '$lib/geo';
 	import type { PageData, ActionData } from './$types';
 	import type { Media } from '$lib/types';
 
@@ -24,6 +29,9 @@
 	let lat: number | null = data.space.lat;
 	let lng: number | null = data.space.lng;
 	let geocoding = false;
+
+	let boundary: string | null = data.space.boundary_geojson;
+	let boundaryArea = boundary ? area(JSON.parse(boundary)) : 0;
 
 	type LocationMode = 'gps' | 'search' | 'pin';
 	let mode: LocationMode = 'pin';
@@ -149,7 +157,23 @@
 		});
 	}
 
+	function openBoundaryEditor() {
+		setBoundaryDraft({ lat, lng, geojson: boundary, returnTo: $page.url.pathname });
+		goto('/space/boundary');
+	}
+
 	onMount(async () => {
+		const boundaryResult = takeBoundaryResult();
+		if (boundaryResult) {
+			boundary = boundaryResult.geojson;
+			boundaryArea = boundaryResult.areaM2;
+		}
+
+		if (boundaryResult?.lat != null && boundaryResult?.lng != null) {
+			mode = 'pin';
+			await applyLocation(boundaryResult.lat, boundaryResult.lng);
+		}
+
 		await tick();
 		initMap();
 	});
@@ -322,10 +346,39 @@
 			{/if}
 		</div>
 
+		<div class="flex flex-col gap-2">
+			<div class="label pb-0"><span class="label-text">{$_('space.new.boundary.label')}</span></div>
+			{#if boundary}
+				<div class="flex items-center justify-between gap-2 rounded-xl border border-base-300 px-4 py-3">
+					<span class="text-sm text-base-content/70">{formatArea(boundaryArea)}</span>
+					<div class="flex gap-2">
+						<button type="button" class="btn btn-ghost btn-sm" onclick={openBoundaryEditor}>
+							{$_('space.new.boundary.edit')}
+						</button>
+						<button
+							type="button"
+							class="btn btn-ghost btn-sm text-error"
+							onclick={() => {
+								boundary = null;
+								boundaryArea = 0;
+							}}
+						>
+							{$_('space.new.boundary.clear')}
+						</button>
+					</div>
+				</div>
+			{:else}
+				<button type="button" class="btn btn-outline w-full" onclick={openBoundaryEditor}>
+					{$_('space.new.boundary.draw')}
+				</button>
+			{/if}
+		</div>
+
 		<input type="hidden" name="locality" value={locality ?? ''} />
 		<input type="hidden" name="country" value={country ?? ''} />
 		<input type="hidden" name="lat" value={lat ?? ''} />
 		<input type="hidden" name="lng" value={lng ?? ''} />
+		<input type="hidden" name="boundary_geojson" value={boundary ?? ''} />
 
 		<button class="btn btn-primary w-full" disabled={submitting || !spaceName}>
 			{#if submitting}<span class="loading loading-spinner loading-sm"></span>{/if}

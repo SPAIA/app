@@ -2,9 +2,11 @@
 	import '../app.css';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
+	import { readLocalSessionIds, clearLocalSessionIds } from '$lib/localSessions';
 	import type { LayoutData } from './$types';
 
 	export let data: LayoutData;
@@ -13,6 +15,26 @@
 	setContext('authUser', authUser);
 
 	$: authUser.set(data.user);
+
+	// Link any anonymous observations this device made before the observer
+	// signed in — independent of the email-claim flow on the summary screen.
+	onMount(() => {
+		if (!data.user) return;
+		const sessionIds = readLocalSessionIds();
+		if (sessionIds.length === 0) return;
+
+		fetch('/api/sessions/claim-local', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ sessionIds })
+		})
+			.then((res) => {
+				if (res.ok) clearLocalSessionIds();
+			})
+			.catch(() => {
+				// offline — retried on the next authenticated page load
+			});
+	});
 
 	const tabs = [
 		{
@@ -42,28 +64,33 @@
 	function isActive(href: string) {
 		return currentPath === href || currentPath.startsWith(href + '/');
 	}
+
+	/** Routes that own the whole frame (e.g. a fullscreen map editor) render without the tab bar or scroll chrome. */
+	$: isFullscreenRoute = currentPath.startsWith('/space/boundary');
 </script>
 
 <div class="flex min-h-dvh flex-col items-center bg-base-200">
 	<div class="relative flex w-full max-w-[420px] flex-1 flex-col bg-base-100">
-		<main class="flex-1 overflow-y-auto pb-24">
+		<main class={isFullscreenRoute ? '' : 'flex-1 overflow-y-auto pb-24'}>
 			<slot />
 		</main>
 
-		<nav class="fixed bottom-0 left-1/2 w-full max-w-[420px] -translate-x-1/2 bg-base-100 border-t border-base-300 px-4 py-3">
-			<div class="flex items-center justify-around gap-2">
-				{#each tabs as tab}
-					<button
-						class="flex flex-1 items-center justify-center rounded-lg py-3 transition-colors {isActive(tab.href)
-							? 'bg-primary text-primary-content'
-							: 'bg-base-200 text-base-content/50 hover:bg-base-300 hover:text-base-content'}"
-						onclick={() => goto(tab.href)}
-						aria-label={$_(tab.labelKey)}
-					>
-						{@html tab.svg}
-					</button>
-				{/each}
-			</div>
-		</nav>
+		{#if !isFullscreenRoute}
+			<nav class="fixed bottom-0 left-1/2 w-full max-w-[420px] -translate-x-1/2 bg-base-100 border-t border-base-300 px-4 py-3">
+				<div class="flex items-center justify-around gap-2">
+					{#each tabs as tab}
+						<button
+							class="flex flex-1 items-center justify-center rounded-lg py-3 transition-colors {isActive(tab.href)
+								? 'bg-primary text-primary-content'
+								: 'bg-base-200 text-base-content/50 hover:bg-base-300 hover:text-base-content'}"
+							onclick={() => goto(tab.href)}
+							aria-label={$_(tab.labelKey)}
+						>
+							{@html tab.svg}
+						</button>
+					{/each}
+				</div>
+			</nav>
+		{/if}
 	</div>
 </div>

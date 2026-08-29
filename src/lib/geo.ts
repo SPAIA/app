@@ -36,6 +36,20 @@ export function formatDistanceKm(km: number): string {
 	return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
 }
 
+/**
+ * Distance as a range that accounts for the device's reported GPS accuracy (metres),
+ * e.g. "30m–70m" instead of a falsely precise "50m" when the fix is only good to ±20m.
+ * Falls back to a single value when accuracy is unknown.
+ */
+export function formatDistanceRange(km: number, accuracyMeters: number | null | undefined): string {
+	if (accuracyMeters == null || accuracyMeters <= 0) return formatDistanceKm(km);
+
+	const meters = km * 1000;
+	const low = formatDistanceKm(Math.max(0, meters - accuracyMeters) / 1000);
+	const high = formatDistanceKm((meters + accuracyMeters) / 1000);
+	return low === high ? low : `${low}–${high}`;
+}
+
 /** Nearest spot with known coordinates to the given point, or null if none have coordinates. */
 export function findNearestSpot(spots: Spot[], lat: number, lng: number): { spot: Spot; distanceKm: number } | null {
 	let nearest: { spot: Spot; distanceKm: number } | null = null;
@@ -49,4 +63,10 @@ export function findNearestSpot(spots: Spot[], lat: number, lng: number): { spot
 	}
 
 	return nearest;
+}
+
+/** Short human-readable area: m² under 1ha, otherwise hectares. */
+export function formatArea(m2: number): string {
+	if (m2 >= 10000) return `${(m2 / 10000).toLocaleString(undefined, { maximumFractionDigits: 2 })} ha`;
+	return `${Math.round(m2).toLocaleString()} m²`;
 }

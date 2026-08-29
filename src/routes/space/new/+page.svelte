@@ -5,6 +5,8 @@
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { reverseGeocode } from '$lib/geocode';
 	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
+	import { setBoundaryDraft, takeBoundaryResult } from '$lib/boundaryHandoff';
+	import { formatArea } from '$lib/geo';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -41,6 +43,9 @@
 	let mapInstance: import('maplibre-gl').Map | null = null;
 	let markerInstance: import('maplibre-gl').Marker | null = null;
 	let mapReady = false;
+
+	let boundary: string | null = null;
+	let boundaryArea = 0;
 
 	let submitting = false;
 	let error = '';
@@ -154,8 +159,24 @@
 		}
 	}
 
+	function openBoundaryEditor() {
+		setBoundaryDraft({ lat, lng, geojson: boundary, returnTo: $page.url.pathname + $page.url.search });
+		goto('/space/boundary');
+	}
+
 	onMount(async () => {
-		locateWithGps();
+		const boundaryResult = takeBoundaryResult();
+		if (boundaryResult) {
+			boundary = boundaryResult.geojson;
+			boundaryArea = boundaryResult.areaM2;
+		}
+
+		if (boundaryResult?.lat != null && boundaryResult?.lng != null) {
+			mode = 'pin';
+			await applyLocation(boundaryResult.lat, boundaryResult.lng);
+		} else {
+			locateWithGps();
+		}
 
 		const sessionId = $page.url.searchParams.get('order');
 		if (!sessionId) {
@@ -190,7 +211,7 @@
 		const res = await fetch('/api/space/create', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ spaceName, locality, country, lat, lng, spaceOrderId })
+			body: JSON.stringify({ spaceName, locality, country, lat, lng, spaceOrderId, boundaryGeojson: boundary })
 		});
 
 		if (!res.ok) {
@@ -287,6 +308,34 @@
 				<p class="text-xs text-base-content/50">{$_('space.new.location.resolving')}</p>
 			{:else if locality}
 				<p class="text-xs text-base-content/50">📍 {locality}{country ? `, ${country}` : ''}</p>
+			{/if}
+		</div>
+
+		<div class="flex flex-col gap-2">
+			<div class="label pb-0"><span class="label-text">{$_('space.new.boundary.label')}</span></div>
+			{#if boundary}
+				<div class="flex items-center justify-between gap-2 rounded-xl border border-base-300 px-4 py-3">
+					<span class="text-sm text-base-content/70">{formatArea(boundaryArea)}</span>
+					<div class="flex gap-2">
+						<button type="button" class="btn btn-ghost btn-sm" onclick={openBoundaryEditor}>
+							{$_('space.new.boundary.edit')}
+						</button>
+						<button
+							type="button"
+							class="btn btn-ghost btn-sm text-error"
+							onclick={() => {
+								boundary = null;
+								boundaryArea = 0;
+							}}
+						>
+							{$_('space.new.boundary.clear')}
+						</button>
+					</div>
+				</div>
+			{:else}
+				<button type="button" class="btn btn-outline w-full" onclick={openBoundaryEditor}>
+					{$_('space.new.boundary.draw')}
+				</button>
 			{/if}
 		</div>
 

@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import { reverseGeocodeLocality } from '$lib/geocode';
+	import { formatDistanceKm } from '$lib/geo';
 	import { resizeImageFile } from '$lib/media/resizeImage';
 	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
 	import type { SpotVisionResult } from '$lib/types';
@@ -23,6 +24,7 @@
 	let gpsStatus: 'idle' | 'acquiring' | 'found' | 'error' = 'idle';
 	let lat: number | null = null;
 	let lng: number | null = null;
+	let accuracy: number | null = null;
 	let locality: string | null = null;
 	let geocoding = false;
 
@@ -70,6 +72,7 @@
 		navigator.geolocation.getCurrentPosition(
 			async (pos) => {
 				gpsStatus = 'found';
+				accuracy = pos.coords.accuracy;
 				await applyLocation(pos.coords.latitude, pos.coords.longitude);
 			},
 			() => {
@@ -100,12 +103,14 @@
 
 		marker.on('dragend', () => {
 			mode = 'pin';
+			accuracy = null;
 			const { lat: newLat, lng: newLng } = marker.getLngLat();
 			applyLocation(newLat, newLng);
 		});
 
 		map.on('click', (e) => {
 			mode = 'pin';
+			accuracy = null;
 			marker.setLngLat(e.lngLat);
 			applyLocation(e.lngLat.lat, e.lngLat.lng);
 		});
@@ -290,6 +295,11 @@
 					<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.resolving')}</p>
 				{:else if locality}
 					<p class="mt-2 text-xs text-base-content/50">📍 {locality}</p>
+				{/if}
+				{#if mode === 'gps' && accuracy != null}
+					<p class="mt-1 text-xs text-base-content/40">
+						{$_('spot.add.location.accuracy', { values: { range: formatDistanceKm(accuracy / 1000) } })}
+					</p>
 				{/if}
 			</div>
 

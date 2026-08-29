@@ -42,7 +42,19 @@ export const actions: Actions = {
 		const lat = latRaw ? Number(latRaw) : null;
 		const lng = lngRaw ? Number(lngRaw) : null;
 
-		await updateSpaceFields(db, space.id, { name, locality, country, lat, lng });
+		const boundaryRaw = (form.get('boundary_geojson') as string | null)?.trim() || null;
+		if (boundaryRaw) {
+			try {
+				const geom = JSON.parse(boundaryRaw);
+				if (geom?.type !== 'Polygon' && geom?.type !== 'MultiPolygon') {
+					return fail(400, { error: 'Invalid boundary' });
+				}
+			} catch {
+				return fail(400, { error: 'Invalid boundary' });
+			}
+		}
+
+		await updateSpaceFields(db, space.id, { name, locality, country, lat, lng, boundary_geojson: boundaryRaw });
 
 		return { success: true };
 	}

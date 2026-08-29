@@ -49,7 +49,7 @@
 	<div class="rounded-xl bg-primary px-5 py-5 text-center">
 		<p class="text-lg font-medium leading-snug text-primary-content">{$_('close.headline')}</p>
 		<p class="mt-2 text-sm text-green-mid">
-			{$_('close.sub', { values: { count: $sessionStore.totalCount, duration: $sessionStore.durationMin } })}
+			{$_('close.sub', { values: { count: $sessionStore.totalCount, duration: $sessionStore.totalDurationMin } })}
 		</p>
 	</div>
 

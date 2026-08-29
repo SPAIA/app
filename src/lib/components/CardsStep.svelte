@@ -2,6 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
 	import { sessionStore } from '$lib/stores/session';
+	import { completeSession } from '$lib/sessionSave';
 	import InsectCard from './InsectCard.svelte';
 	import type { InsectType } from '$lib/types';
 
@@ -21,42 +22,15 @@
 
 	let saving = false;
 
-	// Persist the session the moment observation finishes — anonymously. It can
-	// be claimed by email later (SummaryStep), but it's saved either way.
+	// The session has been autosaving throughout the observation (see
+	// ObserveStep) — this just sends any last taps and marks it complete.
 	async function saveAndFinish() {
 		if (saving) return;
 		saving = true;
 
-		const s = $sessionStore;
-		const sessionId = s.sessionId ?? crypto.randomUUID();
-		const body = {
-			sessionId,
-			taps: s.taps,
-			weather: s.weather,
-			condition: s.condition,
-			focalArea: s.focalArea,
-			lat: s.lat,
-			lng: s.lng,
-			durationMin: s.durationMin,
-			spaceId: s.spaceId,
-			spotId: s.spotId,
-			spotName: s.spotName,
-			locality: s.locality,
-			startedAt: s.startedAt,
-			clockOffsetMs: s.clockOffsetMs
-		};
+		await completeSession();
 
-		try {
-			await fetch('/api/sessions/complete', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(body)
-			});
-		} catch {
-			// non-blocking — advance regardless so the observer isn't stuck.
-		}
-
-		sessionStore.update((st) => ({ ...st, sessionId, step: 'summary' }));
+		sessionStore.update((st) => ({ ...st, step: 'summary' }));
 		saving = false;
 	}
 </script>

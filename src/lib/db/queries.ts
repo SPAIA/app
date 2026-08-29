@@ -282,14 +282,40 @@ export async function getSessionSightings(db: D1Database, sessionId: string): Pr
 	return result.results;
 }
 
+/**
+ * Upserts a session row. Called repeatedly during a live observation (once at
+ * start, then on every autosave) as well as once more at completion — so a
+ * page reload or dropped connection mid-session never loses progress.
+ *
+ * `user_id` only ever moves from an anon owner to a real one, never back: if
+ * the observer wasn't signed in yet when this session started, later
+ * autosaves keep passing a fresh throwaway `anon:*` id (see
+ * /api/sessions/autosave), which must not clobber the one already stored.
+ */
 export async function createSession(
 	db: D1Database,
-	session: Omit<Session, 'total_count' | 'shared' | 'completed_at' | 'claim_email'>
+	session: Omit<Session, 'shared' | 'completed_at' | 'claim_email'>
 ): Promise<void> {
 	await db
 		.prepare(`
-			INSERT INTO sessions (id, user_id, space_id, space_name, spot_id, spot_name, locality, weather, condition, focal_area, lat, lng, duration_min, started_at, clock_offset_ms)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO sessions (id, user_id, space_id, space_name, spot_id, spot_name, locality, weather, condition, focal_area, lat, lng, duration_min, started_at, clock_offset_ms, total_count)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			ON CONFLICT(id) DO UPDATE SET
+				user_id = CASE WHEN excluded.user_id NOT LIKE 'anon:%' THEN excluded.user_id ELSE sessions.user_id END,
+				space_id = excluded.space_id,
+				space_name = excluded.space_name,
+				spot_id = excluded.spot_id,
+				spot_name = excluded.spot_name,
+				locality = excluded.locality,
+				weather = excluded.weather,
+				condition = excluded.condition,
+				focal_area = excluded.focal_area,
+				lat = excluded.lat,
+				lng = excluded.lng,
+				duration_min = excluded.duration_min,
+				started_at = excluded.started_at,
+				clock_offset_ms = excluded.clock_offset_ms,
+				total_count = excluded.total_count
 		`)
 		.bind(
 			session.id,
@@ -306,7 +332,8 @@ export async function createSession(
 			session.lng,
 			session.duration_min,
 			session.started_at,
-			session.clock_offset_ms
+			session.clock_offset_ms,
+			session.total_count
 		)
 		.run();
 }
@@ -351,6 +378,25 @@ export async function claimSessionsByEmail(
 	await db
 		.prepare(`UPDATE sessions SET user_id = ?, claim_email = NULL WHERE claim_email = ? AND user_id LIKE 'anon:%'`)
 		.bind(userId, email)
+		.run();
+}
+
+/**
+ * Reassigns specific anon-owned sessions to a real user id, keyed by the
+ * session ids a browser tracked locally (see $lib/localSessions). Lets a
+ * device's past anonymous observations get linked the moment the observer
+ * signs in normally, without requiring the email-claim flow. Idempotent.
+ */
+export async function claimSessionsByIds(
+	db: D1Database,
+	sessionIds: string[],
+	userId: string
+): Promise<void> {
+	if (sessionIds.length === 0) return;
+	const placeholders = sessionIds.map(() => '?').join(',');
+	await db
+		.prepare(`UPDATE sessions SET user_id = ?, claim_email = NULL WHERE id IN (${placeholders}) AND user_id LIKE 'anon:%'`)
+		.bind(userId, ...sessionIds)
 		.run();
 }
 
@@ -507,14 +553,26 @@ export async function redeemCode(
 
 export async function createSpace(
 	db: D1Database,
-	space: Pick<Space, 'slug' | 'name' | 'locality' | 'country' | 'icon' | 'lat' | 'lng' | 'owner_id'>
+	space: Pick<Space, 'slug' | 'name' | 'locality' | 'country' | 'icon' | 'lat' | 'lng' | 'owner_id'> & {
+		boundary_geojson?: string | null;
+	}
 ): Promise<number> {
 	const result = await db
 		.prepare(`
-			INSERT INTO spaces (slug, name, locality, country, icon, lat, lng, owner_id)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO spaces (slug, name, locality, country, icon, lat, lng, owner_id, boundary_geojson)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`)
-		.bind(space.slug, space.name, space.locality, space.country, space.icon, space.lat, space.lng, space.owner_id)
+		.bind(
+			space.slug,
+			space.name,
+			space.locality,
+			space.country,
+			space.icon,
+			space.lat,
+			space.lng,
+			space.owner_id,
+			space.boundary_geojson ?? null
+		)
 		.run() as { success: boolean; meta: { last_row_id: number } };
 	return result.meta.last_row_id;
 }
@@ -522,11 +580,18 @@ export async function createSpace(
 export async function updateSpaceFields(
 	db: D1Database,
 	spaceId: number,
-	fields: { name: string; locality: string | null; country: string | null; lat: number | null; lng: number | null }
+	fields: {
+		name: string;
+		locality: string | null;
+		country: string | null;
+		lat: number | null;
+		lng: number | null;
+		boundary_geojson?: string | null;
+	}
 ): Promise<void> {
 	await db
-		.prepare('UPDATE spaces SET name = ?, locality = ?, country = ?, lat = ?, lng = ? WHERE id = ?')
-		.bind(fields.name, fields.locality, fields.country, fields.lat, fields.lng, spaceId)
+		.prepare('UPDATE spaces SET name = ?, locality = ?, country = ?, lat = ?, lng = ?, boundary_geojson = ? WHERE id = ?')
+		.bind(fields.name, fields.locality, fields.country, fields.lat, fields.lng, fields.boundary_geojson ?? null, spaceId)
 		.run();
 }
 
@@ -728,4 +793,14 @@ export async function recordPlantObservations(
 			.bind(params.spotId, params.mediaId, plant.plantId, plant.confidence, params.source)
 			.run();
 	}
+}
+
+/** Drops a photo's habitat-feature reads so an edited set can replace them. */
+export async function deleteHabitatFeaturesForMedia(db: D1Database, spotId: number, mediaId: string): Promise<void> {
+	await db.prepare('DELETE FROM habitat_features WHERE spot_id = ? AND media_id = ?').bind(spotId, mediaId).run();
+}
+
+/** Drops a photo's plant observations so an edited set can replace them. */
+export async function deletePlantObservationsForMedia(db: D1Database, spotId: number, mediaId: string): Promise<void> {
+	await db.prepare('DELETE FROM plant_observations WHERE spot_id = ? AND media_id = ?').bind(spotId, mediaId).run();
 }

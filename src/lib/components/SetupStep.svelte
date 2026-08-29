@@ -7,7 +7,9 @@
 	import { syncClock, clockOffsetMs, timeOfDayLabel } from '$lib/time';
 	import { reverseGeocodeLocality } from '$lib/geocode';
 	import { resizeImageFile } from '$lib/media/resizeImage';
-	import { haversineKm, directionsUrl, formatDistanceKm } from '$lib/geo';
+	import { haversineKm, directionsUrl, formatDistanceRange } from '$lib/geo';
+	import { trackLocalSessionId } from '$lib/localSessions';
+	import { resetSaveProgress } from '$lib/sessionSave';
 
 	export let spot: Spot;
 
@@ -34,6 +36,7 @@
 	let lat: number | null = null;
 	let lng: number | null = null;
 	let distanceKm: number | null = null;
+	let accuracy: number | null = null;
 
 	let sessionId: string | null = null;
 	let spotName = spot.name;
@@ -57,6 +60,7 @@
 			async (pos) => {
 				lat = pos.coords.latitude;
 				lng = pos.coords.longitude;
+				accuracy = pos.coords.accuracy;
 
 				if (spot.lat != null && spot.lng != null) {
 					distanceKm = haversineKm(lat, lng, spot.lat, spot.lng);
@@ -73,6 +77,7 @@
 				}
 
 				sessionId = crypto.randomUUID();
+				trackLocalSessionId(sessionId);
 				phase = 'photo';
 			},
 			() => {
@@ -154,6 +159,7 @@
 	}
 
 	function handleBegin() {
+		resetSaveProgress();
 		sessionStore.update((s) => ({
 			...s,
 			sessionId,
@@ -171,6 +177,7 @@
 			lat,
 			lng,
 			durationMin: selectedDuration,
+			totalDurationMin: selectedDuration,
 			clockOffsetMs: clockOffsetMs(),
 			step: 'intro'
 		}));
@@ -197,7 +204,7 @@
 		{:else if phase === 'far'}
 			<p class="text-sm text-base-content">
 				{$_('observe.setup.proximity.tooFar', {
-					values: { distance: distanceKm != null ? formatDistanceKm(distanceKm) : '?' }
+					values: { distance: distanceKm != null ? formatDistanceRange(distanceKm, accuracy) : '?' }
 				})}
 			</p>
 			{#if spot.lat != null && spot.lng != null}
