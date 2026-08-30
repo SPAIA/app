@@ -198,10 +198,13 @@ export interface RedeemCodeUse {
 	used_at: string;
 }
 
-export interface LeaderboardRow {
-	locality: string;
-	total_sightings: number;
-	observer_count: number;
+export interface RecentSighting {
+	insect_name: string;
+	icon: string | null;
+	count: number;
+	tapped_at: string;
+	locality: string | null;
+	space_name: string | null;
 }
 
 export interface LiveSpaceData {

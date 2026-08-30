@@ -2,7 +2,7 @@ import type {
 	Space,
 	Spot,
 	InsectType,
-	LeaderboardRow,
+	RecentSighting,
 	Profile,
 	Session,
 	Sighting,
@@ -66,8 +66,19 @@ export async function getSpotsBySpace(db: D1Database, spaceId: number): Promise<
 }
 
 /** Spot slugs are unique across the whole app — they address /observe/[slug] directly. */
-export async function getSpotBySlug(db: D1Database, slug: string): Promise<Spot | null> {
-	return db.prepare('SELECT * FROM spots WHERE slug = ? AND active = 1').bind(slug).first<Spot>();
+export async function getSpotBySlug(
+	db: D1Database,
+	slug: string
+): Promise<(Spot & { locality: string }) | null> {
+	return db
+		.prepare(`
+			SELECT sp.*, sc.locality as locality
+			FROM spots sp
+			JOIN spaces sc ON sc.id = sp.space_id
+			WHERE sp.slug = ? AND sp.active = 1
+		`)
+		.bind(slug)
+		.first<Spot & { locality: string }>();
 }
 
 export async function getSpotById(db: D1Database, spotId: number): Promise<Spot | null> {
@@ -189,20 +200,24 @@ export async function refreshSpotAiDescription(db: D1Database, spotId: number, a
 	await db.prepare('UPDATE spots SET ai_description = ? WHERE id = ?').bind(aiDescription, spotId).run();
 }
 
-export async function getLeaderboard(db: D1Database): Promise<LeaderboardRow[]> {
+export async function getRecentSightings(db: D1Database, limit = 30): Promise<RecentSighting[]> {
 	const result = await db
 		.prepare(`
 			SELECT
-				sp.locality,
-				SUM(s.total_count) AS total_sightings,
-				COUNT(DISTINCT s.user_id) AS observer_count
-			FROM sessions s
-			JOIN spaces sp ON s.space_id = sp.id
-			WHERE s.completed_at >= datetime('now', '-30 days')
-			GROUP BY sp.locality
-			ORDER BY total_sightings DESC
+				si.insect_name,
+				it.icon,
+				si.count,
+				si.tapped_at,
+				se.locality,
+				se.space_name
+			FROM sightings si
+			JOIN sessions se ON si.session_id = se.id
+			LEFT JOIN insect_types it ON si.insect_type_id = it.id
+			ORDER BY si.tapped_at DESC
+			LIMIT ?
 		`)
-		.all<LeaderboardRow>();
+		.bind(limit)
+		.all<RecentSighting>();
 	return result.results;
 }
 

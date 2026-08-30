@@ -1,7 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createSession, insertSighting, getInsectTypes } from '$lib/db/queries';
-import { checkSpotProximity } from '$lib/server/proximity';
 
 interface Tap {
 	name: string;
@@ -61,9 +60,6 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	if (!sessionId || !Array.isArray(taps) || !durationMin) {
 		return json({ error: 'Missing required fields' }, { status: 400 });
 	}
-
-	const proximityError = await checkSpotProximity(db, spotId, lat, lng);
-	if (proximityError) return json({ error: proximityError.error }, { status: proximityError.status });
 
 	// Own the session straight away: the signed-in user if there is one,
 	// otherwise a throwaway anonymous id — createSession's upsert keeps

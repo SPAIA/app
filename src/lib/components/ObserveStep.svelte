@@ -73,6 +73,31 @@
 		buttonScales = { ...buttonScales };
 	}
 
+	function removeLastTap(insect: InsectType, event: MouseEvent) {
+		event.stopPropagation();
+
+		sessionStore.update((s) => {
+			if ((s.counts[insect.name] ?? 0) <= 0) return s;
+
+			const lastIndex = s.taps.map((t) => t.name).lastIndexOf(insect.name);
+			const taps = s.taps.slice();
+			if (lastIndex !== -1) taps.splice(lastIndex, 1);
+
+			return {
+				...s,
+				counts: {
+					...s.counts,
+					[insect.name]: s.counts[insect.name] - 1
+				},
+				taps,
+				totalCount: Math.max(0, s.totalCount - 1)
+			};
+		});
+
+		void autosaveSession();
+		scheduleIdleSave();
+	}
+
 	$: progressPercent = totalSeconds > 0 ? ((totalSeconds - timeLeft) / totalSeconds) * 100 : 0;
 
 	function formatTime(seconds: number) {
@@ -106,21 +131,31 @@
 	<div class="grid grid-cols-2 gap-2">
 		{#each insectTypes as insect}
 			{@const count = $sessionStore.counts[insect.name] ?? 0}
-			<button
+			<div
+				role="button"
+				tabindex="0"
 				class="relative aspect-square overflow-hidden rounded-xl border border-base-300 transition-all"
 				style="transform: scale({buttonScales[insect.name] ?? 1})"
 				onclick={() => tapInsect(insect)}
+				onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), tapInsect(insect))}
 			>
 				{#if count > 0}
 					<span class="absolute right-1.5 top-1.5 z-10 min-w-[18px] rounded-full bg-primary px-1 py-px text-center text-[9px] font-medium text-white">
 						{count}
 					</span>
+					<button
+						class="absolute left-1.5 top-1.5 z-10 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-black/50 text-[11px] font-medium leading-none text-white"
+						aria-label={$_('observe.timer.undo')}
+						onclick={(e) => removeLastTap(insect, e)}
+					>
+						−
+					</button>
 				{/if}
 				<img src={insectImage(insect.name)} alt="" class="absolute inset-0 h-full w-full object-cover" />
 				<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent pt-4">
 					<span class="block px-2 pb-1.5 text-[10px] font-medium text-white">{$_(`insect.${insect.name}`)}</span>
 				</div>
-			</button>
+			</div>
 		{/each}
 	</div>
 

@@ -9,7 +9,6 @@ import {
 	getInsectTypes
 } from '$lib/db/queries';
 import { updateStreak } from '$lib/gamification';
-import { checkSpotProximity } from '$lib/server/proximity';
 
 interface Tap {
 	name: string;
@@ -66,9 +65,6 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	if (!sessionId || !Array.isArray(taps) || !durationMin) {
 		return json({ error: 'Missing required fields' }, { status: 400 });
 	}
-
-	const proximityError = await checkSpotProximity(db, spotId, lat, lng);
-	if (proximityError) return json({ error: proximityError.error }, { status: proximityError.status });
 
 	// Own the session straight away: the signed-in user if there is one,
 	// otherwise an anonymous owner. Anonymous sessions can later be claimed by
