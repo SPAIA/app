@@ -48,10 +48,16 @@ async function sendMagicLinkEmail(env: AuthEnv, to: string, url: string) {
  * On Cloudflare the D1 binding only exists per-request (platform.env.DB), so the
  * auth instance can't be created at module load — it's constructed here from env.
  */
-export function getAuth(env: AuthEnv) {
+export function getAuth(env: AuthEnv, requestURL?: URL) {
+	// Derive baseURL from the incoming request's own origin rather than a fixed
+	// env var, so the app works correctly under multiple custom domains
+	// (e.g. bugmeister.spaia.earth and app.spaia.earth both point at this
+	// worker). This keeps magic-link emails, the origin/CSRF check, and the
+	// session cookie all on whichever host the user is actually using.
+	const baseURL = requestURL ? requestURL.origin : env.BETTER_AUTH_URL;
 	return betterAuth({
 		secret: env.BETTER_AUTH_SECRET,
-		baseURL: env.BETTER_AUTH_URL,
+		baseURL,
 		database: {
 			// Our D1Database is a hand-rolled minimal interface; D1Dialect wants the
 			// full @cloudflare/workers-types one. Same object at runtime — cast across.
@@ -62,6 +68,12 @@ export function getAuth(env: AuthEnv) {
 		},
 		emailAndPassword: {
 			enabled: true
+		},
+		session: {
+			// Default is 7 days w/ a 24h rolling refresh window, which logs users
+			// out surprisingly fast if they don't visit daily. Extend both.
+			expiresIn: 60 * 60 * 24 * 30, // 30 days
+			updateAge: 60 * 60 * 24 * 7 // refresh if active within the last 7 days
 		},
 		plugins: [
 			magicLink({

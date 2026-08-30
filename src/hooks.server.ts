@@ -9,7 +9,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	if (env?.DB && env.BETTER_AUTH_SECRET) {
 		try {
-			const auth = getAuth(env);
+			const auth = getAuth(env, event.url);
 			const data = await auth.api.getSession({ headers: event.request.headers });
 			if (data) {
 				event.locals.user = data.user as App.Locals['user'];

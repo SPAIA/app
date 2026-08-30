@@ -31,7 +31,7 @@ export const POST: RequestHandler = async ({ request, url, platform, locals }) =
 	// Send the magic link — creates the account if needed.
 	if (env.BETTER_AUTH_SECRET && env.RESEND_API_KEY) {
 		try {
-			await getAuth(env).api.signInMagicLink({
+			await getAuth(env, url).api.signInMagicLink({
 				headers: request.headers,
 				body: { email, callbackURL: `${url.origin}/profile` }
 			});
