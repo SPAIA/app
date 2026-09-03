@@ -67,6 +67,9 @@
 
 	/** Routes that own the whole frame (e.g. a fullscreen map editor) render without the tab bar or scroll chrome. */
 	$: isFullscreenRoute = currentPath.startsWith('/space/boundary');
+
+	/** The marketing landing page (anonymous visitors at "/") reads better without the app tab bar. */
+	$: hideTabBar = isFullscreenRoute || currentPath === '/';
 </script>
 
 <div class="flex min-h-dvh flex-col items-center bg-base-200">
@@ -75,7 +78,7 @@
 			<slot />
 		</main>
 
-		{#if !isFullscreenRoute}
+		{#if !hideTabBar}
 			<nav class="fixed bottom-0 left-1/2 w-full max-w-[420px] -translate-x-1/2 bg-base-100 border-t border-base-300 px-4 py-3">
 				<div class="flex items-center justify-around gap-2">
 					{#each tabs as tab}

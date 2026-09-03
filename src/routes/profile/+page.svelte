@@ -2,9 +2,20 @@
 	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
 	import { LEVEL_TITLE_KEYS } from '$lib/gamification';
+	import { authClient } from '$lib/auth-client';
+	import LegalFooter from '$lib/components/LegalFooter.svelte';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
+
+	let loggingOut = false;
+
+	async function handleLogout() {
+		loggingOut = true;
+		await authClient.signOut();
+		// Full reload so server load functions re-run without the session cookie.
+		window.location.href = '/';
+	}
 
 	$: profile = data.profile;
 	$: level = profile?.level ?? 1;
@@ -43,6 +54,7 @@
 		<button class="btn btn-primary mx-auto" onclick={() => goto('/auth/login')}>
 			{$_('collection.anon.cta')}
 		</button>
+		<LegalFooter />
 	</div>
 {:else}
 	<div class="flex flex-col gap-4 px-5 py-6">
@@ -61,7 +73,7 @@
 			</button>
 			<div class="flex-1 min-w-0">
 				<p class="text-sm font-medium text-white">{profile.display_name ?? 'Bugmeister'}</p>
-				<p class="text-[11px] text-green-mid">{$_(levelTitleKey)} · Berlin</p>
+				<p class="text-[11px] text-green-mid">{$_(levelTitleKey)}{profile.home_locality ? ` · ${profile.home_locality}` : ''}</p>
 			</div>
 			<button
 				onclick={() => goto('/profile/edit')}
@@ -190,6 +202,12 @@
 			{/each}
 		{/if}
 
+		<button class="btn btn-outline w-full" onclick={handleLogout} disabled={loggingOut}>
+			{#if loggingOut}<span class="loading loading-spinner loading-sm"></span>{/if}
+			{$_('profile.logout')}
+		</button>
+
 		<p class="text-center text-[11px] text-base-content/40">{$_('collection.footer')}</p>
+		<LegalFooter />
 	</div>
 {/if}

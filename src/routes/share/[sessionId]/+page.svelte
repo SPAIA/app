@@ -15,14 +15,14 @@
 		if (!card) return;
 		const canvas = await html2canvas(card, { scale: 2, useCORS: true });
 		const link = document.createElement('a');
-		link.download = `bugmeister-session.png`;
+		link.download = `spaia-session.png`;
 		link.href = canvas.toDataURL('image/png');
 		link.click();
 	}
 
 	async function shareToStories() {
 		if (navigator.share) {
-			await navigator.share({ title: 'Bugmeister session', url });
+			await navigator.share({ title: 'SPAIA session', url });
 		}
 	}
 
@@ -32,9 +32,9 @@
 </script>
 
 <svelte:head>
-	<title>{$_('app.name')} — {session.total_count} sightings in {session.locality ?? 'Berlin'}</title>
-	<meta property="og:title" content="Bugmeister: {session.total_count} insects in {session.duration_min} min" />
-	<meta property="og:description" content="{session.total_count} sightings in {session.locality ?? 'Berlin'}. Join the insect observation network." />
+	<title>{$_('app.name')}{session.locality ? ` — ${session.total_count} sightings in ${session.locality}` : ''}</title>
+	<meta property="og:title" content="SPAIA: {session.total_count} insects in {session.duration_min} min" />
+	<meta property="og:description" content="{session.total_count} sightings{session.locality ? ` in ${session.locality}` : ''}. Join the insect observation network." />
 	<meta property="og:url" content={url} />
 </svelte:head>
 
@@ -50,19 +50,21 @@
 		<div class="mb-4 flex items-start justify-between">
 			<div>
 				<p class="text-[11px] font-medium uppercase tracking-wider text-white/60">
-					{session.space_name ?? 'Berlin'}{session.locality ? ` · ${session.locality}` : ''}
+					{session.space_name ?? $_('app.name')}{session.locality ? ` · ${session.locality}` : ''}
 				</p>
 				<p class="text-[11px] text-white/40">
 					{session.completed_at?.split('T')[0] ?? ''}
 				</p>
 			</div>
-			<span class="rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-medium text-white">#4 Berlin</span>
+			{#if session.locality}
+				<span class="rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-medium text-white">#4 {session.locality}</span>
+			{/if}
 		</div>
 
 		<h2 class="mb-1 text-2xl font-medium leading-snug text-white">
 			{session.total_count} creatures.<br>{session.duration_min} minutes.<br>Plain sight.
 		</h2>
-		<p class="mb-4 text-xs text-green-mid">{session.space_name ?? 'Berlin'} · Session</p>
+		<p class="mb-4 text-xs text-green-mid">{session.space_name ?? $_('app.name')} · Session</p>
 
 		<!-- Stats -->
 		<div class="mb-4 grid grid-cols-2 gap-2">
@@ -98,7 +100,7 @@
 
 		<div class="flex items-center justify-between">
 			<div class="text-[10px] leading-relaxed text-white/40">
-				#Bugmeister<br>#{(session.space_name ?? 'Berlin').replace(/\s/g, '')}<br>#SPAIA
+				#{(session.space_name ?? session.locality ?? '').replace(/\s/g, '')}<br>#SPAIA
 			</div>
 			<div class="flex h-11 w-11 items-center justify-center rounded-md bg-white text-[10px] font-medium text-base-content">QR</div>
 		</div>

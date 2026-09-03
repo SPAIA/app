@@ -2,34 +2,27 @@
 	import { _ } from 'svelte-i18n';
 	import { onMount } from 'svelte';
 	import { sessionStore } from '$lib/stores/session';
-	import type { WeatherOption } from '$lib/stores/session';
-	import type { HabitatFeatureCategory, Spot, SpotVisionResult } from '$lib/types';
-	import { syncClock, clockOffsetMs, timeOfDayLabel } from '$lib/time';
+	import type { Spot, SpotVisionResult } from '$lib/types';
+	import { syncClock, clockOffsetMs, nowISO, timeOfDayLabel } from '$lib/time';
 	import { resizeImageFile } from '$lib/media/resizeImage';
 	import { haversineKm, directionsUrl, formatDistanceRange } from '$lib/geo';
 	import { trackLocalSessionId } from '$lib/localSessions';
 	import { resetSaveProgress } from '$lib/sessionSave';
 
 	export let spot: Spot & { locality: string };
+	export let cover: { id: string } | null = null;
 
 	// If you're far from the spot we just warn — doesn't block observing.
 	const PROXIMITY_THRESHOLD_KM = 0.1;
 
-	type Phase = 'locating' | 'gpsError' | 'photo' | 'analyzing' | 'confirm' | 'weatherFallback' | 'details';
-	let phase: Phase = 'locating';
+	type Phase = 'overview' | 'locating' | 'gpsError' | 'photo';
+	let phase: Phase = 'overview';
 	let showFarWarning = false;
+	let showFarModal = false;
 
-	const durations = [1, 3, 5, 10];
-	const weatherOptions: { key: WeatherOption; icon: string; labelKey: string }[] = [
-		{ key: 'sunny', icon: '☀️', labelKey: 'weather.sunny' },
-		{ key: 'partly', icon: '⛅', labelKey: 'weather.partly' },
-		{ key: 'overcast', icon: '☁️', labelKey: 'weather.overcast' },
-		{ key: 'rainy', icon: '🌧️', labelKey: 'weather.rainy' }
-	];
+	/** Default observation length — the duration picker was removed to get straight to counting. */
+	const DEFAULT_DURATION_MIN = 5;
 
-	let selectedDuration = 10;
-	let selectedWeather: WeatherOption | null = null;
-	let condition = '';
 	let lat: number | null = null;
 	let lng: number | null = null;
 	let distanceKm: number | null = null;
@@ -37,18 +30,8 @@
 
 	let sessionId: string | null = null;
 	let spotName = spot.name;
-	let isNewSpot = false;
-	let photoUrl: string | null = null;
-	let mediaId: string | null = null;
-	let vision: SpotVisionResult | null = null;
-	let editablePlants: { name: string; rank: SpotVisionResult['plants'][number]['rank'] }[] = [];
-	let editableFeatures: { category: HabitatFeatureCategory; label: string }[] = [];
-	let newPlantName = '';
-	let newFeatureLabel = '';
 	let fileInput: HTMLInputElement;
-	let uploadingPhoto = false;
-
-	let error = '';
+	let preparingPhoto = false;
 
 	function checkProximity() {
 		phase = 'locating';
@@ -84,20 +67,30 @@
 		fileInput?.click();
 	}
 
+	// The photo upload + DeepSeek Vision read run in the background from here on — the
+	// observer moves straight into the timer/count instead of waiting on them. Results
+	// land in sessionStore and are shown for confirmation after the count (see
+	// SpotConfirmStep), whenever the fetch below happens to resolve.
 	async function onFileSelected(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
 		if (!file || sessionId == null) return;
 
-		phase = 'analyzing';
-		error = '';
-		uploadingPhoto = true;
+		preparingPhoto = true;
+		const resized = await resizeImageFile(file);
+		void uploadPhoto(resized);
+		preparingPhoto = false;
+		input.value = '';
+		handleBegin();
+	}
+
+	async function uploadPhoto(file: File) {
+		if (sessionId == null) return;
+		sessionStore.update((s) => ({ ...s, visionStatus: 'pending' }));
 
 		try {
-			const resized = await resizeImageFile(file);
-
 			const form = new FormData();
-			form.append('file', resized);
+			form.append('file', file);
 			form.append('spot_id', String(spot.id));
 			form.append('locality', spot.locality);
 			form.append('time_of_day', timeOfDayLabel());
@@ -110,85 +103,35 @@
 				vision: SpotVisionResult | null;
 				isNewSpot: boolean;
 			};
-			photoUrl = data.media.url;
-			mediaId = data.media.id;
-			vision = data.vision;
-			editablePlants = data.vision ? [...data.vision.plants] : [];
-			editableFeatures = data.vision ? [...data.vision.habitat_features] : [];
-			isNewSpot = data.isNewSpot;
-			selectedWeather = data.vision?.weather ?? null;
-			if (data.isNewSpot) spotName = data.spot.name;
-		} catch {
-			error = $_('spot.add.error.generic');
-		} finally {
-			uploadingPhoto = false;
-			input.value = '';
-			phase = 'confirm';
+			sessionStore.update((s) => ({
+				...s,
+				photoUrl: data.media.url,
+				mediaId: data.media.id,
+				vision: data.vision,
+				isNewSpot: data.isNewSpot,
+				visionStatus: data.vision ? 'done' : 'error',
+				focalArea: data.vision?.scene || s.focalArea
+			}));
+		} catch (err) {
+			console.error('Spot photo upload failed', err);
+			sessionStore.update((s) => ({ ...s, visionStatus: 'error' }));
 		}
 	}
 
 	function skipPhoto() {
-		phase = 'weatherFallback';
-	}
-
-	function removePlant(index: number) {
-		editablePlants = editablePlants.filter((_, i) => i !== index);
-	}
-
-	function addPlant() {
-		const name = newPlantName.trim();
-		if (!name) return;
-		editablePlants = [...editablePlants, { name, rank: 'type' }];
-		newPlantName = '';
-	}
-
-	function removeFeature(index: number) {
-		editableFeatures = editableFeatures.filter((_, i) => i !== index);
-	}
-
-	function addFeature() {
-		const label = newFeatureLabel.trim();
-		if (!label) return;
-		editableFeatures = [...editableFeatures, { category: 'other', label }];
-		newFeatureLabel = '';
-	}
-
-	async function confirmSpot() {
-		if (isNewSpot) {
-			const finalName = spotName.trim() || $_('spot.add.confirm.name.default');
-			spotName = finalName;
-
-			try {
-				await fetch(`/api/spot/${spot.id}`, {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ name: finalName })
-				});
-			} catch {
-				// non-blocking — the AI-suggested name still stands server-side
-			}
-		}
-
-		if (vision && mediaId) {
-			try {
-				await fetch(`/api/spot/${spot.id}/vision`, {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ mediaId, plants: editablePlants, habitat_features: editableFeatures })
-				});
-			} catch {
-				// non-blocking — the AI-guessed plants/features still stand server-side
-			}
-		}
-
-		phase = 'details';
-	}
-
-	function continueFromWeatherFallback() {
-		phase = 'details';
+		handleBegin();
 	}
 
 	function handleBegin() {
+		if (showFarWarning) {
+			showFarModal = true;
+			return;
+		}
+		beginSession();
+	}
+
+	function beginSession() {
+		showFarModal = false;
 		resetSaveProgress();
 		sessionStore.update((s) => ({
 			...s,
@@ -201,15 +144,17 @@
 			spotId: spot.id,
 			spotName,
 			locality: spot.locality,
-			weather: selectedWeather,
-			condition: condition.trim() || null,
-			focalArea: vision?.scene || spotName,
+			// Weather and habitat condition are captured after the count, in SpotConfirmStep.
+			// If the background vision read already landed, keep its scene; otherwise fall
+			// back to the spot name for now — uploadPhoto backfills this once it resolves.
+			focalArea: s.focalArea || spotName,
 			lat,
 			lng,
-			durationMin: selectedDuration,
-			totalDurationMin: selectedDuration,
+			durationMin: DEFAULT_DURATION_MIN,
+			totalDurationMin: DEFAULT_DURATION_MIN,
 			clockOffsetMs: clockOffsetMs(),
-			step: 'intro'
+			startedAt: nowISO(),
+			step: 'observe'
 		}));
 	}
 
@@ -217,23 +162,21 @@
 		// Align the device clock to server (UTC) time early, so taps recorded
 		// during the session line up with the NTP-synced site camera.
 		void syncClock();
-		checkProximity();
 	});
-
-	$: ctaCopy = $_('observe.cta', { values: { locality: spot.locality } });
 </script>
 
-{#if showFarWarning}
-	<div class="alert alert-warning mx-5 mt-4 flex items-start justify-between gap-3 text-sm">
-		<span>
-			{$_('observe.setup.proximity.farWarning', {
-				values: { distance: distanceKm != null ? formatDistanceRange(distanceKm, accuracy) : '?' }
-			})}
-		</span>
-		<div class="flex shrink-0 items-center gap-2">
+{#if showFarModal}
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-5">
+		<div class="flex w-full max-w-sm flex-col gap-3 rounded-xl bg-base-100 p-5 text-center shadow-xl">
+			<span class="text-3xl">📍</span>
+			<p class="text-sm text-base-content">
+				{$_('observe.setup.proximity.farWarning', {
+					values: { distance: distanceKm != null ? formatDistanceRange(distanceKm, accuracy) : '?' }
+				})}
+			</p>
 			{#if spot.lat != null && spot.lng != null}
 				<a
-					class="link whitespace-nowrap text-xs font-medium"
+					class="btn btn-outline w-full"
 					href={directionsUrl(spot.lat, spot.lng)}
 					target="_blank"
 					rel="noopener noreferrer"
@@ -241,19 +184,36 @@
 					{$_('observe.setup.proximity.directions')}
 				</a>
 			{/if}
-			<button
-				type="button"
-				class="text-lg leading-none"
-				aria-label={$_('spot.add.confirm.remove')}
-				onclick={() => (showFarWarning = false)}
-			>
-				&times;
+			<button class="btn btn-primary w-full" onclick={beginSession}>
+				{$_('observe.setup.proximity.continueAnyway')}
+			</button>
+			<button class="btn btn-ghost btn-sm" onclick={() => (showFarModal = false)}>
+				{$_('observe.setup.proximity.cancel')}
 			</button>
 		</div>
 	</div>
 {/if}
 
-{#if phase === 'locating' || phase === 'gpsError'}
+{#if phase === 'overview'}
+	<div class="flex flex-col">
+		{#if cover}
+			<img src="/api/media/{cover.id}" alt="" class="h-56 w-full object-cover" />
+		{/if}
+		<div class="flex flex-col items-center gap-3 px-5 pb-8 pt-6 text-center">
+			<span class="text-3xl">{spot.icon}</span>
+			<div>
+				<h1 class="text-xl font-medium text-base-content">{spot.name}</h1>
+				<p class="text-sm text-base-content/50">{spot.locality}</p>
+			</div>
+			<button class="btn btn-primary btn-lg mt-2 w-full" onclick={checkProximity}>
+				{$_('observe.overview.cta')}
+			</button>
+			<a class="btn btn-ghost btn-sm w-full" href="/tutorial">
+				{$_('observe.overview.tutorial')}
+			</a>
+		</div>
+	</div>
+{:else if phase === 'locating' || phase === 'gpsError'}
 	<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">
 		<span class="text-3xl">{spot.icon}</span>
 		<h1 class="text-lg font-medium text-base-content">{spot.name}</h1>
@@ -285,211 +245,11 @@
 			onchange={onFileSelected}
 		/>
 
-		<button class="btn btn-primary w-full" onclick={openFilePicker} disabled={uploadingPhoto}>
+		<button class="btn btn-primary w-full" onclick={openFilePicker} disabled={preparingPhoto}>
 			{$_('spot.add.photo.cta')}
 		</button>
 		<button class="btn btn-ghost btn-sm" onclick={skipPhoto}>
 			{$_('observe.setup.photo.skip')}
-		</button>
-	</div>
-{:else if phase === 'weatherFallback'}
-	<div class="flex flex-col gap-4 px-5 py-6">
-		<div>
-			<p class="mb-2 text-xs font-medium uppercase tracking-widest text-base-content/50">
-				{$_('observe.setup.weather.label')}
-			</p>
-			<div class="grid grid-cols-4 gap-2">
-				{#each weatherOptions as w}
-					<button
-						class="flex flex-col items-center rounded-lg border py-2 text-xs transition-all"
-						class:border-primary={selectedWeather === w.key}
-						class:bg-green-light={selectedWeather === w.key}
-						class:text-primary={selectedWeather === w.key}
-						class:border-base-300={selectedWeather !== w.key}
-						class:bg-base-100={selectedWeather !== w.key}
-						onclick={() => (selectedWeather = w.key)}
-					>
-						<span class="mb-0.5 text-base">{w.icon}</span>
-						<span class="text-center text-[9px] leading-tight text-base-content/60">{$_(w.labelKey)}</span>
-					</button>
-				{/each}
-			</div>
-		</div>
-
-		<label class="form-control">
-			<div class="label"><span class="label-text">{$_('observe.setup.condition.label')}</span></div>
-			<textarea
-				class="textarea textarea-bordered w-full"
-				rows="2"
-				placeholder={$_('observe.setup.condition.placeholder')}
-				bind:value={condition}
-			></textarea>
-		</label>
-
-		<button class="btn btn-primary w-full" onclick={continueFromWeatherFallback}>
-			{$_('spot.add.location.continue')}
-		</button>
-	</div>
-{:else if phase === 'analyzing'}
-	<div class="flex flex-col items-center gap-4 px-5 py-16 text-center">
-		<span class="loading loading-spinner loading-lg text-primary"></span>
-		<p class="text-sm text-base-content/50">{$_('spot.add.analyzing')}</p>
-	</div>
-{:else if phase === 'confirm'}
-	<div class="flex flex-col gap-4 px-5 py-6">
-		{#if photoUrl}
-			<img src={photoUrl} alt="" class="h-40 w-full rounded-xl object-cover" />
-		{/if}
-
-		{#if error}
-			<div class="alert alert-error text-sm">{error}</div>
-		{/if}
-
-		{#if isNewSpot}
-			<label class="form-control">
-				<div class="label"><span class="label-text">{$_('spot.add.confirm.name.label')}</span></div>
-				<input
-					type="text"
-					class="input input-bordered w-full"
-					placeholder={$_('spot.add.confirm.name.default')}
-					bind:value={spotName}
-				/>
-			</label>
-		{:else}
-			<h2 class="text-base font-medium text-base-content">{spotName}</h2>
-		{/if}
-
-		{#if vision}
-			{#if vision.changes}
-				<p class="rounded-lg bg-green-light px-3 py-2.5 text-sm text-green-dark">
-					{$_('spot.add.confirm.changes.label')}: {vision.changes}
-				</p>
-			{/if}
-			{#if vision.scene}
-				<p class="text-sm text-base-content/70">{vision.scene}</p>
-			{/if}
-			<div>
-				<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-base-content/50">
-					{$_('spot.add.confirm.plants.label')}
-				</p>
-				<div class="flex flex-wrap gap-1.5">
-					{#each editablePlants as plant, i}
-						<span class="flex items-center gap-1 rounded-full bg-green-light px-2.5 py-1 text-xs text-green-dark">
-							{plant.name}
-							<button
-								type="button"
-								class="text-green-dark/60 hover:text-green-dark"
-								aria-label={$_('spot.add.confirm.remove')}
-								onclick={() => removePlant(i)}
-							>
-								&times;
-							</button>
-						</span>
-					{/each}
-				</div>
-				<div class="mt-1.5 flex gap-1.5">
-					<input
-						type="text"
-						class="input input-bordered input-sm flex-1"
-						placeholder={$_('spot.add.confirm.plants.addPlaceholder')}
-						bind:value={newPlantName}
-						onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), addPlant())}
-					/>
-					<button type="button" class="btn btn-sm btn-outline" onclick={addPlant}>
-						{$_('spot.add.confirm.add')}
-					</button>
-				</div>
-			</div>
-			<div>
-				<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-base-content/50">
-					{$_('spot.add.confirm.habitat_features.label')}
-				</p>
-				<div class="flex flex-wrap gap-1.5">
-					{#each editableFeatures as feature, i}
-						<span class="flex items-center gap-1 rounded-full bg-base-200 px-2.5 py-1 text-xs text-base-content/70">
-							{feature.label}
-							<button
-								type="button"
-								class="text-base-content/40 hover:text-base-content/70"
-								aria-label={$_('spot.add.confirm.remove')}
-								onclick={() => removeFeature(i)}
-							>
-								&times;
-							</button>
-						</span>
-					{/each}
-				</div>
-				<div class="mt-1.5 flex gap-1.5">
-					<input
-						type="text"
-						class="input input-bordered input-sm flex-1"
-						placeholder={$_('spot.add.confirm.habitat_features.addPlaceholder')}
-						bind:value={newFeatureLabel}
-						onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-					/>
-					<button type="button" class="btn btn-sm btn-outline" onclick={addFeature}>
-						{$_('spot.add.confirm.add')}
-					</button>
-				</div>
-			</div>
-		{/if}
-
-		<div>
-			<p class="mb-2 text-xs font-medium uppercase tracking-widest text-base-content/50">
-				{$_('observe.setup.weather.label')}
-			</p>
-			<div class="grid grid-cols-4 gap-2">
-				{#each weatherOptions as w}
-					<button
-						class="flex flex-col items-center rounded-lg border py-2 text-xs transition-all"
-						class:border-primary={selectedWeather === w.key}
-						class:bg-green-light={selectedWeather === w.key}
-						class:text-primary={selectedWeather === w.key}
-						class:border-base-300={selectedWeather !== w.key}
-						class:bg-base-100={selectedWeather !== w.key}
-						onclick={() => (selectedWeather = w.key)}
-					>
-						<span class="mb-0.5 text-base">{w.icon}</span>
-						<span class="text-center text-[9px] leading-tight text-base-content/60">{$_(w.labelKey)}</span>
-					</button>
-				{/each}
-			</div>
-		</div>
-
-		<button class="btn btn-primary w-full" onclick={confirmSpot} disabled={isNewSpot && !spotName.trim()}>
-			{$_('spot.add.confirm.cta')}
-		</button>
-	</div>
-{:else if phase === 'details'}
-	<div class="flex flex-col gap-4 px-5 py-6">
-		<div class="rounded-xl bg-primary/10 px-4 py-3 text-sm font-medium text-primary">
-			📍 {spotName} · {spot.locality}
-		</div>
-
-		<!-- Timer picker -->
-		<div>
-			<p class="mb-2 text-xs font-medium uppercase tracking-widest text-base-content/50">
-				{$_('observe.setup.timer.label')}
-			</p>
-			<div class="grid grid-cols-4 gap-2">
-				{#each durations as d}
-					<button
-						class="rounded-lg border py-2.5 text-sm font-medium transition-all"
-						class:border-primary={selectedDuration === d}
-						class:bg-green-light={selectedDuration === d}
-						class:text-primary={selectedDuration === d}
-						class:border-base-300={selectedDuration !== d}
-						class:bg-base-100={selectedDuration !== d}
-						onclick={() => (selectedDuration = d)}
-					>
-						{d}<span class="text-xs">m</span>
-					</button>
-				{/each}
-			</div>
-		</div>
-
-		<button class="btn btn-primary mt-2 w-full" onclick={handleBegin}>
-			{ctaCopy}
 		</button>
 	</div>
 {/if}

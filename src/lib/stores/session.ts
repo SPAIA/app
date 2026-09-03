@@ -1,7 +1,10 @@
 import { writable } from 'svelte/store';
+import type { SpotVisionResult } from '$lib/types';
 
 export type WeatherOption = 'sunny' | 'partly' | 'overcast' | 'rainy';
-export type SessionStep = 'setup' | 'intro' | 'observe' | 'thankyou' | 'cards' | 'summary';
+export type SessionStep = 'setup' | 'observe' | 'thankyou' | 'confirm' | 'cards' | 'summary';
+/** DeepSeek Vision runs in the background right after the spot photo is taken — see SetupStep. */
+export type VisionStatus = 'none' | 'pending' | 'done' | 'error';
 
 /** A single button press, recorded at the moment it happens. */
 export interface Tap {
@@ -23,6 +26,13 @@ export interface SessionState {
 	condition: string | null;
 	/** Short scene description — from the spot's DeepSeek Vision read, or typed by hand if AI is unavailable. */
 	focalArea: string;
+	/** Set once the spot photo upload resolves, so the vision result can be shown after the count. */
+	photoUrl: string | null;
+	mediaId: string | null;
+	vision: SpotVisionResult | null;
+	visionStatus: VisionStatus;
+	/** Whether this spot had never been photographed before this session — drives the name-confirm UI. */
+	isNewSpot: boolean;
 	lat: number | null;
 	lng: number | null;
 	/** Countdown length of the current timer leg (the "add time" flow starts a new leg with just the extra minutes). */
@@ -50,6 +60,11 @@ const initialState: SessionState = {
 	weather: null,
 	condition: null,
 	focalArea: '',
+	photoUrl: null,
+	mediaId: null,
+	vision: null,
+	visionStatus: 'none',
+	isNewSpot: false,
 	lat: null,
 	lng: null,
 	durationMin: 10,

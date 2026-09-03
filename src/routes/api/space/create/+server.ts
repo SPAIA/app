@@ -50,7 +50,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const spaceId = await createSpace(db, {
 		slug,
 		name: spaceName,
-		locality: locality || 'Berlin',
+		locality: locality || '',
 		country: country ?? null,
 		icon: '🌿',
 		lat: lat ?? null,

@@ -1,7 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ url }) => {
-	const target = '/explore' + url.search;
-	throw redirect(307, target);
+export const load: PageServerLoad = async ({ url, locals }) => {
+	if (locals.user) {
+		throw redirect(307, '/explore' + url.search);
+	}
 };

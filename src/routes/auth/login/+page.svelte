@@ -2,6 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { page } from '$app/stores';
 	import { authClient } from '$lib/auth-client';
+	import LegalFooter from '$lib/components/LegalFooter.svelte';
 
 	let activeTab: 'email' | 'magic' | 'signup' = 'email';
 	let email = '';
@@ -209,4 +210,8 @@
 			{$_('auth.signup.have_account')}
 		</button>
 	{/if}
+
+	<div class="mt-8">
+		<LegalFooter />
+	</div>
 </div>

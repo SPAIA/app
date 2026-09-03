@@ -15,7 +15,7 @@
 	}
 
 	function seeResults() {
-		sessionStore.update((s) => ({ ...s, step: 'cards' }));
+		sessionStore.update((s) => ({ ...s, step: 'confirm' }));
 	}
 </script>
 

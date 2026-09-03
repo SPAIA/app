@@ -4,9 +4,9 @@
 	import { sessionStore, resetSession } from '$lib/stores/session';
 	import { resetSaveProgress } from '$lib/sessionSave';
 	import SetupStep from '$lib/components/SetupStep.svelte';
-	import IntroStep from '$lib/components/IntroStep.svelte';
 	import ObserveStep from '$lib/components/ObserveStep.svelte';
 	import ThankYouStep from '$lib/components/ThankYouStep.svelte';
+	import SpotConfirmStep from '$lib/components/SpotConfirmStep.svelte';
 	import CardsStep from '$lib/components/CardsStep.svelte';
 	import SummaryStep from '$lib/components/SummaryStep.svelte';
 	import type { PageData } from './$types';
@@ -28,13 +28,13 @@
 </svelte:head>
 
 {#if step === 'setup'}
-	<SetupStep spot={data.spot} />
-{:else if step === 'intro'}
-	<IntroStep insectTypes={data.insectTypes} />
+	<SetupStep spot={data.spot} cover={data.cover} />
 {:else if step === 'observe'}
 	<ObserveStep insectTypes={data.insectTypes} />
 {:else if step === 'thankyou'}
 	<ThankYouStep />
+{:else if step === 'confirm'}
+	<SpotConfirmStep />
 {:else if step === 'cards'}
 	<CardsStep insectTypes={data.insectTypes} />
 {:else if step === 'summary'}

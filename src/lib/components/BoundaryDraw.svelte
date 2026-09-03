@@ -146,9 +146,10 @@
 			? `https://tiles.stadiamaps.com/styles/alidade_smooth.json?api_key=${stadiaApiKey}`
 			: 'https://demotiles.maplibre.org/style.json';
 
-		const center: [number, number] = lat != null && lng != null ? [lng, lat] : [13.38, 52.52];
+		const center: [number, number] = lat != null && lng != null ? [lng, lat] : [0, 20];
+		const zoom = lat != null && lng != null ? 18 : 2;
 
-		const map = new mapLib.Map({ container: mapContainer, style: styleUrl, center, zoom: 18 });
+		const map = new mapLib.Map({ container: mapContainer, style: styleUrl, center, zoom });
 		mapInstance = map;
 
 		const initialFeatures = parseInitialGeometry(geojson);

@@ -132,9 +132,10 @@
 			? `https://tiles.stadiamaps.com/styles/alidade_smooth.json?api_key=${data.stadiaApiKey}`
 			: 'https://demotiles.maplibre.org/style.json';
 
-		const center: [number, number] = lat != null && lng != null ? [lng, lat] : [13.38, 52.52];
+		const center: [number, number] = lat != null && lng != null ? [lng, lat] : [0, 20];
+		const zoom = lat != null && lng != null ? 14 : 2;
 
-		const map = new mapLib.Map({ container: mapContainer, style: styleUrl, center, zoom: 14 });
+		const map = new mapLib.Map({ container: mapContainer, style: styleUrl, center, zoom });
 		mapInstance = map;
 
 		const marker = new mapLib.Marker({ draggable: true, color: '#0F6E56' })

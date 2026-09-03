@@ -98,8 +98,8 @@
 			const map = new mapLib.Map({
 				container: mapContainer,
 				style: styleUrl,
-				center: [13.38, 52.52],
-				zoom: 12
+				center: [0, 20],
+				zoom: 2
 			});
 			mapInstance = map;
 

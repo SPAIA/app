@@ -22,11 +22,11 @@ async function sendMagicLinkEmail(env: AuthEnv, to: string, url: string) {
 		body: JSON.stringify({
 			from: env.EMAIL_FROM,
 			to,
-			subject: 'Your Bugmeister sign-in link 🐛',
+			subject: 'Your SPAIA sign-in link 🐛',
 			html: `
 				<div style="font-family:system-ui,sans-serif;max-width:480px;margin:0 auto;padding:24px">
 					<p style="font-size:32px;margin:0 0 8px">🐛</p>
-					<h1 style="font-size:20px;margin:0 0 16px">Sign in to Bugmeister</h1>
+					<h1 style="font-size:20px;margin:0 0 16px">Sign in to SPAIA</h1>
 					<p style="color:#444;line-height:1.5">Tap the button below to sign in. This link expires in 5 minutes and can only be used once.</p>
 					<p style="margin:24px 0">
 						<a href="${url}" style="background:#16a34a;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;display:inline-block;font-weight:600">Sign in</a>
