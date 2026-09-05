@@ -62,6 +62,7 @@
   "observe.nearest.directions": "Route anzeigen",
   "observe.nearest.cta": "Hier beobachten",
   "observe.nearest.retry": "Erneut versuchen",
+  "observe.nearest.addSpot": "Neuen Platz hier hinzufügen",
   "spot.add.location.label": "Wo bist du?",
   "spot.add.location.gps": "GPS nutzen",
   "spot.add.location.pin": "Nadel setzen",

@@ -66,7 +66,7 @@
 	}
 
 	/** Routes that own the whole frame (e.g. a fullscreen map editor) render without the tab bar or scroll chrome. */
-	$: isFullscreenRoute = currentPath.startsWith('/space/boundary');
+	$: isFullscreenRoute = currentPath.startsWith('/space/boundary') || currentPath.startsWith('/spot/new');
 
 	/** The marketing landing page (anonymous visitors at "/") reads better without the app tab bar. */
 	$: hideTabBar = isFullscreenRoute || currentPath === '/';

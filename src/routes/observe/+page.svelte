@@ -133,6 +133,9 @@
 		{:else if phase === 'none'}
 			<p class="text-sm text-base-content/50">{$_('observe.nearest.none')}</p>
 			<button class="btn btn-outline w-full" onclick={locate}>{$_('observe.nearest.retry')}</button>
+			<button class="btn btn-ghost btn-sm w-full" onclick={() => goto('/spot-pack')}>
+				{$_('observe.nearest.addSpot')}
+			</button>
 		{:else if phase === 'found' && nearest}
 			<span class="text-4xl">{nearest.icon}</span>
 			<div>
@@ -157,6 +160,9 @@
 					{$_('observe.nearest.directions')}
 				</a>
 			{/if}
+			<button class="btn btn-ghost btn-sm w-full" onclick={() => goto('/spot-pack')}>
+				{$_('observe.nearest.addSpot')}
+			</button>
 		{/if}
 	</div>
 </div>

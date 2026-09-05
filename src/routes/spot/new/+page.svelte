@@ -260,58 +260,67 @@
 	</div>
 {:else if verified}
 	{#if phase === 'location'}
-		<div class="flex flex-col gap-4 px-5 py-6">
-			<h1 class="text-xl font-medium text-base-content">{$_('spot.buy.title')}</h1>
+		<div class="absolute inset-0 flex flex-col">
+			<div class="absolute inset-0">
+				<div bind:this={mapContainer} class="h-full w-full"></div>
+			</div>
 
-			{#if error}
-				<div class="alert alert-error text-sm">{error}</div>
-			{/if}
-
-			<div>
-				<p class="mb-2 text-xs font-medium uppercase tracking-widest text-base-content/50">
-					{$_('spot.add.location.label')}
-				</p>
-
-				<SegmentedToggle
-					value={mode}
-					options={[
-						{ value: 'gps', label: $_('spot.add.location.gps'), onSelect: locateWithGps },
-						{ value: 'pin', label: $_('spot.add.location.pin'), onSelect: () => (mode = 'pin') }
-					]}
-				/>
-
-				{#if mode === 'gps'}
-					{#if gpsStatus === 'acquiring'}
-						<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.locating')}</p>
-					{:else if gpsStatus === 'error'}
-						<p class="mt-2 text-xs text-error">{$_('spot.add.location.gps.error')}</p>
-					{/if}
-				{:else}
-					<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.pin.hint')}</p>
-				{/if}
-
-				<div bind:this={mapContainer} class="mt-2 h-40 w-full overflow-hidden rounded-xl border border-base-300"></div>
-
-				{#if geocoding}
-					<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.resolving')}</p>
-				{:else if locality}
-					<p class="mt-2 text-xs text-base-content/50">📍 {locality}</p>
-				{/if}
-				{#if mode === 'gps' && accuracy != null}
-					<p class="mt-1 text-xs text-base-content/40">
-						{$_('spot.add.location.accuracy', { values: { range: formatDistanceKm(accuracy / 1000) } })}
-					</p>
+			<div
+				class="relative z-10 flex flex-col gap-2 bg-gradient-to-b from-base-100/95 to-transparent px-5 pb-8 pt-[calc(env(safe-area-inset-top)+1rem)]"
+			>
+				<h1 class="text-xl font-medium text-base-content">{$_('spot.buy.title')}</h1>
+				{#if error}
+					<div class="alert alert-error text-sm">{error}</div>
 				{/if}
 			</div>
 
-			<button
-				class="btn btn-primary w-full"
-				onclick={handleContinue}
-				disabled={lat == null || lng == null || creatingSpot}
+			<div
+				class="relative z-10 mt-auto flex flex-col gap-3 rounded-t-2xl border-t border-base-300 bg-base-100 px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
 			>
-				{#if creatingSpot}<span class="loading loading-spinner loading-sm"></span>{/if}
-				{$_('spot.add.location.continue')}
-			</button>
+				<div>
+					<p class="mb-2 text-xs font-medium uppercase tracking-widest text-base-content/50">
+						{$_('spot.add.location.label')}
+					</p>
+
+					<SegmentedToggle
+						value={mode}
+						options={[
+							{ value: 'gps', label: $_('spot.add.location.gps'), onSelect: locateWithGps },
+							{ value: 'pin', label: $_('spot.add.location.pin'), onSelect: () => (mode = 'pin') }
+						]}
+					/>
+
+					{#if mode === 'gps'}
+						{#if gpsStatus === 'acquiring'}
+							<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.locating')}</p>
+						{:else if gpsStatus === 'error'}
+							<p class="mt-2 text-xs text-error">{$_('spot.add.location.gps.error')}</p>
+						{/if}
+					{:else}
+						<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.pin.hint')}</p>
+					{/if}
+
+					{#if geocoding}
+						<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.resolving')}</p>
+					{:else if locality}
+						<p class="mt-2 text-xs text-base-content/50">📍 {locality}</p>
+					{/if}
+					{#if mode === 'gps' && accuracy != null}
+						<p class="mt-1 text-xs text-base-content/40">
+							{$_('spot.add.location.accuracy', { values: { range: formatDistanceKm(accuracy / 1000) } })}
+						</p>
+					{/if}
+				</div>
+
+				<button
+					class="btn btn-primary w-full"
+					onclick={handleContinue}
+					disabled={lat == null || lng == null || creatingSpot}
+				>
+					{#if creatingSpot}<span class="loading loading-spinner loading-sm"></span>{/if}
+					{$_('spot.add.location.continue')}
+				</button>
+			</div>
 		</div>
 	{:else if phase === 'photo'}
 		<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">

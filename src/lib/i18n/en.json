@@ -62,6 +62,7 @@
   "observe.nearest.directions": "Get directions",
   "observe.nearest.cta": "Observe here",
   "observe.nearest.retry": "Try again",
+  "observe.nearest.addSpot": "Add a new spot here",
   "observe.intro.title": "Tap when you spot one",
   "observe.intro.body": "Every time you see a tiny creature nearby, tap its card. It helps us understand the health of this place.",
   "observe.intro.skip": "Skip",

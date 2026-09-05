@@ -62,6 +62,7 @@
   "observe.nearest.directions": "Route",
   "observe.nearest.cta": "Hier observeren",
   "observe.nearest.retry": "Opnieuw proberen",
+  "observe.nearest.addSpot": "Voeg hier een nieuwe plek toe",
   "spot.add.location.label": "Waar ben je?",
   "spot.add.location.gps": "GPS gebruiken",
   "spot.add.location.pin": "Speld plaatsen",
