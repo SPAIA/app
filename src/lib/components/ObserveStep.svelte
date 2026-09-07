@@ -3,7 +3,6 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { sessionStore } from '$lib/stores/session';
 	import { nowISO } from '$lib/time';
-	import { insectImage } from '$lib/insectImage';
 	import { autosaveSession } from '$lib/sessionSave';
 	import type { InsectType } from '$lib/types';
 
@@ -128,33 +127,31 @@
 	</div>
 
 	<!-- Insect grid -->
-	<div class="grid grid-cols-2 gap-2">
+	<div class="grid grid-cols-3 gap-1.5">
 		{#each insectTypes as insect}
 			{@const count = $sessionStore.counts[insect.name] ?? 0}
 			<div
 				role="button"
 				tabindex="0"
-				class="relative aspect-square overflow-hidden rounded-xl border border-base-300 transition-all"
+				class="relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border border-base-300 bg-base-200 transition-all"
 				style="transform: scale({buttonScales[insect.name] ?? 1})"
 				onclick={() => tapInsect(insect)}
 				onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), tapInsect(insect))}
 			>
 				{#if count > 0}
-					<span class="absolute right-1.5 top-1.5 z-10 min-w-[18px] rounded-full bg-primary px-1 py-px text-center text-[9px] font-medium text-white">
+					<span class="absolute right-1 top-1 z-10 min-w-4 rounded-full bg-primary px-1 py-px text-center text-[8px] font-medium text-white">
 						{count}
 					</span>
 					<button
-						class="absolute left-1.5 top-1.5 z-10 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-black/50 text-[11px] font-medium leading-none text-white"
+						class="absolute left-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-black/50 text-[10px] font-medium leading-none text-white"
 						aria-label={$_('observe.timer.undo')}
 						onclick={(e) => removeLastTap(insect, e)}
 					>
 						−
 					</button>
 				{/if}
-				<img src={insectImage(insect.name)} alt="" class="absolute inset-0 h-full w-full object-cover" />
-				<div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent pt-4">
-					<span class="block px-2 pb-1.5 text-[10px] font-medium text-white">{$_(`insect.${insect.name}`)}</span>
-				</div>
+				<span class="text-2xl leading-none">{insect.icon}</span>
+				<span class="px-1 text-center text-[9px] font-medium leading-tight text-base-content/70">{$_(`insect.${insect.name}`)}</span>
 			</div>
 		{/each}
 	</div>
