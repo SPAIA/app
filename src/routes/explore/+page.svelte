@@ -166,7 +166,7 @@
 	{/if}
 
 	{#if !selectedSpot}
-		<button class="absolute inset-x-4 bottom-24 z-10 btn btn-outline btn-sm w-full bg-base-100" onclick={() => goto('/space-pack')}>
+		<button class="absolute inset-x-4 bottom-24 z-10 btn btn-outline btn-sm bg-base-100" onclick={() => goto('/space-pack')}>
 			{$_('explore.cta.space')}
 		</button>
 	{/if}
