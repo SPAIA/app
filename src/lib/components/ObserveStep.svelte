@@ -4,6 +4,7 @@
 	import { sessionStore } from '$lib/stores/session';
 	import { nowISO } from '$lib/time';
 	import { autosaveSession } from '$lib/sessionSave';
+	import { insectImage } from '$lib/insectImage';
 	import type { InsectType } from '$lib/types';
 
 	export let insectTypes: InsectType[] = [];
@@ -150,7 +151,7 @@
 						−
 					</button>
 				{/if}
-				<span class="text-2xl leading-none">{insect.icon}</span>
+				<img src={insectImage(insect.name)} alt="" class="h-7 w-7" />
 				<span class="px-1 text-center text-[9px] font-medium leading-tight text-base-content/70">{$_(`insect.${insect.name}`)}</span>
 			</div>
 		{/each}
