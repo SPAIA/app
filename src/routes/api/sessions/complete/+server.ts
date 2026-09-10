@@ -4,6 +4,8 @@ import {
 	createSession,
 	completeSession,
 	insertSighting,
+	incrementSpotInsectCount,
+	addSpotMinutesObserved,
 	getProfile,
 	upsertProfile,
 	getInsectTypes
@@ -97,11 +99,13 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	});
 
 	await completeSession(db, sessionId, finalTotalCount);
+	if (spotId) await addSpotMinutesObserved(db, spotId, durationMin);
 
 	// One row per button press, each stamped with the time it was pressed.
 	for (const tap of taps) {
 		const insect = insectTypes.find((i) => i.name === tap.name);
 		await insertSighting(db, sessionId, insect?.id ?? null, tap.name, tap.tappedAt);
+		if (spotId) await incrementSpotInsectCount(db, spotId, insect?.id ?? null, tap.name);
 	}
 
 	// Streak is a signed-in feature; don't create junk profiles for anon owners.

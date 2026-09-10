@@ -105,29 +105,30 @@ export interface SpotSummary {
 	observationCount: number;
 	lastObservedAt: string | null;
 	topInsects: { name: string; icon: string | null; count: number }[];
+	totalMinutesObserved: number;
+	insectCounts: { name: string; icon: string | null; count: number }[];
 }
 
 /** Stats shown on a spot's map card: how many observations, when last, what's most seen. */
 export async function getSpotSummary(db: D1Database, spotId: number): Promise<SpotSummary> {
 	const stats = await db
 		.prepare(`
-			SELECT COUNT(*) as observation_count, MAX(completed_at) as last_observed_at
-			FROM sessions
-			WHERE spot_id = ? AND completed_at IS NOT NULL
+			SELECT COUNT(se.id) as observation_count, MAX(se.completed_at) as last_observed_at, sp.total_minutes_observed as total_minutes_observed
+			FROM spots sp
+			LEFT JOIN sessions se ON se.spot_id = sp.id AND se.completed_at IS NOT NULL
+			WHERE sp.id = ?
+			GROUP BY sp.id
 		`)
 		.bind(spotId)
-		.first<{ observation_count: number; last_observed_at: string | null }>();
+		.first<{ observation_count: number; last_observed_at: string | null; total_minutes_observed: number }>();
 
 	const insects = await db
 		.prepare(`
-			SELECT si.insect_name as name, it.icon as icon, SUM(si.count) as count
-			FROM sightings si
-			JOIN sessions se ON si.session_id = se.id
-			LEFT JOIN insect_types it ON si.insect_type_id = it.id
-			WHERE se.spot_id = ?
-			GROUP BY si.insect_name
+			SELECT insect_name as name, it.icon as icon, total_count as count
+			FROM spot_insect_stats sis
+			LEFT JOIN insect_types it ON sis.insect_type_id = it.id
+			WHERE sis.spot_id = ?
 			ORDER BY count DESC
-			LIMIT 3
 		`)
 		.bind(spotId)
 		.all<{ name: string; icon: string | null; count: number }>();
@@ -135,8 +136,41 @@ export async function getSpotSummary(db: D1Database, spotId: number): Promise<Sp
 	return {
 		observationCount: stats?.observation_count ?? 0,
 		lastObservedAt: stats?.last_observed_at ?? null,
-		topInsects: insects.results
+		topInsects: insects.results.slice(0, 3),
+		totalMinutesObserved: stats?.total_minutes_observed ?? 0,
+		insectCounts: insects.results
 	};
+}
+
+/**
+ * Bumps a spot's running insect tally by one sighting. Called alongside
+ * insertSighting (from both autosave and complete) so per-spot species
+ * totals stay live without re-aggregating sessions+sightings on every read.
+ */
+export async function incrementSpotInsectCount(
+	db: D1Database,
+	spotId: number,
+	insectTypeId: number | null,
+	insectName: string
+): Promise<void> {
+	await db
+		.prepare(`
+			INSERT INTO spot_insect_stats (spot_id, insect_type_id, insect_name, total_count)
+			VALUES (?, ?, ?, 1)
+			ON CONFLICT(spot_id, insect_name) DO UPDATE SET
+				total_count = total_count + 1,
+				insect_type_id = COALESCE(excluded.insect_type_id, insect_type_id)
+		`)
+		.bind(spotId, insectTypeId, insectName)
+		.run();
+}
+
+/** Adds a just-completed session's duration to the spot's running total minutes observed. */
+export async function addSpotMinutesObserved(db: D1Database, spotId: number, minutes: number): Promise<void> {
+	await db
+		.prepare('UPDATE spots SET total_minutes_observed = total_minutes_observed + ? WHERE id = ?')
+		.bind(minutes, spotId)
+		.run();
 }
 
 /** The spot an order already paid for, if any — stops one order minting two spots. */

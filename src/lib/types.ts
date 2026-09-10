@@ -40,6 +40,16 @@ export interface Spot {
 	owner_id: string | null;
 	/** The space_orders row that paid for this spot, if any — prevents one order minting two spots. */
 	order_id: string | null;
+	/** Running total across all completed sessions at this spot, kept up to date on session save. */
+	total_minutes_observed: number;
+}
+
+/** Running per-spot, per-insect tally — one row per insect ever spotted there. */
+export interface SpotInsectStat {
+	spot_id: number;
+	insect_type_id: number | null;
+	insect_name: string;
+	total_count: number;
 }
 
 /** Taxonomic rank; "type" is not a real rank — it's a generic guess not yet pinned to one. */

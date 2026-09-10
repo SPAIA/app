@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { createSession, insertSighting, getInsectTypes } from '$lib/db/queries';
+import { createSession, insertSighting, incrementSpotInsectCount, getInsectTypes } from '$lib/db/queries';
 
 interface Tap {
 	name: string;
@@ -91,6 +91,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	for (const tap of taps) {
 		const insect = insectTypes.find((i) => i.name === tap.name);
 		await insertSighting(db, sessionId, insect?.id ?? null, tap.name, tap.tappedAt);
+		if (spotId) await incrementSpotInsectCount(db, spotId, insect?.id ?? null, tap.name);
 	}
 
 	return json({ ok: true });
