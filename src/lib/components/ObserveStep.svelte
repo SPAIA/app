@@ -50,6 +50,11 @@
 		sessionStore.update((s) => ({ ...s, step: 'thankyou' }));
 	}
 
+	function adjustTime(deltaMinutes: number) {
+		timeLeft = Math.max(0, timeLeft + deltaMinutes * 60);
+		if (timeLeft > totalSeconds) totalSeconds = timeLeft;
+	}
+
 	function tapInsect(insect: InsectType) {
 		sessionStore.update((s) => ({
 			...s,
@@ -107,57 +112,77 @@
 	}
 </script>
 
-<div class="relative flex flex-col gap-4 px-5 py-6">
-	<!-- Timer display -->
-	<div class="rounded-xl border border-base-300 bg-base-200 p-4 text-center">
-		<div class="font-mono text-4xl font-medium text-primary">{formatTime(timeLeft)}</div>
-		<div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-base-300">
-			<div
-				class="h-full rounded-full bg-primary transition-all duration-1000"
-				style="width: {progressPercent}%"
-			></div>
+<div class="relative flex flex-col">
+	<!-- Timer display: sticky so it stays visible while the insect grid scrolls beneath it -->
+	<div class="sticky top-0 z-20 bg-base-100 px-5 pb-4 pt-6">
+		<div class="rounded-xl border border-base-300 bg-base-200 p-4 text-center">
+			<div class="flex items-center justify-between gap-3">
+				<button
+					class="btn btn-ghost btn-sm shrink-0"
+					aria-label={$_('observe.timer.minus')}
+					onclick={() => adjustTime(-1)}
+				>
+					−1 min
+				</button>
+				<div class="font-mono text-4xl font-medium text-primary">{formatTime(timeLeft)}</div>
+				<button
+					class="btn btn-ghost btn-sm shrink-0"
+					aria-label={$_('observe.timer.plus')}
+					onclick={() => adjustTime(1)}
+				>
+					+1 min
+				</button>
+			</div>
+			<div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-base-300">
+				<div
+					class="h-full rounded-full bg-primary transition-all duration-1000"
+					style="width: {progressPercent}%"
+				></div>
+			</div>
+		</div>
+
+		<!-- Running totals -->
+		<div class="mt-4 flex justify-center gap-6 text-sm">
+			<span class="text-base-content/60">
+				{$_('observe.timer.total')}:
+				<strong class="text-base-content">{$sessionStore.totalCount}</strong>
+			</span>
 		</div>
 	</div>
 
-	<!-- Running totals -->
-	<div class="flex justify-center gap-6 text-sm">
-		<span class="text-base-content/60">
-			{$_('observe.timer.total')}:
-			<strong class="text-base-content">{$sessionStore.totalCount}</strong>
-		</span>
-	</div>
+	<div class="flex flex-col gap-4 px-5 pb-6">
+		<!-- Insect grid -->
+		<div class="grid grid-cols-3 gap-1.5">
+			{#each insectTypes as insect}
+				{@const count = $sessionStore.counts[insect.name] ?? 0}
+				<div
+					role="button"
+					tabindex="0"
+					class="relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border border-base-300 bg-base-200 transition-all"
+					style="transform: scale({buttonScales[insect.name] ?? 1})"
+					onclick={() => tapInsect(insect)}
+					onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), tapInsect(insect))}
+				>
+					{#if count > 0}
+						<span class="absolute right-1 top-1 z-10 min-w-4 rounded-full bg-primary px-1 py-px text-center text-[8px] font-medium text-white">
+							{count}
+						</span>
+						<button
+							class="absolute left-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-black/50 text-[10px] font-medium leading-none text-white"
+							aria-label={$_('observe.timer.undo')}
+							onclick={(e) => removeLastTap(insect, e)}
+						>
+							−
+						</button>
+					{/if}
+					<img src={insectImage(insect.name)} alt="" class="h-16 w-16" />
+					<span class="px-1 text-center text-xs font-medium leading-tight text-base-content/70">{$_(`insect.${insect.name}`)}</span>
+				</div>
+			{/each}
+		</div>
 
-	<!-- Insect grid -->
-	<div class="grid grid-cols-3 gap-1.5">
-		{#each insectTypes as insect}
-			{@const count = $sessionStore.counts[insect.name] ?? 0}
-			<div
-				role="button"
-				tabindex="0"
-				class="relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border border-base-300 bg-base-200 transition-all"
-				style="transform: scale({buttonScales[insect.name] ?? 1})"
-				onclick={() => tapInsect(insect)}
-				onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), tapInsect(insect))}
-			>
-				{#if count > 0}
-					<span class="absolute right-1 top-1 z-10 min-w-4 rounded-full bg-primary px-1 py-px text-center text-[8px] font-medium text-white">
-						{count}
-					</span>
-					<button
-						class="absolute left-1 top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full bg-black/50 text-[10px] font-medium leading-none text-white"
-						aria-label={$_('observe.timer.undo')}
-						onclick={(e) => removeLastTap(insect, e)}
-					>
-						−
-					</button>
-				{/if}
-				<img src={insectImage(insect.name)} alt="" class="h-7 w-7" />
-				<span class="px-1 text-center text-[9px] font-medium leading-tight text-base-content/70">{$_(`insect.${insect.name}`)}</span>
-			</div>
-		{/each}
+		<button class="btn btn-ghost btn-sm text-base-content/40" onclick={advance}>
+			{$_('observe.timer.finish')}
+		</button>
 	</div>
-
-	<button class="btn btn-ghost btn-sm text-base-content/40" onclick={advance}>
-		{$_('observe.timer.finish')}
-	</button>
 </div>

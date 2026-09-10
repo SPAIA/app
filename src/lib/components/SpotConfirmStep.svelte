@@ -20,6 +20,7 @@
 	let spotName = $sessionStore.spotName ?? '';
 	let editablePlants: { name: string; rank: SpotVisionResult['plants'][number]['rank'] }[] = [];
 	let editableFeatures: { category: HabitatFeatureCategory; label: string }[] = [];
+	let sceneDescription = $sessionStore.focalArea ?? '';
 	let newPlantName = '';
 	let newFeatureLabel = '';
 	let saving = false;
@@ -37,6 +38,7 @@
 		editableFeatures = [...vision.habitat_features];
 		if (isNewSpot) spotName = vision.name;
 		if (selectedWeather == null && vision.weather) selectedWeather = vision.weather;
+		if (vision.scene) sceneDescription = vision.scene;
 	}
 
 	function removePlant(index: number) {
@@ -65,7 +67,12 @@
 		if (saving) return;
 		saving = true;
 
-		sessionStore.update((s) => ({ ...s, weather: selectedWeather, condition: condition.trim() || null }));
+		sessionStore.update((s) => ({
+			...s,
+			weather: selectedWeather,
+			condition: condition.trim() || null,
+			focalArea: sceneDescription.trim() || s.focalArea
+		}));
 
 		if (isNewSpot && spotId) {
 			const finalName = spotName.trim() || $_('spot.add.confirm.name.default');
@@ -135,7 +142,18 @@
 			</p>
 		{/if}
 		{#if vision?.scene}
-			<p class="text-sm text-base-content/70">{vision.scene}</p>
+			<label class="form-control">
+				<div class="label">
+					<span class="label-text text-xs font-medium uppercase tracking-widest text-base-content/50">
+						{$_('spot.add.confirm.scene.label')}
+					</span>
+				</div>
+				<textarea
+					class="textarea textarea-bordered w-full text-sm"
+					rows="2"
+					bind:value={sceneDescription}
+				></textarea>
+			</label>
 		{/if}
 
 		<div>

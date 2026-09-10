@@ -69,7 +69,7 @@
 	</div>
 
 	{#if $sessionStore.locality && $sessionStore.totalCount > 0}
-		<p class="rounded-lg bg-green-light px-3 py-2.5 text-sm text-primary">
+		<p class="rounded-lg bg-green-light px-3 py-2.5 text-sm text-green-dark">
 			{$_('cards.impact', { values: { count: $sessionStore.totalCount, locality: $sessionStore.locality } })}
 		</p>
 	{/if}

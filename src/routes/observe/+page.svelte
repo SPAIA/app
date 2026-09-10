@@ -2,7 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { directionsUrl, formatDistanceRange, haversineKm } from '$lib/geo';
+	import { directionsUrl, findNearestSpot, formatDistanceRange, haversineKm } from '$lib/geo';
 	import type { Spot } from '$lib/types';
 	import type { SpotSummary } from '$lib/db/queries';
 	import type { PageData } from './$types';
@@ -54,13 +54,22 @@
 		cover = null;
 	}
 
-	async function centerOnUser(lat: number, lng: number) {
+	async function centerOnUser(lat: number, lng: number, nearest: MapSpot | null) {
 		const mapLib = await mapLibPromise;
 		const map = mapInstance;
 		if (!mapLib || !map) return;
 
 		centeredOnUser = true;
-		map.flyTo({ center: [lng, lat], zoom: 14 });
+
+		if (nearest?.lat != null && nearest?.lng != null) {
+			// Fit both the user and their nearest spot in view rather than just the user,
+			// since finding that spot is the point of this screen.
+			const bounds = new mapLib.LngLatBounds([lng, lat], [lng, lat]);
+			bounds.extend([nearest.lng, nearest.lat]);
+			map.fitBounds(bounds, { padding: 80, maxZoom: 16 });
+		} else {
+			map.flyTo({ center: [lng, lat], zoom: 16 });
+		}
 
 		const el = document.createElement('div');
 		el.className = 'h-4 w-4 rounded-full border-2 border-white bg-primary shadow';
@@ -82,7 +91,10 @@
 				userLng = pos.coords.longitude;
 				accuracy = pos.coords.accuracy;
 				phase = 'located';
-				centerOnUser(userLat, userLng);
+
+				const nearest = findNearestSpot(data.spots as MapSpot[], userLat, userLng);
+				centerOnUser(userLat, userLng, (nearest?.spot as MapSpot) ?? null);
+				if (nearest) selectSpot(nearest.spot as MapSpot);
 			},
 			() => {
 				phase = 'error';

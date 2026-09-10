@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { sessionStore, resetSession } from '$lib/stores/session';
 
 	let email = '';
@@ -10,6 +11,7 @@
 	// The session is already persisted (anonymously) by the time we reach this
 	// step — see CardsStep. Here the email only *claims* that saved session.
 	$: sessionId = $sessionStore.sessionId;
+	$: loggedIn = !!$page.data.user;
 
 	async function handleEmailSubmit() {
 		if (!email || !sessionId) return;
@@ -48,13 +50,13 @@
 	<!-- Hero -->
 	<div class="rounded-xl bg-primary px-5 py-5 text-center">
 		<p class="text-lg font-medium leading-snug text-primary-content">{$_('close.headline')}</p>
-		<p class="mt-2 text-sm text-green-mid">
+		<p class="mt-2 text-sm text-primary-content/70">
 			{$_('close.sub', { values: { count: $sessionStore.totalCount, duration: $sessionStore.totalDurationMin } })}
 		</p>
 	</div>
 
 	<!-- Email capture -->
-	{#if !submitted}
+	{#if !submitted && !loggedIn}
 		<div class="flex flex-col gap-3 rounded-xl border border-base-300 bg-base-100 px-4 py-4">
 			<p class="text-sm font-medium text-base-content">{$_('email.cta')}</p>
 			<input
