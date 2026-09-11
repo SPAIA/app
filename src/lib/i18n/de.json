@@ -113,6 +113,7 @@
   "cards.title": "Deine Funde",
   "cards.stats.sightings": "Sichtungen",
   "cards.stats.types": "Gefundene Arten",
+  "cards.card.avg": "Ø {avg} hier",
   "cards.impact": "Deine Sichtungen haben zu einem besseren Verständnis der Insektenpopulationen in {locality} beigetragen.",
   "cards.locked": "???",
   "cards.cta.continue": "Weiter",

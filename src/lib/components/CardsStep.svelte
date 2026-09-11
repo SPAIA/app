@@ -21,24 +21,50 @@
 	$: lockedLabel = $_('cards.locked');
 
 	let comparison: SpotSessionComparison | null = null;
+	let spotInsectCounts: { name: string; count: number }[] = [];
+	let spotMinutesObserved = 0;
 
 	// The session isn't marked complete until the environmental confirm step
-	// (see SpotConfirmStep) — but the comparison only ever looks at *other*
-	// sessions at this spot, so it's safe to read here already.
+	// (see SpotConfirmStep) — but the comparison, and the spot's running totals
+	// below, only ever look at history, so it's safe to read both here already.
 	onMount(async () => {
 		const spotId = $sessionStore.spotId;
 		const sessionId = $sessionStore.sessionId;
 		if (!spotId || !sessionId) return;
 		try {
-			const res = await fetch(`/api/spot/${spotId}/comparison?exclude=${sessionId}`);
-			if (res.ok) {
-				const data = (await res.json()) as { comparison: SpotSessionComparison };
+			const [comparisonRes, summaryRes] = await Promise.all([
+				fetch(`/api/spot/${spotId}/comparison?exclude=${sessionId}`),
+				fetch(`/api/spot/${spotId}/summary`)
+			]);
+			if (comparisonRes.ok) {
+				const data = (await comparisonRes.json()) as { comparison: SpotSessionComparison };
 				comparison = data.comparison;
 			}
+			if (summaryRes.ok) {
+				const data = (await summaryRes.json()) as {
+					totalMinutesObserved: number;
+					insectCounts: { name: string; count: number }[];
+				};
+				spotMinutesObserved = data.totalMinutesObserved;
+				spotInsectCounts = data.insectCounts;
+			}
 		} catch {
-			// non-blocking — the cards still show fine without the comparison
+			// non-blocking — the cards still show fine without this
 		}
 	});
+
+	// Historical sightings-per-minute rate for this species at this spot, scaled to this
+	// session's length — e.g. 20 sightings over 100 min observed, in a 10-min session, is 2.
+	// The stored count already includes this in-progress session's own taps (autosave writes
+	// them as they happen), so those are subtracted back out first to keep this a fair,
+	// purely historical average.
+	function avgForSpecies(name: string): number | null {
+		if (spotMinutesObserved <= 0) return null;
+		const stored = spotInsectCounts.find((i) => i.name === name)?.count ?? 0;
+		const ownTaps = $sessionStore.counts[name] ?? 0;
+		const historical = Math.max(0, stored - ownTaps);
+		return (historical / spotMinutesObserved) * $sessionStore.totalDurationMin;
+	}
 
 	// Only read when comparison.lastSession is set — 0 otherwise, just to keep this typed as a plain number.
 	$: diff = comparison?.lastSession ? $sessionStore.totalCount - comparison.lastSession.totalCount : 0;
@@ -141,6 +167,7 @@
 			<InsectCard
 				name={insect.name}
 				count={insect.count}
+				avg={avgForSpecies(insect.name)}
 			/>
 		{/each}
 		{#each lockedSlots as _}

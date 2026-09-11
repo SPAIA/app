@@ -131,6 +131,7 @@
   "cards.title": "Your finds",
   "cards.stats.sightings": "Sightings",
   "cards.stats.types": "Types found",
+  "cards.card.avg": "avg {avg} here",
   "cards.impact": "Your sightings have contributed to a better understanding of insect populations in {locality}.",
   "cards.locked": "???",
   "cards.cta.continue": "Continue",

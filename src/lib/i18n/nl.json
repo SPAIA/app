@@ -113,6 +113,7 @@
   "cards.title": "Jouw vondsten",
   "cards.stats.sightings": "Waarnemingen",
   "cards.stats.types": "Gevonden soorten",
+  "cards.card.avg": "gem. {avg} hier",
   "cards.impact": "Jouw waarnemingen hebben bijgedragen aan een beter begrip van insectenpopulaties in {locality}.",
   "cards.locked": "???",
   "cards.cta.continue": "Doorgaan",

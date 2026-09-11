@@ -1,0 +1,6 @@
+.wrangler
+node_modules
+.svelte-kit
+.DS_Store
+.env
+.dev.vars
