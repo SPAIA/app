@@ -94,7 +94,7 @@
 				bind:this={fileInput}
 				type="file"
 				accept="image/*"
-				class="hidden"
+				class="sr-only"
 				onchange={handleAvatarChange}
 			/>
 		</div>

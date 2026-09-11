@@ -22,12 +22,12 @@
 	$: levelTitleKey = LEVEL_TITLE_KEYS[level - 1] ?? LEVEL_TITLE_KEYS[0];
 	$: totalSightings = data.sessions.reduce((sum, s) => sum + s.total_count, 0);
 
-	// Group collection by space
-	$: spaceMap = data.collection.reduce<Record<number, { space_id: number; space_name: string; space_icon: string; space_slug: string; cards: typeof data.collection }>>((acc, row) => {
+	// Group sightings by space
+	$: spaceMap = data.collection.reduce<Record<number, { space_id: number; space_name: string; space_icon: string; space_slug: string; sightings: typeof data.collection }>>((acc, row) => {
 		if (!acc[row.space_id]) {
-			acc[row.space_id] = { space_id: row.space_id, space_name: row.space_name, space_icon: row.space_icon, space_slug: row.space_slug, cards: [] };
+			acc[row.space_id] = { space_id: row.space_id, space_name: row.space_name, space_icon: row.space_icon, space_slug: row.space_slug, sightings: [] };
 		}
-		acc[row.space_id].cards.push(row);
+		acc[row.space_id].sightings.push(row);
 		return acc;
 	}, {});
 	$: locationSets = Object.values(spaceMap);
@@ -129,29 +129,22 @@
 		</div>
 
 		{#each locationSets as set}
-			{@const lockedCount = Math.max(0, 8 - set.cards.length)}
 			<div class="overflow-hidden rounded-xl border border-base-200 bg-base-100">
 				<div class="flex items-center gap-2.5 border-b border-base-200 px-3.5 py-3">
 					<span class="text-xl">{set.space_icon}</span>
 					<div class="flex-1 min-w-0">
 						<p class="text-sm font-medium text-base-content">{set.space_name}</p>
-						<p class="text-[10px] text-base-content/40">{set.cards.length} types found</p>
+						<p class="text-[10px] text-base-content/40">{set.sightings.length} types found</p>
 					</div>
 					<span class="shrink-0 text-xs font-medium text-primary">
-						{set.cards.reduce((sum, c) => sum + c.count, 0)} sightings
+						{set.sightings.reduce((sum, s) => sum + s.count, 0)} sightings
 					</span>
 				</div>
 				<div class="flex gap-1.5 overflow-x-auto px-3 py-2.5 scrollbar-none">
-					{#each set.cards as card}
+					{#each set.sightings as sighting}
 						<div class="flex w-16 shrink-0 flex-col items-center gap-1 rounded-[10px] border border-primary bg-green-light px-1.5 py-2.5">
-							<span class="text-xl">{card.icon}</span>
-							<span class="text-center text-[8px] font-medium leading-tight text-base-content/70">{$_(`insect.${card.insect_name}`)}</span>
-						</div>
-					{/each}
-					{#each { length: lockedCount } as _}
-						<div class="flex w-16 shrink-0 flex-col items-center gap-1 rounded-[10px] border border-base-300 bg-base-200 px-1.5 py-2.5 opacity-40">
-							<span class="text-base text-base-content/30">🔒</span>
-							<span class="text-[8px] text-base-content/40">???</span>
+							<span class="text-xl">{sighting.icon}</span>
+							<span class="text-center text-[8px] font-medium leading-tight text-base-content/70">{$_(`insect.${sighting.insect_name}`)}</span>
 						</div>
 					{/each}
 				</div>
@@ -164,42 +157,25 @@
 			</button>
 		{/if}
 
-		<!-- Owned spaces & spots -->
-		{#if data.ownedSpaces.length > 0}
+		<!-- Owned spots -->
+		{#if data.spots.length > 0}
 			<div class="flex items-center justify-between">
 				<p class="text-sm font-medium text-base-content">{$_('profile.spaces.title')}</p>
 			</div>
 
-			{#each data.ownedSpaces as { space, spots }}
-				<div class="overflow-hidden rounded-xl border border-base-200 bg-base-100">
-					<div class="flex items-center gap-2.5 border-b border-base-200 px-3.5 py-3">
-						<span class="text-xl">{space.icon}</span>
-						<div class="flex-1 min-w-0">
-							<p class="text-sm font-medium text-base-content">{space.name}</p>
-							<p class="text-[10px] text-base-content/40">{space.locality}</p>
+			<div class="overflow-hidden rounded-xl border border-base-200 bg-base-100">
+				<div class="flex flex-col divide-y divide-base-200">
+					{#each data.spots as spot}
+						<div class="flex items-center gap-2.5 px-3.5 py-2.5">
+							<span class="text-base">{spot.icon}</span>
+							<span class="flex-1 min-w-0 truncate text-xs text-base-content/70">{spot.name}</span>
+							<a href="/space/{spot.space_slug}/spot/{spot.slug}/edit" class="shrink-0 text-[11px] font-medium text-primary">
+								{$_('profile.spaces.edit')}
+							</a>
 						</div>
-						<a href="/space/{space.slug}/dashboard" class="shrink-0 text-[11px] font-medium text-primary">
-							{$_('profile.spaces.dashboard')}
-						</a>
-						<a href="/space/{space.slug}/edit" class="shrink-0 text-[11px] font-medium text-primary">
-							{$_('profile.spaces.edit')}
-						</a>
-					</div>
-					{#if spots.length > 0}
-						<div class="flex flex-col divide-y divide-base-200">
-							{#each spots as spot}
-								<div class="flex items-center gap-2.5 px-3.5 py-2.5">
-									<span class="text-base">{spot.icon}</span>
-									<span class="flex-1 min-w-0 truncate text-xs text-base-content/70">{spot.name}</span>
-									<a href="/space/{space.slug}/spot/{spot.slug}/edit" class="shrink-0 text-[11px] font-medium text-primary">
-										{$_('profile.spaces.edit')}
-									</a>
-								</div>
-							{/each}
-						</div>
-					{/if}
+					{/each}
 				</div>
-			{/each}
+			</div>
 		{/if}
 
 		<button class="btn btn-outline w-full" onclick={handleLogout} disabled={loggingOut}>

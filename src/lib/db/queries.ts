@@ -86,6 +86,24 @@ export async function getSpotById(db: D1Database, spotId: number): Promise<Spot 
 	return db.prepare('SELECT * FROM spots WHERE id = ?').bind(spotId).first<Spot>();
 }
 
+/** All spots a user owns, regardless of who owns the space they sit in. */
+export async function getSpotsByOwner(
+	db: D1Database,
+	ownerId: string
+): Promise<Array<Spot & { space_slug: string; space_name: string }>> {
+	const result = await db
+		.prepare(`
+			SELECT sp.*, sc.slug as space_slug, sc.name as space_name
+			FROM spots sp
+			JOIN spaces sc ON sc.id = sp.space_id
+			WHERE sp.owner_id = ? AND sp.active = 1
+			ORDER BY sp.name ASC
+		`)
+		.bind(ownerId)
+		.all<Spot & { space_slug: string; space_name: string }>();
+	return result.results;
+}
+
 /** Every located spot, with its parent space's name — for the /explore full-screen map. */
 export async function getSpotsForMap(
 	db: D1Database

@@ -231,7 +231,7 @@
 			bind:this={coverInput}
 			type="file"
 			accept="image/*"
-			class="hidden"
+			class="sr-only"
 			onchange={handleCoverChange}
 		/>
 	</div>

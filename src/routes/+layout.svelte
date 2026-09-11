@@ -61,8 +61,8 @@
 
 	$: currentPath = $page.url.pathname;
 
-	function isActive(href: string) {
-		return currentPath === href || currentPath.startsWith(href + '/');
+	function isActive(href: string, path: string) {
+		return path === href || path.startsWith(href + '/');
 	}
 
 	/** Routes that own the whole frame (e.g. a fullscreen map editor) render without the tab bar or scroll chrome. */
@@ -82,7 +82,7 @@
 				<div class="flex items-center justify-around gap-2">
 					{#each tabs as tab}
 						<button
-							class="flex flex-1 items-center justify-center rounded-lg py-3 transition-colors {isActive(tab.href)
+							class="flex flex-1 items-center justify-center rounded-lg py-3 transition-colors {isActive(tab.href, currentPath)
 								? 'bg-primary text-primary-content'
 								: 'bg-base-200 text-base-content/50 hover:bg-base-300 hover:text-base-content'}"
 							onclick={() => goto(tab.href)}

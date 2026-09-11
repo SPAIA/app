@@ -241,7 +241,7 @@
 			type="file"
 			accept="image/*"
 			capture="environment"
-			class="hidden"
+			class="sr-only"
 			onchange={onFileSelected}
 		/>
 

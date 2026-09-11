@@ -81,7 +81,7 @@
 		{#if email}
 			<div class="rounded-xl border border-base-300 bg-base-100 px-4 py-4 text-center">
 				<p class="text-sm font-medium text-base-content">Check your email</p>
-				<p class="mt-1 text-xs text-base-content/50">We sent a magic link to <strong>{email}</strong> — click it to view your collection.</p>
+				<p class="mt-1 text-xs text-base-content/50">We sent a magic link to <strong>{email}</strong> — click it to view your sightings.</p>
 			</div>
 		{/if}
 		<div class="flex flex-col gap-2">

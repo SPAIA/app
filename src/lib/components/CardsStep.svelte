@@ -16,10 +16,6 @@
 		})
 		.filter(Boolean) as (InsectType & { count: number })[];
 
-	$: lockedCount = Math.max(0, 8 - tappedTypes.length);
-	$: lockedSlots = Array.from({ length: lockedCount });
-	$: lockedLabel = $_('cards.locked');
-
 	let comparison: SpotSessionComparison | null = null;
 	let spotInsectCounts: { name: string; count: number }[] = [];
 	let spotMinutesObserved = 0;
@@ -161,7 +157,7 @@
 		</div>
 	{/if}
 
-	<!-- Cards grid -->
+	<!-- Sightings grid -->
 	<div class="grid grid-cols-2 gap-2.5">
 		{#each tappedTypes as insect}
 			<InsectCard
@@ -169,12 +165,6 @@
 				count={insect.count}
 				avg={avgForSpecies(insect.name)}
 			/>
-		{/each}
-		{#each lockedSlots as _}
-			<div class="flex flex-col items-center gap-1.5 rounded-xl border border-base-300 bg-base-200 px-2 py-4 opacity-40">
-				<span class="text-xl text-base-content/30">🔒</span>
-				<span class="text-[11px] text-base-content/40">{lockedLabel}</span>
-			</div>
 		{/each}
 	</div>
 
