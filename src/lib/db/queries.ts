@@ -13,7 +13,8 @@ import type {
 	RedeemCodeScope,
 	PlantRank,
 	HabitatFeatureCategory,
-	PlantObservationSource
+	PlantObservationSource,
+	SpotSessionComparison
 } from '$lib/types';
 import { normalizePlantName, findBestNameMatch } from '$lib/textMatch';
 
@@ -139,6 +140,49 @@ export async function getSpotSummary(db: D1Database, spotId: number): Promise<Sp
 		topInsects: insects.results.slice(0, 3),
 		totalMinutesObserved: stats?.total_minutes_observed ?? 0,
 		insectCounts: insects.results
+	};
+}
+
+/**
+ * Compares one just-finished session against the spot's history (any user):
+ * the previous session, and the average across every prior completed one.
+ * Called once at completion so the summary screen can say "more/fewer than
+ * last time" — the session being compared against is excluded from both.
+ */
+export async function getSpotSessionComparison(
+	db: D1Database,
+	spotId: number,
+	excludeSessionId: string
+): Promise<SpotSessionComparison> {
+	const last = await db
+		.prepare(`
+			SELECT total_count, duration_min, completed_at
+			FROM sessions
+			WHERE spot_id = ? AND completed_at IS NOT NULL AND id != ?
+			ORDER BY completed_at DESC
+			LIMIT 1
+		`)
+		.bind(spotId, excludeSessionId)
+		.first<{ total_count: number; duration_min: number; completed_at: string }>();
+
+	const agg = await db
+		.prepare(`
+			SELECT COUNT(*) as prior_count, AVG(total_count) as avg_count, AVG(duration_min) as avg_duration
+			FROM sessions
+			WHERE spot_id = ? AND completed_at IS NOT NULL AND id != ?
+		`)
+		.bind(spotId, excludeSessionId)
+		.first<{ prior_count: number; avg_count: number | null; avg_duration: number | null }>();
+
+	return {
+		priorSessionCount: agg?.prior_count ?? 0,
+		lastSession: last
+			? { totalCount: last.total_count, durationMin: last.duration_min, completedAt: last.completed_at }
+			: null,
+		average:
+			agg && agg.prior_count > 0
+				? { totalCount: agg.avg_count ?? 0, durationMin: agg.avg_duration ?? 0 }
+				: null
 	};
 }
 

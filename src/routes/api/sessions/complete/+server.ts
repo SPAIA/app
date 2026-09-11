@@ -6,6 +6,7 @@ import {
 	insertSighting,
 	incrementSpotInsectCount,
 	addSpotMinutesObserved,
+	getSpotSessionComparison,
 	getProfile,
 	upsertProfile,
 	getInsectTypes
@@ -121,5 +122,9 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		});
 	}
 
-	return json({ sessionId });
+	// How this session compares to the spot's history, from any user — shown
+	// on the summary screen ("more/fewer than last time").
+	const comparison = spotId ? await getSpotSessionComparison(db, spotId, sessionId) : null;
+
+	return json({ sessionId, comparison });
 };

@@ -1,5 +1,6 @@
 import { get } from 'svelte/store';
 import { sessionStore, type SessionState } from './stores/session';
+import type { SpotSessionComparison } from './types';
 
 /** How many taps have already been persisted server-side, so a save only sends the delta. */
 let savedTapCount = 0;
@@ -37,9 +38,9 @@ function buildPayload(s: SessionState, newTaps: SessionState['taps']) {
 	};
 }
 
-async function send(url: string): Promise<boolean> {
+async function send(url: string): Promise<Response | null> {
 	const s = get(sessionStore);
-	if (!s.sessionId) return false;
+	if (!s.sessionId) return null;
 
 	const newTaps = s.taps.slice(savedTapCount);
 	try {
@@ -50,12 +51,12 @@ async function send(url: string): Promise<boolean> {
 		});
 		if (res.ok) {
 			savedTapCount = s.taps.length;
-			return true;
+			return res;
 		}
 	} catch {
 		// offline — the next autosave/complete call retries with the same delta
 	}
-	return false;
+	return null;
 }
 
 /**
@@ -68,9 +69,15 @@ export function autosaveSession(): Promise<void> {
 	return result;
 }
 
+export interface CompleteSessionResult {
+	comparison: SpotSessionComparison | null;
+}
+
 /** Final save: same delta as autosave, but marks the session complete. */
-export function completeSession(): Promise<boolean> {
-	const result = queue.then(() => send('/api/sessions/complete'));
+export function completeSession(): Promise<CompleteSessionResult | null> {
+	const result = queue
+		.then(() => send('/api/sessions/complete'))
+		.then((res) => (res ? res.json() : null)) as Promise<CompleteSessionResult | null>;
 	queue = result.then(() => undefined);
 	return result;
 }

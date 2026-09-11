@@ -3,10 +3,14 @@
 	import { sessionStore } from '$lib/stores/session';
 	import type { WeatherOption } from '$lib/stores/session';
 	import type { HabitatFeatureCategory, SpotVisionResult } from '$lib/types';
+	import { completeSession } from '$lib/sessionSave';
 
-	// Shown right after the count finishes — this is where weather, habitat condition, and
-	// the spot's DeepSeek Vision read (kicked off in the background from the photo step in
-	// SetupStep) all get confirmed, instead of asking for any of it before the count starts.
+	// Shown after the observer has already seen their "Your finds" cards (see
+	// CardsStep) — this is where weather, habitat condition, and the spot's
+	// DeepSeek Vision read (kicked off in the background from the photo step in
+	// SetupStep) all get confirmed. Confirming here is also what actually saves
+	// the session for good — the session has only been autosaving in the
+	// background until now.
 
 	const weatherOptions: { key: WeatherOption; icon: string; labelKey: string }[] = [
 		{ key: 'sunny', icon: '☀️', labelKey: 'weather.sunny' },
@@ -102,8 +106,10 @@
 			}
 		}
 
+		await completeSession();
+
 		saving = false;
-		sessionStore.update((s) => ({ ...s, step: 'cards' }));
+		sessionStore.update((s) => ({ ...s, step: 'summary' }));
 	}
 </script>
 
@@ -139,6 +145,10 @@
 		{#if vision?.changes}
 			<p class="rounded-lg bg-green-light px-3 py-2.5 text-sm text-green-dark">
 				{$_('spot.add.confirm.changes.label')}: {vision.changes}
+			</p>
+		{:else if vision?.area_mismatch}
+			<p class="rounded-lg border border-base-300 bg-base-200 px-3 py-2.5 text-sm text-base-content/70">
+				{$_('spot.add.confirm.area_mismatch')}
 			</p>
 		{/if}
 		{#if vision?.scene}

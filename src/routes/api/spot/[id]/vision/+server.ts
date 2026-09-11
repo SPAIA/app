@@ -57,6 +57,7 @@ export const PATCH: RequestHandler = async ({ params, request, platform }) => {
 		name: cached?.name ?? spot.name,
 		scene: cached?.scene ?? '',
 		changes: cached?.changes ?? null,
+		area_mismatch: cached?.area_mismatch ?? false,
 		weather: cached?.weather ?? null,
 		plants,
 		habitat_features: habitatFeatures

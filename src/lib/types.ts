@@ -123,6 +123,8 @@ export interface SpotVisionResult {
 	habitat_features: { category: HabitatFeatureCategory; label: string }[];
 	/** Set only when a previous visit's photo was sent alongside this one. */
 	changes: string | null;
+	/** True when a previous photo was supplied but doesn't seem to show the same physical area — "changes" is skipped in that case. */
+	area_mismatch: boolean;
 	/** Best guess at current weather, read off the photo — null if it can't be told. */
 	weather: 'sunny' | 'partly' | 'overcast' | 'rainy' | null;
 }
@@ -162,6 +164,16 @@ export interface Session {
 	total_count: number;
 	shared: number;
 	claim_email: string | null;
+}
+
+/**
+ * How a just-finished session compares to a spot's history, from any user —
+ * shown on the summary screen. Returned by POST /api/sessions/complete.
+ */
+export interface SpotSessionComparison {
+	priorSessionCount: number;
+	lastSession: { totalCount: number; durationMin: number; completedAt: string } | null;
+	average: { totalCount: number; durationMin: number } | null;
 }
 
 export interface Sighting {
