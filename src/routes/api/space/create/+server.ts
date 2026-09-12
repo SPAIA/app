@@ -7,6 +7,13 @@ interface CreateSpaceBody {
 	/** Reverse-geocoded from the creator's position; may be missing if geolocation failed. */
 	locality?: string | null;
 	country?: string | null;
+	town?: string | null;
+	region?: string | null;
+	postcode?: string | null;
+	countryGeonameId?: number | null;
+	regionGeonameId?: number | null;
+	townGeonameId?: number | null;
+	localityGeonameId?: number | null;
 	spaceOrderId: string;
 	lat?: number | null;
 	lng?: number | null;
@@ -22,7 +29,22 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
 
 	const body = (await request.json()) as CreateSpaceBody;
-	const { spaceName, locality, country, spaceOrderId, lat, lng, boundaryGeojson } = body;
+	const {
+		spaceName,
+		locality,
+		country,
+		town,
+		region,
+		postcode,
+		countryGeonameId,
+		regionGeonameId,
+		townGeonameId,
+		localityGeonameId,
+		spaceOrderId,
+		lat,
+		lng,
+		boundaryGeojson
+	} = body;
 
 	if (!spaceName || !spaceOrderId) {
 		return json({ error: 'Missing required fields' }, { status: 400 });
@@ -52,6 +74,13 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		name: spaceName,
 		locality: locality || '',
 		country: country ?? null,
+		town: town ?? null,
+		region: region ?? null,
+		postcode: postcode ?? null,
+		country_geoname_id: countryGeonameId ?? null,
+		region_geoname_id: regionGeonameId ?? null,
+		town_geoname_id: townGeonameId ?? null,
+		locality_geoname_id: localityGeonameId ?? null,
 		icon: '🌿',
 		lat: lat ?? null,
 		lng: lng ?? null,

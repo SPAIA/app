@@ -13,6 +13,16 @@ export interface Space {
 	name: string;
 	locality: string;
 	country: string | null;
+	/** City/town from reverse geocoding — distinct from `locality`, which can be a neighbourhood. */
+	town: string | null;
+	/** State/province from reverse geocoding. */
+	region: string | null;
+	postcode: string | null;
+	/** GeoNames ids for locality/country/town/region — stable across languages, unlike the strings above. */
+	country_geoname_id: number | null;
+	region_geoname_id: number | null;
+	town_geoname_id: number | null;
+	locality_geoname_id: number | null;
 	icon: string;
 	lat: number | null;
 	lng: number | null;

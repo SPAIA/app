@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { _ } from 'svelte-i18n';
+	import { _, locale } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
 	import { LEVEL_TITLE_KEYS } from '$lib/gamification';
 	import { authClient } from '$lib/auth-client';
@@ -9,6 +9,17 @@
 	export let data: PageData;
 
 	let loggingOut = false;
+
+	const languages = [
+		{ code: 'en', label: 'English' },
+		{ code: 'de', label: 'Deutsch' },
+		{ code: 'nl', label: 'Nederlands' }
+	];
+
+	function setLanguage(code: string) {
+		locale.set(code);
+		localStorage.setItem('locale', code);
+	}
 
 	async function handleLogout() {
 		loggingOut = true;
@@ -177,6 +188,20 @@
 				</div>
 			</div>
 		{/if}
+
+		<!-- Language selector -->
+		<div class="flex items-center justify-between rounded-xl border border-base-200 bg-base-100 px-3.5 py-3">
+			<p class="text-sm font-medium text-base-content">{$_('profile.language.label')}</p>
+			<select
+				class="select select-sm select-bordered"
+				value={$locale}
+				onchange={(e) => setLanguage(e.currentTarget.value)}
+			>
+				{#each languages as lang}
+					<option value={lang.code}>{lang.label}</option>
+				{/each}
+			</select>
+		</div>
 
 		<button class="btn btn-outline w-full" onclick={handleLogout} disabled={loggingOut}>
 			{#if loggingOut}<span class="loading loading-spinner loading-sm"></span>{/if}

@@ -2,7 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { directionsUrl, findNearestSpot, formatDistanceRange, haversineKm } from '$lib/geo';
+	import { directionsUrl, findNearestSpot, formatDistanceKm, formatDistanceRange, haversineKm } from '$lib/geo';
 	import type { Spot } from '$lib/types';
 	import type { SpotSummary } from '$lib/db/queries';
 	import type { PageData } from './$types';
@@ -21,6 +21,13 @@
 	let selectedDistanceKm: number | null = null;
 	let cover: { id: string } | null = null;
 	let coverLoading = false;
+
+	let nearestSpot: MapSpot | null = null;
+	let nearestDistanceKm: number | null = null;
+	let showProximityModal = false;
+	const NEW_SPOT_PROXIMITY_KM = 0.1;
+
+	$: isNearest = selectedSpot != null && nearestSpot != null && selectedSpot.id === nearestSpot.id;
 
 	let mapContainer: HTMLDivElement;
 	let mapInstance: import('maplibre-gl').Map | null = null;
@@ -52,6 +59,19 @@
 	function closeCard() {
 		selectedSpot = null;
 		cover = null;
+	}
+
+	function handleCreateSpot() {
+		if (nearestDistanceKm != null && nearestDistanceKm < NEW_SPOT_PROXIMITY_KM) {
+			showProximityModal = true;
+		} else {
+			goto('/spot-pack');
+		}
+	}
+
+	function confirmCreateSpot() {
+		showProximityModal = false;
+		goto('/spot-pack');
 	}
 
 	async function centerOnUser(lat: number, lng: number, nearest: MapSpot | null) {
@@ -93,7 +113,9 @@
 				phase = 'located';
 
 				const nearest = findNearestSpot(data.spots as MapSpot[], userLat, userLng);
-				centerOnUser(userLat, userLng, (nearest?.spot as MapSpot) ?? null);
+				nearestSpot = (nearest?.spot as MapSpot) ?? null;
+				nearestDistanceKm = nearest?.distanceKm ?? null;
+				centerOnUser(userLat, userLng, nearestSpot);
 				if (nearest) selectSpot(nearest.spot as MapSpot);
 			},
 			() => {
@@ -209,6 +231,9 @@
 		<div class="flex flex-col items-center gap-4 p-5 text-center">
 			<span class="text-4xl">{selectedSpot.icon}</span>
 			<div>
+				{#if isNearest}
+					<p class="text-sm text-base-content/50">{$_('observe.nearest.heading')}</p>
+				{/if}
 				<h2 class="text-xl font-medium text-base-content">{selectedSpot.name}</h2>
 				{#if selectedDistanceKm != null}
 					<p class="mt-1 text-sm text-base-content/50">
@@ -218,7 +243,7 @@
 			</div>
 
 			<button class="btn btn-primary w-full" onclick={() => goto(`/observe/${selectedSpot!.slug}`)}>
-				{$_('observe.nearest.cta')}
+				{$_('observe.nearest.cta', { values: { name: selectedSpot.name } })}
 			</button>
 			{#if selectedSpot.lat != null && selectedSpot.lng != null}
 				<a
@@ -230,8 +255,30 @@
 					{$_('observe.nearest.directions')}
 				</a>
 			{/if}
+			<button class="btn btn-outline w-full" onclick={handleCreateSpot}>
+				{$_('observe.nearest.addSpot')}
+			</button>
 			<button class="btn btn-ghost btn-sm w-full" onclick={closeCard}>
 				{$_('explore.spot.close')}
+			</button>
+		</div>
+	</div>
+{/if}
+
+{#if showProximityModal}
+	<div class="fixed inset-0 z-60 flex items-center justify-center bg-black/50 px-5">
+		<div class="flex w-full max-w-sm flex-col gap-3 rounded-xl bg-base-100 p-5 text-center shadow-xl">
+			<span class="text-3xl">📍</span>
+			<p class="text-sm text-base-content">
+				{$_('observe.nearest.newSpot.warning', {
+					values: { distance: nearestDistanceKm != null ? formatDistanceKm(nearestDistanceKm) : '?' }
+				})}
+			</p>
+			<button class="btn btn-primary w-full" onclick={confirmCreateSpot}>
+				{$_('observe.nearest.newSpot.confirm')}
+			</button>
+			<button class="btn btn-ghost btn-sm" onclick={() => (showProximityModal = false)}>
+				{$_('observe.nearest.newSpot.cancel')}
 			</button>
 		</div>
 	</div>

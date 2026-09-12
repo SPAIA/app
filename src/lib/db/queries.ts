@@ -665,19 +665,37 @@ export async function redeemCode(
 export async function createSpace(
 	db: D1Database,
 	space: Pick<Space, 'slug' | 'name' | 'locality' | 'country' | 'icon' | 'lat' | 'lng' | 'owner_id'> & {
+		town?: string | null;
+		region?: string | null;
+		postcode?: string | null;
+		country_geoname_id?: number | null;
+		region_geoname_id?: number | null;
+		town_geoname_id?: number | null;
+		locality_geoname_id?: number | null;
 		boundary_geojson?: string | null;
 	}
 ): Promise<number> {
 	const result = await db
 		.prepare(`
-			INSERT INTO spaces (slug, name, locality, country, icon, lat, lng, owner_id, boundary_geojson)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO spaces (
+				slug, name, locality, country, town, region, postcode,
+				country_geoname_id, region_geoname_id, town_geoname_id, locality_geoname_id,
+				icon, lat, lng, owner_id, boundary_geojson
+			)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`)
 		.bind(
 			space.slug,
 			space.name,
 			space.locality,
 			space.country,
+			space.town ?? null,
+			space.region ?? null,
+			space.postcode ?? null,
+			space.country_geoname_id ?? null,
+			space.region_geoname_id ?? null,
+			space.town_geoname_id ?? null,
+			space.locality_geoname_id ?? null,
 			space.icon,
 			space.lat,
 			space.lng,
@@ -695,14 +713,42 @@ export async function updateSpaceFields(
 		name: string;
 		locality: string | null;
 		country: string | null;
+		town?: string | null;
+		region?: string | null;
+		postcode?: string | null;
+		country_geoname_id?: number | null;
+		region_geoname_id?: number | null;
+		town_geoname_id?: number | null;
+		locality_geoname_id?: number | null;
 		lat: number | null;
 		lng: number | null;
 		boundary_geojson?: string | null;
 	}
 ): Promise<void> {
 	await db
-		.prepare('UPDATE spaces SET name = ?, locality = ?, country = ?, lat = ?, lng = ?, boundary_geojson = ? WHERE id = ?')
-		.bind(fields.name, fields.locality, fields.country, fields.lat, fields.lng, fields.boundary_geojson ?? null, spaceId)
+		.prepare(
+			`UPDATE spaces SET
+				name = ?, locality = ?, country = ?, town = ?, region = ?, postcode = ?,
+				country_geoname_id = ?, region_geoname_id = ?, town_geoname_id = ?, locality_geoname_id = ?,
+				lat = ?, lng = ?, boundary_geojson = ?
+			WHERE id = ?`
+		)
+		.bind(
+			fields.name,
+			fields.locality,
+			fields.country,
+			fields.town ?? null,
+			fields.region ?? null,
+			fields.postcode ?? null,
+			fields.country_geoname_id ?? null,
+			fields.region_geoname_id ?? null,
+			fields.town_geoname_id ?? null,
+			fields.locality_geoname_id ?? null,
+			fields.lat,
+			fields.lng,
+			fields.boundary_geojson ?? null,
+			spaceId
+		)
 		.run();
 }
 

@@ -26,6 +26,13 @@
 
 	let locality: string | null = null;
 	let country: string | null = null;
+	let town: string | null = null;
+	let region: string | null = null;
+	let postcode: string | null = null;
+	let countryGeonameId: number | null = null;
+	let regionGeonameId: number | null = null;
+	let townGeonameId: number | null = null;
+	let localityGeonameId: number | null = null;
 	let lat: number | null = null;
 	let lng: number | null = null;
 	let geocoding = false;
@@ -59,6 +66,13 @@
 			const result = await reverseGeocode(newLat, newLng);
 			locality = result?.locality ?? null;
 			country = result?.country ?? null;
+			town = result?.town ?? null;
+			region = result?.region ?? null;
+			postcode = result?.postcode ?? null;
+			countryGeonameId = result?.countryGeonameId ?? null;
+			regionGeonameId = result?.regionGeonameId ?? null;
+			townGeonameId = result?.townGeonameId ?? null;
+			localityGeonameId = result?.localityGeonameId ?? null;
 		} finally {
 			geocoding = false;
 		}
@@ -212,7 +226,22 @@
 		const res = await fetch('/api/space/create', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ spaceName, locality, country, lat, lng, spaceOrderId, boundaryGeojson: boundary })
+			body: JSON.stringify({
+				spaceName,
+				locality,
+				country,
+				town,
+				region,
+				postcode,
+				countryGeonameId,
+				regionGeonameId,
+				townGeonameId,
+				localityGeonameId,
+				lat,
+				lng,
+				spaceOrderId,
+				boundaryGeojson: boundary
+			})
 		});
 
 		if (!res.ok) {

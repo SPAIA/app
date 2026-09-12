@@ -37,6 +37,17 @@ export const actions: Actions = {
 
 		const locality = (form.get('locality') as string | null)?.trim() || null;
 		const country = (form.get('country') as string | null)?.trim() || null;
+		const town = (form.get('town') as string | null)?.trim() || null;
+		const region = (form.get('region') as string | null)?.trim() || null;
+		const postcode = (form.get('postcode') as string | null)?.trim() || null;
+		const getGeonameId = (fieldName: string) => {
+			const raw = (form.get(fieldName) as string | null)?.trim();
+			return raw ? Number(raw) : null;
+		};
+		const countryGeonameId = getGeonameId('country_geoname_id');
+		const regionGeonameId = getGeonameId('region_geoname_id');
+		const townGeonameId = getGeonameId('town_geoname_id');
+		const localityGeonameId = getGeonameId('locality_geoname_id');
 		const latRaw = form.get('lat') as string | null;
 		const lngRaw = form.get('lng') as string | null;
 		const lat = latRaw ? Number(latRaw) : null;
@@ -54,7 +65,21 @@ export const actions: Actions = {
 			}
 		}
 
-		await updateSpaceFields(db, space.id, { name, locality, country, lat, lng, boundary_geojson: boundaryRaw });
+		await updateSpaceFields(db, space.id, {
+			name,
+			locality,
+			country,
+			town,
+			region,
+			postcode,
+			country_geoname_id: countryGeonameId,
+			region_geoname_id: regionGeonameId,
+			town_geoname_id: townGeonameId,
+			locality_geoname_id: localityGeonameId,
+			lat,
+			lng,
+			boundary_geojson: boundaryRaw
+		});
 
 		return { success: true };
 	}

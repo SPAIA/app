@@ -26,6 +26,13 @@
 	let spaceName = data.space.name;
 	let locality: string | null = data.space.locality;
 	let country: string | null = data.space.country;
+	let town: string | null = data.space.town;
+	let region: string | null = data.space.region;
+	let postcode: string | null = data.space.postcode;
+	let countryGeonameId: number | null = data.space.country_geoname_id;
+	let regionGeonameId: number | null = data.space.region_geoname_id;
+	let townGeonameId: number | null = data.space.town_geoname_id;
+	let localityGeonameId: number | null = data.space.locality_geoname_id;
 	let lat: number | null = data.space.lat;
 	let lng: number | null = data.space.lng;
 	let geocoding = false;
@@ -64,6 +71,13 @@
 			const result = await reverseGeocode(newLat, newLng);
 			locality = result?.locality ?? locality;
 			country = result?.country ?? country;
+			town = result?.town ?? town;
+			region = result?.region ?? region;
+			postcode = result?.postcode ?? postcode;
+			countryGeonameId = result?.countryGeonameId ?? countryGeonameId;
+			regionGeonameId = result?.regionGeonameId ?? regionGeonameId;
+			townGeonameId = result?.townGeonameId ?? townGeonameId;
+			localityGeonameId = result?.localityGeonameId ?? localityGeonameId;
 		} finally {
 			geocoding = false;
 		}
@@ -377,6 +391,13 @@
 
 		<input type="hidden" name="locality" value={locality ?? ''} />
 		<input type="hidden" name="country" value={country ?? ''} />
+		<input type="hidden" name="town" value={town ?? ''} />
+		<input type="hidden" name="region" value={region ?? ''} />
+		<input type="hidden" name="postcode" value={postcode ?? ''} />
+		<input type="hidden" name="country_geoname_id" value={countryGeonameId ?? ''} />
+		<input type="hidden" name="region_geoname_id" value={regionGeonameId ?? ''} />
+		<input type="hidden" name="town_geoname_id" value={townGeonameId ?? ''} />
+		<input type="hidden" name="locality_geoname_id" value={localityGeonameId ?? ''} />
 		<input type="hidden" name="lat" value={lat ?? ''} />
 		<input type="hidden" name="lng" value={lng ?? ''} />
 		<input type="hidden" name="boundary_geojson" value={boundary ?? ''} />

@@ -1,3 +1,6 @@
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { point as turfPoint } from '@turf/helpers';
+import type { Polygon, MultiPolygon } from 'geojson';
 import type { Space, Spot } from '$lib/types';
 
 const EARTH_RADIUS_KM = 6371;
@@ -11,19 +14,25 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
 	return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
 }
 
-/** Nearest space with known coordinates to the given point, or null if none have coordinates. */
-export function findNearestSpace(spaces: Space[], lat: number, lng: number): { space: Space; distanceKm: number } | null {
-	let nearest: { space: Space; distanceKm: number } | null = null;
+/**
+ * The space whose drawn boundary contains this point, or null if none does
+ * (including when no space has a boundary at all yet).
+ */
+export function findContainingSpace(spaces: Space[], lat: number, lng: number): Space | null {
+	const pt = turfPoint([lng, lat]);
 
 	for (const space of spaces) {
-		if (space.lat == null || space.lng == null) continue;
-		const distanceKm = haversineKm(lat, lng, space.lat, space.lng);
-		if (!nearest || distanceKm < nearest.distanceKm) {
-			nearest = { space, distanceKm };
+		if (!space.boundary_geojson) continue;
+		let geometry: Polygon | MultiPolygon;
+		try {
+			geometry = JSON.parse(space.boundary_geojson);
+		} catch {
+			continue;
 		}
+		if (booleanPointInPolygon(pt, geometry)) return space;
 	}
 
-	return nearest;
+	return null;
 }
 
 /** A "Get directions" link that opens the device's map app pointed at (lat, lng). */

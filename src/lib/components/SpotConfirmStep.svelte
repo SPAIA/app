@@ -4,6 +4,7 @@
 	import type { WeatherOption } from '$lib/stores/session';
 	import type { HabitatFeatureCategory, SpotVisionResult } from '$lib/types';
 	import { completeSession } from '$lib/sessionSave';
+	import ChipListEditor from '$lib/components/ChipListEditor.svelte';
 
 	// Shown after the observer has already seen their "Your finds" cards (see
 	// CardsStep) — this is where weather, habitat condition, and the spot's
@@ -25,8 +26,6 @@
 	let editablePlants: { name: string; rank: SpotVisionResult['plants'][number]['rank'] }[] = [];
 	let editableFeatures: { category: HabitatFeatureCategory; label: string }[] = [];
 	let sceneDescription = $sessionStore.focalArea ?? '';
-	let newPlantName = '';
-	let newFeatureLabel = '';
 	let saving = false;
 	let seeded = false;
 
@@ -49,22 +48,16 @@
 		editablePlants = editablePlants.filter((_, i) => i !== index);
 	}
 
-	function addPlant() {
-		const name = newPlantName.trim();
-		if (!name) return;
+	function addPlant(name: string) {
 		editablePlants = [...editablePlants, { name, rank: 'type' }];
-		newPlantName = '';
 	}
 
 	function removeFeature(index: number) {
 		editableFeatures = editableFeatures.filter((_, i) => i !== index);
 	}
 
-	function addFeature() {
-		const label = newFeatureLabel.trim();
-		if (!label) return;
+	function addFeature(label: string) {
 		editableFeatures = [...editableFeatures, { category: 'other', label }];
-		newFeatureLabel = '';
 	}
 
 	async function confirmAndContinue() {
@@ -170,66 +163,28 @@
 			<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-base-content/50">
 				{$_('spot.add.confirm.plants.label')}
 			</p>
-			<div class="flex flex-wrap gap-1.5">
-				{#each editablePlants as plant, i}
-					<span class="flex items-center gap-1 rounded-full bg-green-light px-2.5 py-1 text-xs text-green-dark">
-						{plant.name}
-						<button
-							type="button"
-							class="text-green-dark/60 hover:text-green-dark"
-							aria-label={$_('spot.add.confirm.remove')}
-							onclick={() => removePlant(i)}
-						>
-							&times;
-						</button>
-					</span>
-				{/each}
-			</div>
-			<div class="mt-1.5 flex gap-1.5">
-				<input
-					type="text"
-					class="input input-bordered input-sm flex-1"
-					placeholder={$_('spot.add.confirm.plants.addPlaceholder')}
-					bind:value={newPlantName}
-					onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), addPlant())}
-				/>
-				<button type="button" class="btn btn-sm btn-outline" onclick={addPlant}>
-					{$_('spot.add.confirm.add')}
-				</button>
-			</div>
+			<ChipListEditor
+				items={editablePlants.map((p) => p.name)}
+				addPlaceholder={$_('spot.add.confirm.plants.addPlaceholder')}
+				removeLabel={$_('spot.add.confirm.remove')}
+				chipClass="bg-green-light text-green-dark"
+				chipRemoveClass="text-green-dark/60 hover:text-green-dark"
+				onAdd={addPlant}
+				onRemove={removePlant}
+			/>
 		</div>
 
 		<div>
 			<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-base-content/50">
 				{$_('spot.add.confirm.habitat_features.label')}
 			</p>
-			<div class="flex flex-wrap gap-1.5">
-				{#each editableFeatures as feature, i}
-					<span class="flex items-center gap-1 rounded-full bg-base-200 px-2.5 py-1 text-xs text-base-content/70">
-						{feature.label}
-						<button
-							type="button"
-							class="text-base-content/40 hover:text-base-content/70"
-							aria-label={$_('spot.add.confirm.remove')}
-							onclick={() => removeFeature(i)}
-						>
-							&times;
-						</button>
-					</span>
-				{/each}
-			</div>
-			<div class="mt-1.5 flex gap-1.5">
-				<input
-					type="text"
-					class="input input-bordered input-sm flex-1"
-					placeholder={$_('spot.add.confirm.habitat_features.addPlaceholder')}
-					bind:value={newFeatureLabel}
-					onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-				/>
-				<button type="button" class="btn btn-sm btn-outline" onclick={addFeature}>
-					{$_('spot.add.confirm.add')}
-				</button>
-			</div>
+			<ChipListEditor
+				items={editableFeatures.map((f) => f.label)}
+				addPlaceholder={$_('spot.add.confirm.habitat_features.addPlaceholder')}
+				removeLabel={$_('spot.add.confirm.remove')}
+				onAdd={addFeature}
+				onRemove={removeFeature}
+			/>
 		</div>
 	{/if}
 
