@@ -56,7 +56,7 @@
   "observe.nearest.none": "Nog geen plekken in de buurt",
   "observe.nearest.distance": "{distance} verwijderd",
   "observe.nearest.directions": "Route",
-  "observe.nearest.cta": "Ik ben bij {name} — start observatie",
+  "observe.nearest.cta": "Start observatie",
   "observe.nearest.retry": "Opnieuw proberen",
   "observe.nearest.addSpot": "Maak hier een nieuwe plek aan",
   "observe.nearest.newSpot.warning": "Je bent maar {distance} van een bestaande plek verwijderd. Door dezelfde plek over tijd te volgen, kunnen we veranderingen bijhouden — weet je zeker dat je een nieuwe plek wilt aanmaken?",

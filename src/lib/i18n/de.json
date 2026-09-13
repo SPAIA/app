@@ -56,7 +56,7 @@
   "observe.nearest.none": "Noch keine Orte in deiner Nähe",
   "observe.nearest.distance": "{distance} entfernt",
   "observe.nearest.directions": "Route anzeigen",
-  "observe.nearest.cta": "Ich bin bei {name} — Beobachtung starten",
+  "observe.nearest.cta": "Beobachtung starten",
   "observe.nearest.retry": "Erneut versuchen",
   "observe.nearest.addSpot": "Neuen Platz hier anlegen",
   "observe.nearest.newSpot.warning": "Du bist nur {distance} von einem bestehenden Ort entfernt. Die Beobachtung desselben Ortes über die Zeit lässt uns Veränderungen verfolgen — möchtest du wirklich einen neuen anlegen?",

@@ -56,7 +56,7 @@
   "observe.nearest.none": "No spots near you yet",
   "observe.nearest.distance": "{distance} away",
   "observe.nearest.directions": "Get directions",
-  "observe.nearest.cta": "I'm at {name} — start observation",
+  "observe.nearest.cta": "Start observation",
   "observe.nearest.retry": "Try again",
   "observe.nearest.addSpot": "Create a new spot here",
   "observe.nearest.newSpot.warning": "You're only {distance} from an existing spot. Monitoring the same spot over time is what lets us track change — are you sure you want to create a new one?",
