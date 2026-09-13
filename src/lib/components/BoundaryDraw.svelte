@@ -4,6 +4,8 @@
 	import area from '@turf/area';
 	import { formatArea } from '$lib/geo';
 	import SegmentedToggle from './SegmentedToggle.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	/** Reference point to center the map on until a boundary exists. */
 	export let lat: number | null = null;
@@ -241,18 +243,20 @@
 				]}
 			/>
 		</div>
-		<button type="button" class="btn btn-sm btn-outline bg-base-100" onclick={toggleBasemap}>
+		<Button type="button" variant="outline" size="sm" onclick={toggleBasemap}>
 			{basemap === 'satellite' ? $_('space.new.boundary.map') : $_('space.new.boundary.satellite')}
-		</button>
-		<button
+		</Button>
+		<Button
 			type="button"
-			class="btn btn-sm btn-square btn-outline bg-base-100"
+			variant="outline"
+			size="icon-sm"
+			class="rounded-none"
 			onclick={locateMe}
 			disabled={locating}
 			aria-label={$_('space.new.boundary.locate')}
 		>
 			{#if locating}
-				<span class="loading loading-spinner loading-xs"></span>
+				<Spinner size="xs" />
 			{:else}
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -272,43 +276,43 @@
 					<line x1="20" y1="12" x2="23" y2="12" />
 				</svg>
 			{/if}
-		</button>
+		</Button>
 	</div>
 
 	<div class={fullscreen ? 'absolute inset-0' : ''}>
 		<div
 			bind:this={mapContainer}
-			class={fullscreen ? 'h-full w-full' : 'h-64 w-full overflow-hidden rounded-xl border border-base-300'}
+			class={fullscreen ? 'h-full w-full' : 'h-64 w-full overflow-hidden rounded-xl border border-border'}
 		></div>
 	</div>
 
 	<div
 		class={fullscreen
-			? 'absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 rounded-t-2xl bg-base-100 px-4 pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.12)]'
+			? 'absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 rounded-t-2xl bg-background px-4 pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.12)]'
 			: 'flex flex-col gap-2'}
 		style={fullscreen ? 'padding-bottom: max(env(safe-area-inset-bottom), 1rem)' : undefined}
 	>
 		<div class="flex items-center justify-between gap-2">
 			<div class="flex gap-1">
-				<button type="button" class="btn btn-ghost btn-xs" disabled={!canUndo} onclick={undo}>
+				<Button type="button" variant="ghost" size="xs" disabled={!canUndo} onclick={undo}>
 					{$_('space.new.boundary.undo')}
-				</button>
-				<button type="button" class="btn btn-ghost btn-xs" disabled={!canRedo} onclick={redo}>
+				</Button>
+				<Button type="button" variant="ghost" size="xs" disabled={!canRedo} onclick={redo}>
 					{$_('space.new.boundary.redo')}
-				</button>
-				<button type="button" class="btn btn-ghost btn-xs text-error" disabled={selectedId == null} onclick={deleteSelected}>
+				</Button>
+				<Button type="button" variant="ghost" size="xs" class="text-destructive" disabled={selectedId == null} onclick={deleteSelected}>
 					{$_('space.new.boundary.delete')}
-				</button>
-				<button type="button" class="btn btn-ghost btn-xs text-error" disabled={!hasFeatures} onclick={clearAll}>
+				</Button>
+				<Button type="button" variant="ghost" size="xs" class="text-destructive" disabled={!hasFeatures} onclick={clearAll}>
 					{$_('space.new.boundary.clear')}
-				</button>
+				</Button>
 			</div>
 			{#if hasFeatures}
-				<span class="text-xs font-medium text-base-content/70">{formatArea(areaM2)}</span>
+				<span class="text-xs font-medium text-muted-foreground">{formatArea(areaM2)}</span>
 			{/if}
 		</div>
 
-		<p class="text-xs text-base-content/50">
+		<p class="text-xs text-muted-foreground">
 			{uiMode === 'draw' ? $_('space.new.boundary.hint.draw') : $_('space.new.boundary.hint.select')}
 		</p>
 	</div>

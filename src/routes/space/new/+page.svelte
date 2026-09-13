@@ -5,6 +5,12 @@
 	import { onMount } from 'svelte';
 	import { setBoundaryDraft, takeBoundaryResult } from '$lib/boundaryHandoff';
 	import { formatArea } from '$lib/geo';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
+	import { Label } from '$lib/components/ui/label';
+	import * as Alert from '$lib/components/ui/alert';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	let verified = false;
 	let checking = true;
@@ -89,70 +95,71 @@
 <div class="flex flex-col gap-4 px-5 py-6">
 	{#if checking}
 		<div class="flex items-center justify-center py-12">
-			<span class="loading loading-spinner loading-lg text-primary"></span>
+			<Spinner size="lg" class="text-primary" />
 		</div>
 	{:else if verified}
-		<h1 class="text-xl font-medium text-base-content">{$_('space.new.title')}</h1>
+		<h1 class="text-xl font-medium text-foreground">{$_('space.new.title')}</h1>
 
 		{#if error}
-			<div class="alert alert-error text-sm">{error}</div>
+			<Alert.Root variant="destructive" class="text-sm">{error}</Alert.Root>
 		{/if}
 
-		<label class="form-control">
-			<div class="label"><span class="label-text">{$_('space.new.name.label')}</span></div>
-			<input
+		<div class="flex flex-col gap-1.5">
+			<Label>{$_('space.new.name.label')}</Label>
+			<Input
 				type="text"
-				class="input input-bordered w-full"
 				placeholder={$_('space.new.name.placeholder')}
 				bind:value={spaceName}
 			/>
-		</label>
+		</div>
 
-		<label class="form-control">
-			<div class="label"><span class="label-text">{$_('space.new.description.label')}</span></div>
-			<textarea
-				class="textarea textarea-bordered w-full"
-				rows="3"
+		<div class="flex flex-col gap-1.5">
+			<Label>{$_('space.new.description.label')}</Label>
+			<Textarea
+				rows={3}
 				placeholder={$_('space.new.description.placeholder')}
 				bind:value={description}
-			></textarea>
-		</label>
+			></Textarea>
+		</div>
 
 		<div class="flex flex-col gap-2">
-			<div class="label pb-0"><span class="label-text">{$_('space.new.boundary.label')}</span></div>
+			<Label>{$_('space.new.boundary.label')}</Label>
 			{#if boundary}
-				<div class="flex items-center justify-between gap-2 rounded-xl border border-base-300 px-4 py-3">
-					<span class="text-sm text-base-content/70">{formatArea(boundaryArea)}</span>
+				<div class="flex items-center justify-between gap-2 rounded-xl border border-border px-4 py-3">
+					<span class="text-sm text-muted-foreground">{formatArea(boundaryArea)}</span>
 					<div class="flex gap-2">
-						<button type="button" class="btn btn-ghost btn-sm" onclick={openBoundaryEditor}>
+						<Button type="button" variant="ghost" size="sm" onclick={openBoundaryEditor}>
 							{$_('space.new.boundary.edit')}
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
-							class="btn btn-ghost btn-sm text-error"
+							variant="ghost"
+							size="sm"
+							class="text-destructive"
 							onclick={() => {
 								boundary = null;
 								boundaryArea = 0;
 							}}
 						>
 							{$_('space.new.boundary.clear')}
-						</button>
+						</Button>
 					</div>
 				</div>
 			{:else}
-				<button type="button" class="btn btn-outline w-full" onclick={openBoundaryEditor}>
+				<Button type="button" variant="outline" class="w-full" onclick={openBoundaryEditor}>
 					{$_('space.new.boundary.draw')}
-				</button>
+				</Button>
 			{/if}
 		</div>
 
-		<button
-			class="btn btn-primary w-full mt-2"
+		<Button
+			variant="default"
+			class="w-full mt-2"
 			onclick={handleCreate}
 			disabled={submitting || !spaceName}
 		>
-			{#if submitting}<span class="loading loading-spinner loading-sm"></span>{/if}
+			{#if submitting}<Spinner size="sm" />{/if}
 			{$_('space.new.submit')}
-		</button>
+		</Button>
 	{/if}
 </div>

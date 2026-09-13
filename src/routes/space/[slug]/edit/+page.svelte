@@ -9,6 +9,11 @@
 	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
 	import { setBoundaryDraft, takeBoundaryResult } from '$lib/boundaryHandoff';
 	import { formatArea } from '$lib/geo';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import * as Alert from '$lib/components/ui/alert';
+	import { Spinner } from '$lib/components/ui/spinner';
 	import type { PageData, ActionData } from './$types';
 	import type { Media } from '$lib/types';
 
@@ -238,20 +243,20 @@
 </svelte:head>
 
 <div class="flex flex-col gap-4 px-5 py-6">
-	<h1 class="text-xl font-medium text-base-content">{$_('space.edit.title')}</h1>
+	<h1 class="text-xl font-medium text-foreground">{$_('space.edit.title')}</h1>
 
 	{#if form?.success}
-		<div class="alert alert-success text-sm">{$_('space.edit.saved')}</div>
+		<Alert.Root class="text-sm border-primary/30 bg-primary/10 text-primary">{$_('space.edit.saved')}</Alert.Root>
 	{/if}
 	{#if form?.error}
-		<div class="alert alert-error text-sm">{form.error}</div>
+		<Alert.Root variant="destructive" class="text-sm">{form.error}</Alert.Root>
 	{/if}
 
 	<!-- Cover image -->
 	<div class="flex flex-col gap-2">
-		<div class="label pb-0"><span class="label-text">{$_('space.edit.cover.label')}</span></div>
+		<Label>{$_('space.edit.cover.label')}</Label>
 		<div class="relative">
-			<div class="flex h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-base-200 ring-1 ring-base-300">
+			<div class="flex h-32 w-full items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-border">
 				{#if coverPreview}
 					<img src={coverPreview} alt="" class="h-full w-full object-cover" />
 				{:else}
@@ -260,21 +265,23 @@
 			</div>
 			{#if coverUploading}
 				<div class="absolute inset-0 flex items-center justify-center rounded-xl bg-black/40">
-					<span class="loading loading-spinner loading-sm text-white"></span>
+					<Spinner size="sm" class="text-white" />
 				</div>
 			{/if}
 		</div>
 		{#if coverError}
-			<p class="text-xs text-error">{coverError}</p>
+			<p class="text-xs text-destructive">{coverError}</p>
 		{/if}
-		<button
+		<Button
 			type="button"
-			class="btn btn-ghost btn-sm self-start text-primary"
+			variant="ghost"
+			size="sm"
+			class="self-start text-primary"
 			onclick={() => coverInput.click()}
 			disabled={coverUploading}
 		>
 			{$_('space.edit.cover.change')}
-		</button>
+		</Button>
 		<input
 			bind:this={coverInput}
 			type="file"
@@ -291,19 +298,18 @@
 			submitting = false;
 		};
 	}} class="flex flex-col gap-4">
-		<label class="form-control">
-			<div class="label"><span class="label-text">{$_('space.new.name.label')}</span></div>
-			<input
+		<div class="flex flex-col gap-1.5">
+			<Label>{$_('space.new.name.label')}</Label>
+			<Input
 				type="text"
 				name="name"
-				class="input input-bordered w-full"
 				placeholder={$_('space.new.name.placeholder')}
 				bind:value={spaceName}
 			/>
-		</label>
+		</div>
 
 		<div class="flex flex-col gap-2">
-			<div class="label pb-0"><span class="label-text">{$_('space.new.location.label')}</span></div>
+			<Label>{$_('space.new.location.label')}</Label>
 
 			<SegmentedToggle
 				value={mode}
@@ -316,24 +322,23 @@
 
 			{#if mode === 'gps'}
 				{#if gpsStatus === 'locating'}
-					<p class="text-xs text-base-content/50">{$_('space.new.location.locating')}</p>
+					<p class="text-xs text-muted-foreground">{$_('space.new.location.locating')}</p>
 				{:else if gpsStatus === 'denied'}
-					<p class="text-xs text-error">{$_('space.new.location.gps.error')}</p>
+					<p class="text-xs text-destructive">{$_('space.new.location.gps.error')}</p>
 				{/if}
 			{:else if mode === 'search'}
 				<div class="relative">
-					<input
+					<Input
 						type="text"
-						class="input input-bordered w-full"
 						placeholder={$_('space.new.location.search.placeholder')}
 						bind:value={searchText}
 						oninput={onSearchInput}
 					/>
 					{#if searching}
-						<span class="loading loading-spinner loading-xs absolute right-3 top-3"></span>
+						<Spinner size="xs" class="absolute right-3 top-3" />
 					{/if}
 					{#if searchResults.length > 0}
-						<ul class="absolute z-10 mt-1 w-full rounded-lg border border-base-300 bg-base-100">
+						<ul class="absolute z-10 mt-1 w-full rounded-lg border border-border bg-background">
 							{#each searchResults as r}
 								<li>
 									<button
@@ -349,43 +354,45 @@
 					{/if}
 				</div>
 			{:else if mode === 'pin'}
-				<p class="text-xs text-base-content/50">{$_('space.new.location.pin.hint')}</p>
+				<p class="text-xs text-muted-foreground">{$_('space.new.location.pin.hint')}</p>
 			{/if}
 
-			<div bind:this={mapContainer} class="h-40 w-full overflow-hidden rounded-xl border border-base-300"></div>
+			<div bind:this={mapContainer} class="h-40 w-full overflow-hidden rounded-xl border border-border"></div>
 
 			{#if geocoding}
-				<p class="text-xs text-base-content/50">{$_('space.new.location.resolving')}</p>
+				<p class="text-xs text-muted-foreground">{$_('space.new.location.resolving')}</p>
 			{:else if locality}
-				<p class="text-xs text-base-content/50">📍 {locality}{country ? `, ${country}` : ''}</p>
+				<p class="text-xs text-muted-foreground">📍 {locality}{country ? `, ${country}` : ''}</p>
 			{/if}
 		</div>
 
 		<div class="flex flex-col gap-2">
-			<div class="label pb-0"><span class="label-text">{$_('space.new.boundary.label')}</span></div>
+			<Label>{$_('space.new.boundary.label')}</Label>
 			{#if boundary}
-				<div class="flex items-center justify-between gap-2 rounded-xl border border-base-300 px-4 py-3">
-					<span class="text-sm text-base-content/70">{formatArea(boundaryArea)}</span>
+				<div class="flex items-center justify-between gap-2 rounded-xl border border-border px-4 py-3">
+					<span class="text-sm text-muted-foreground">{formatArea(boundaryArea)}</span>
 					<div class="flex gap-2">
-						<button type="button" class="btn btn-ghost btn-sm" onclick={openBoundaryEditor}>
+						<Button type="button" variant="ghost" size="sm" onclick={openBoundaryEditor}>
 							{$_('space.new.boundary.edit')}
-						</button>
-						<button
+						</Button>
+						<Button
 							type="button"
-							class="btn btn-ghost btn-sm text-error"
+							variant="ghost"
+							size="sm"
+							class="text-destructive"
 							onclick={() => {
 								boundary = null;
 								boundaryArea = 0;
 							}}
 						>
 							{$_('space.new.boundary.clear')}
-						</button>
+						</Button>
 					</div>
 				</div>
 			{:else}
-				<button type="button" class="btn btn-outline w-full" onclick={openBoundaryEditor}>
+				<Button type="button" variant="outline" class="w-full" onclick={openBoundaryEditor}>
 					{$_('space.new.boundary.draw')}
-				</button>
+				</Button>
 			{/if}
 		</div>
 
@@ -402,9 +409,9 @@
 		<input type="hidden" name="lng" value={lng ?? ''} />
 		<input type="hidden" name="boundary_geojson" value={boundary ?? ''} />
 
-		<button class="btn btn-primary w-full" disabled={submitting || !spaceName}>
-			{#if submitting}<span class="loading loading-spinner loading-sm"></span>{/if}
+		<Button variant="default" class="w-full" disabled={submitting || !spaceName}>
+			{#if submitting}<Spinner size="sm" />{/if}
 			{$_('space.edit.submit')}
-		</button>
+		</Button>
 	</form>
 </div>

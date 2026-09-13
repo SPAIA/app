@@ -8,6 +8,12 @@
 	import { resizeImageFile } from '$lib/media/resizeImage';
 	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
 	import ChipListEditor from '$lib/components/ChipListEditor.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
+	import { Label } from '$lib/components/ui/label';
+	import * as Alert from '$lib/components/ui/alert';
+	import { Spinner } from '$lib/components/ui/spinner';
 	import type { SpotVisionResult } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -343,7 +349,7 @@
 
 {#if checking}
 	<div class="flex items-center justify-center py-12">
-		<span class="loading loading-spinner loading-lg text-primary"></span>
+		<Spinner size="lg" class="text-primary" />
 	</div>
 {:else if verified}
 	{#if phase === 'location'}
@@ -353,24 +359,24 @@
 			</div>
 
 			<div
-				class="relative z-10 flex flex-col gap-2 bg-gradient-to-b from-base-100/95 to-transparent px-5 pb-8 pt-[calc(env(safe-area-inset-top)+1rem)]"
+				class="relative z-10 flex flex-col gap-2 bg-gradient-to-b from-background/95 to-transparent px-5 pb-8 pt-[calc(env(safe-area-inset-top)+1rem)]"
 			>
 				<div class="flex items-center justify-between gap-2">
-					<h1 class="text-xl font-medium text-base-content">{$_('spot.buy.title')}</h1>
-					<button type="button" class="btn btn-sm btn-outline bg-base-100" onclick={toggleBasemap}>
+					<h1 class="text-xl font-medium text-foreground">{$_('spot.buy.title')}</h1>
+					<Button type="button" variant="outline" size="sm" class="bg-background" onclick={toggleBasemap}>
 						{basemap === 'satellite' ? $_('spot.add.location.map') : $_('spot.add.location.satellite')}
-					</button>
+					</Button>
 				</div>
 				{#if error}
-					<div class="alert alert-error text-sm">{error}</div>
+					<Alert.Root variant="destructive" class="text-sm">{error}</Alert.Root>
 				{/if}
 			</div>
 
 			<div
-				class="relative z-10 mt-auto flex flex-col gap-3 rounded-t-2xl border-t border-base-300 bg-base-100 px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+				class="relative z-10 mt-auto flex flex-col gap-3 rounded-t-2xl border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
 			>
 				<div>
-					<p class="mb-2 text-xs font-medium uppercase tracking-widest text-base-content/50">
+					<p class="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
 						{$_('spot.add.location.label')}
 					</p>
 
@@ -384,42 +390,43 @@
 
 					{#if mode === 'gps'}
 						{#if gpsStatus === 'acquiring'}
-							<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.locating')}</p>
+							<p class="mt-2 text-xs text-muted-foreground">{$_('spot.add.location.locating')}</p>
 						{:else if gpsStatus === 'error'}
-							<p class="mt-2 text-xs text-error">{$_('spot.add.location.gps.error')}</p>
+							<p class="mt-2 text-xs text-destructive">{$_('spot.add.location.gps.error')}</p>
 						{/if}
 					{:else}
-						<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.pin.hint')}</p>
+						<p class="mt-2 text-xs text-muted-foreground">{$_('spot.add.location.pin.hint')}</p>
 					{/if}
 
 					{#if geocoding}
-						<p class="mt-2 text-xs text-base-content/50">{$_('spot.add.location.resolving')}</p>
+						<p class="mt-2 text-xs text-muted-foreground">{$_('spot.add.location.resolving')}</p>
 					{:else if locality}
-						<p class="mt-2 text-xs text-base-content/50">📍 {locality}</p>
+						<p class="mt-2 text-xs text-muted-foreground">📍 {locality}</p>
 					{/if}
 					{#if mode === 'gps' && accuracy != null}
-						<p class="mt-1 text-xs text-base-content/40">
+						<p class="mt-1 text-xs text-muted-foreground">
 							{$_('spot.add.location.accuracy', { values: { range: formatDistanceKm(accuracy / 1000) } })}
 						</p>
 					{/if}
 				</div>
 
-				<button
-					class="btn btn-primary w-full"
+				<Button
+					variant="default"
+					class="w-full"
 					onclick={handleContinue}
 					disabled={lat == null || lng == null || creatingSpot}
 				>
-					{#if creatingSpot}<span class="loading loading-spinner loading-sm"></span>{/if}
+					{#if creatingSpot}<Spinner size="sm" />{/if}
 					{$_('spot.add.location.continue')}
-				</button>
+				</Button>
 			</div>
 		</div>
 	{:else if phase === 'photo'}
 		<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">
 			<span class="text-4xl">📷</span>
 			<div>
-				<p class="text-base font-medium text-base-content">{$_('spot.add.photo.label')}</p>
-				<p class="mt-1 text-sm text-base-content/50">{$_('spot.add.photo.hint')}</p>
+				<p class="text-base font-medium text-foreground">{$_('spot.add.photo.label')}</p>
+				<p class="mt-1 text-sm text-muted-foreground">{$_('spot.add.photo.hint')}</p>
 			</div>
 
 			<input
@@ -431,54 +438,51 @@
 				onchange={onFileSelected}
 			/>
 
-			<button class="btn btn-primary w-full" onclick={openFilePicker}>
+			<Button variant="default" class="w-full" onclick={openFilePicker}>
 				{$_('spot.add.photo.cta')}
-			</button>
-			<button class="btn btn-ghost btn-sm" onclick={skipPhoto}>
+			</Button>
+			<Button variant="ghost" size="sm" onclick={skipPhoto}>
 				{$_('spot.add.photo.skip')}
-			</button>
+			</Button>
 		</div>
 	{:else if phase === 'analyzing'}
 		<div class="flex flex-col items-center gap-4 px-5 py-16 text-center">
-			<span class="loading loading-spinner loading-lg text-primary"></span>
-			<p class="text-sm text-base-content/50">{$_('spot.add.analyzing')}</p>
+			<Spinner size="lg" class="text-primary" />
+			<p class="text-sm text-muted-foreground">{$_('spot.add.analyzing')}</p>
 		</div>
 	{:else if phase === 'confirm'}
 		<div class="flex flex-col gap-4 px-5 py-6">
 			{#if photoUrl}
 				<img src={photoUrl} alt="" class="h-40 w-full rounded-xl object-cover" />
-				<p class="-mt-2 text-xs text-base-content/50">{$_('spot.add.photo.cover_note')}</p>
+				<p class="-mt-2 text-xs text-muted-foreground">{$_('spot.add.photo.cover_note')}</p>
 			{/if}
 
 			{#if error}
-				<div class="alert alert-error text-sm">{error}</div>
+				<Alert.Root variant="destructive" class="text-sm">{error}</Alert.Root>
 			{/if}
 
-			<label class="form-control">
-				<div class="label"><span class="label-text">{$_('spot.add.confirm.name.label')}</span></div>
-				<input
+			<div class="flex flex-col gap-1.5">
+				<Label>{$_('spot.add.confirm.name.label')}</Label>
+				<Input
 					type="text"
-					class="input input-bordered w-full"
 					placeholder={$_('spot.add.confirm.name.default')}
 					bind:value={spotName}
 				/>
-			</label>
+			</div>
 
 			{#if vision}
 				{#if vision.scene}
-					<label class="form-control">
-						<div class="label">
-							<span class="label-text text-xs font-medium uppercase tracking-widest text-base-content/50">
-								{$_('spot.add.confirm.scene.label')}
-							</span>
-						</div>
-						<textarea class="textarea textarea-bordered w-full text-sm" rows="2" bind:value={sceneDescription}
-						></textarea>
-					</label>
+					<div class="flex flex-col gap-1.5">
+						<Label class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+							{$_('spot.add.confirm.scene.label')}
+						</Label>
+						<Textarea class="text-sm" rows={2} bind:value={sceneDescription}
+						></Textarea>
+					</div>
 				{/if}
 
 				<div>
-					<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-base-content/50">
+					<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
 						{$_('spot.add.confirm.plants.label')}
 					</p>
 					<ChipListEditor
@@ -493,7 +497,7 @@
 				</div>
 
 				<div>
-					<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-base-content/50">
+					<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
 						{$_('spot.add.confirm.habitat_features.label')}
 					</p>
 					<ChipListEditor
@@ -506,27 +510,27 @@
 				</div>
 			{/if}
 
-			<button class="btn btn-primary w-full" onclick={confirmSpot} disabled={!spotName.trim()}>
+			<Button variant="default" class="w-full" onclick={confirmSpot} disabled={!spotName.trim()}>
 				{$_('spot.add.confirm.cta')}
-			</button>
+			</Button>
 		</div>
 	{:else if phase === 'done'}
 		<div class="flex flex-col items-center gap-4 px-5 py-16 text-center">
 			<span class="text-4xl">🎉</span>
-			<h1 class="text-xl font-medium text-base-content">{spotName}</h1>
-			<p class="text-sm text-base-content/50">{$_('spot.buy.done.subtitle')}</p>
+			<h1 class="text-xl font-medium text-foreground">{spotName}</h1>
+			<p class="text-sm text-muted-foreground">{$_('spot.buy.done.subtitle')}</p>
 
-			<p class="mt-2 text-sm font-medium text-base-content">{$_('spot.buy.done.observe.prompt')}</p>
-			<button class="btn btn-primary w-full" onclick={startObserving}>
+			<p class="mt-2 text-sm font-medium text-foreground">{$_('spot.buy.done.observe.prompt')}</p>
+			<Button variant="default" class="w-full" onclick={startObserving}>
 				{$_('spot.buy.done.observe.cta')}
-			</button>
+			</Button>
 
-			<a class="btn btn-outline btn-sm w-full" href={`/space/${spaceSlug}/spot/${spotSlug}/edit`}>
+			<Button variant="outline" size="sm" class="w-full" href={`/space/${spaceSlug}/spot/${spotSlug}/edit`}>
 				{$_('spot.buy.done.manage')}
-			</a>
-			<button class="btn btn-ghost btn-sm w-full" onclick={() => goto('/explore')}>
+			</Button>
+			<Button variant="ghost" size="sm" class="w-full" onclick={() => goto('/explore')}>
 				{$_('spot.buy.done.explore')}
-			</button>
+			</Button>
 		</div>
 	{/if}
 {/if}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { Button } from '$lib/components/ui/button';
 </script>
 
 <svelte:head>
@@ -8,36 +9,37 @@
 
 <div class="flex flex-col gap-6 px-5 py-6">
 	<div class="flex items-center gap-3">
-		<button
+		<Button
 			onclick={() => goto('/')}
-			class="btn btn-ghost btn-sm btn-circle"
+			variant="ghost"
+			size="icon-sm"
 			aria-label="Back"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
 			</svg>
-		</button>
+		</Button>
 		<h1 class="text-xl font-semibold">Privacy Policy</h1>
 	</div>
 
-	<p class="text-sm text-base-content/60">
+	<p class="text-sm text-muted-foreground">
 		Last updated 30 August 2026. This describes how the SPAIA App, operated by Playstate UG
 		(haftungsbeschränkt), handles your data.
 	</p>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">Who we are</h2>
-		<p class="text-base-content">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Who we are</h2>
+		<p class="text-foreground">
 			The SPAIA App is operated by Playstate UG (haftungsbeschränkt), Thomas Cox. For anything in
 			this policy, or to exercise any of the rights below, contact us at
-			<a href="mailto:hello@playstateprojects.com" class="link link-primary">hello@playstateprojects.com</a>.
-			See our <a href="/impressum" class="link link-primary">Impressum</a> for full company details.
+			<a href="mailto:hello@playstateprojects.com" class="text-primary hover:underline cursor-pointer">hello@playstateprojects.com</a>.
+			See our <a href="/impressum" class="text-primary hover:underline cursor-pointer">Impressum</a> for full company details.
 		</p>
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">What we collect</h2>
-		<ul class="list-disc pl-5 text-base-content [&>li]:mt-1">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">What we collect</h2>
+		<ul class="list-disc pl-5 text-foreground [&>li]:mt-1">
 			<li><span class="font-medium">Account data</span> — email address, and a password (stored as a salted hash) if you sign up with email/password rather than a magic link.</li>
 			<li><span class="font-medium">Profile data</span> — display name, bio, and profile photo, if you choose to add them.</li>
 			<li><span class="font-medium">Observation data</span> — the insect sightings you tap during a session, session timing, weather, and any notes on habitat conditions.</li>
@@ -49,8 +51,8 @@
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">How we use it</h2>
-		<ul class="list-disc pl-5 text-base-content [&>li]:mt-1">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">How we use it</h2>
+		<ul class="list-disc pl-5 text-foreground [&>li]:mt-1">
 			<li>To run your account and remember your sightings, cards, and streaks.</li>
 			<li>To show spots, spaces, and leaderboards to you and other observers.</li>
 			<li>To read the scene in a photo you submit (habitat, plants, weather) using an AI image-analysis service, so we can pre-fill details for you.</li>
@@ -60,11 +62,11 @@
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">Who we share it with</h2>
-		<p class="text-base-content">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Who we share it with</h2>
+		<p class="text-foreground">
 			We don't sell your data. We use the following processors to run the app:
 		</p>
-		<ul class="list-disc pl-5 text-base-content [&>li]:mt-1">
+		<ul class="list-disc pl-5 text-foreground [&>li]:mt-1">
 			<li><span class="font-medium">Cloudflare</span> — hosting, database, and storage for photos and avatars.</li>
 			<li><span class="font-medium">Stripe</span> — payment processing for space/spot packs.</li>
 			<li><span class="font-medium">Resend</span> — sending account emails (magic links, confirmations).</li>
@@ -75,16 +77,16 @@
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">Cookies</h2>
-		<p class="text-base-content">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Cookies</h2>
+		<p class="text-foreground">
 			We use one essential cookie to keep you signed in. We don't use advertising or
 			analytics cookies.
 		</p>
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">How long we keep it</h2>
-		<p class="text-base-content">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">How long we keep it</h2>
+		<p class="text-foreground">
 			We keep your account and observation data for as long as your account is active. If you
 			delete your account, we delete your profile and personal data, though aggregated,
 			anonymised sighting counts may be retained for research purposes.
@@ -92,26 +94,26 @@
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">Your rights</h2>
-		<p class="text-base-content">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Your rights</h2>
+		<p class="text-foreground">
 			Under GDPR, you can ask us to access, correct, delete, or export your data, or object to
-			how we use it. Email <a href="mailto:hello@playstateprojects.com" class="link link-primary">hello@playstateprojects.com</a>
+			how we use it. Email <a href="mailto:hello@playstateprojects.com" class="text-primary hover:underline cursor-pointer">hello@playstateprojects.com</a>
 			and we'll respond as quickly as we can. You can also lodge a complaint with your local
 			data protection authority.
 		</p>
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">Children</h2>
-		<p class="text-base-content">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Children</h2>
+		<p class="text-foreground">
 			The SPAIA App isn't directed at children under 16. If you believe a child has created an
 			account without parental consent, contact us and we'll remove it.
 		</p>
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-base-content/50">Changes</h2>
-		<p class="text-base-content">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Changes</h2>
+		<p class="text-foreground">
 			We may update this policy as the app changes. We'll update the date at the top when we
 			do.
 		</p>

@@ -6,6 +6,8 @@
 	import type { Spot } from '$lib/types';
 	import type { SpotSummary } from '$lib/db/queries';
 	import type { PageData } from './$types';
+	import { Button } from '$lib/components/ui/button';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	export let data: PageData;
 
@@ -189,41 +191,41 @@
 
 	{#if phase === 'locating'}
 		<div class="pointer-events-none absolute inset-x-4 top-4 flex justify-center">
-			<span class="pointer-events-auto flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-3 py-1.5 text-xs text-base-content/70">
-				<span class="loading loading-spinner loading-xs"></span>
+			<span class="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-xs text-muted-foreground">
+				<Spinner size="xs" />
 				{$_('observe.nearest.locating')}
 			</span>
 		</div>
 	{:else if phase === 'error'}
 		<div class="pointer-events-none absolute inset-x-4 top-4 flex flex-col items-center gap-2">
-			<span class="pointer-events-auto rounded-full bg-error px-3 py-1.5 text-center text-xs text-white">
+			<span class="pointer-events-auto rounded-full bg-destructive px-3 py-1.5 text-center text-xs text-white">
 				{$_('observe.nearest.error')}
 			</span>
-			<button class="pointer-events-auto btn btn-outline btn-xs bg-base-100" onclick={locate}>
+			<Button variant="outline" size="xs" class="pointer-events-auto bg-background" onclick={locate}>
 				{$_('observe.nearest.retry')}
-			</button>
+			</Button>
 		</div>
 	{/if}
 
 	{#if !selectedSpot}
 		{#if data.spots.length === 0}
-			<p class="pointer-events-none absolute inset-x-4 bottom-36 text-center text-xs text-base-content/70">
+			<p class="pointer-events-none absolute inset-x-4 bottom-36 text-center text-xs text-muted-foreground">
 				{$_('observe.nearest.none')}
 			</p>
 		{/if}
-		<button class="absolute inset-x-4 bottom-24 z-10 btn btn-outline btn-sm bg-base-100" onclick={() => goto('/spot-pack')}>
+		<Button variant="outline" size="sm" class="absolute inset-x-4 bottom-24 z-10 bg-background" onclick={() => goto('/spot-pack')}>
 			{$_('observe.nearest.addSpot')}
-		</button>
+		</Button>
 	{/if}
 </div>
 
 <!-- Spot detail bottom sheet -->
 {#if selectedSpot}
 	<button class="fixed inset-0 z-40 w-full bg-black/40" aria-label={$_('explore.spot.close')} onclick={closeCard}></button>
-	<div class="fixed bottom-0 left-1/2 z-50 max-h-[80vh] w-full max-w-105 -translate-x-1/2 overflow-y-auto rounded-t-2xl border-t border-base-300 bg-base-100">
+	<div class="fixed bottom-0 left-1/2 z-50 max-h-[80vh] w-full max-w-105 -translate-x-1/2 overflow-y-auto rounded-t-2xl border-t border-border bg-background">
 		{#if coverLoading}
 			<div class="flex h-40 w-full items-center justify-center">
-				<span class="loading loading-spinner loading-sm"></span>
+				<Spinner size="sm" />
 			</div>
 		{:else if cover}
 			<img src="/api/media/{cover.id}" alt="" class="h-40 w-full rounded-t-2xl object-cover" />
@@ -232,54 +234,55 @@
 			<span class="text-4xl">{selectedSpot.icon}</span>
 			<div>
 				{#if isNearest}
-					<p class="text-sm text-base-content/50">{$_('observe.nearest.heading')}</p>
+					<p class="text-sm text-muted-foreground">{$_('observe.nearest.heading')}</p>
 				{/if}
-				<h2 class="text-xl font-medium text-base-content">{selectedSpot.name}</h2>
+				<h2 class="text-xl font-medium text-foreground">{selectedSpot.name}</h2>
 				{#if selectedDistanceKm != null}
-					<p class="mt-1 text-sm text-base-content/50">
+					<p class="mt-1 text-sm text-muted-foreground">
 						{$_('observe.nearest.distance', { values: { distance: formatDistanceRange(selectedDistanceKm, accuracy) } })}
 					</p>
 				{/if}
 			</div>
 
-			<button class="btn btn-primary w-full" onclick={() => goto(`/observe/${selectedSpot!.slug}`)}>
+			<Button variant="default" class="w-full" onclick={() => goto(`/observe/${selectedSpot!.slug}`)}>
 				{$_('observe.nearest.cta', { values: { name: selectedSpot.name } })}
-			</button>
+			</Button>
 			{#if selectedSpot.lat != null && selectedSpot.lng != null}
-				<a
-					class="btn btn-outline w-full"
+				<Button
+					variant="outline"
+					class="w-full"
 					href={directionsUrl(selectedSpot.lat, selectedSpot.lng)}
 					target="_blank"
 					rel="noopener noreferrer"
 				>
 					{$_('observe.nearest.directions')}
-				</a>
+				</Button>
 			{/if}
-			<button class="btn btn-outline w-full" onclick={handleCreateSpot}>
+			<Button variant="outline" class="w-full" onclick={handleCreateSpot}>
 				{$_('observe.nearest.addSpot')}
-			</button>
-			<button class="btn btn-ghost btn-sm w-full" onclick={closeCard}>
+			</Button>
+			<Button variant="ghost" size="sm" class="w-full" onclick={closeCard}>
 				{$_('explore.spot.close')}
-			</button>
+			</Button>
 		</div>
 	</div>
 {/if}
 
 {#if showProximityModal}
 	<div class="fixed inset-0 z-60 flex items-center justify-center bg-black/50 px-5">
-		<div class="flex w-full max-w-sm flex-col gap-3 rounded-xl bg-base-100 p-5 text-center shadow-xl">
+		<div class="flex w-full max-w-sm flex-col gap-3 rounded-xl bg-background p-5 text-center shadow-xl">
 			<span class="text-3xl">📍</span>
-			<p class="text-sm text-base-content">
+			<p class="text-sm text-foreground">
 				{$_('observe.nearest.newSpot.warning', {
 					values: { distance: nearestDistanceKm != null ? formatDistanceKm(nearestDistanceKm) : '?' }
 				})}
 			</p>
-			<button class="btn btn-primary w-full" onclick={confirmCreateSpot}>
+			<Button variant="default" class="w-full" onclick={confirmCreateSpot}>
 				{$_('observe.nearest.newSpot.confirm')}
-			</button>
-			<button class="btn btn-ghost btn-sm" onclick={() => (showProximityModal = false)}>
+			</Button>
+			<Button variant="ghost" size="sm" onclick={() => (showProximityModal = false)}>
 				{$_('observe.nearest.newSpot.cancel')}
-			</button>
+			</Button>
 		</div>
 	</div>
 {/if}

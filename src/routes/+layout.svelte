@@ -71,20 +71,20 @@
 	$: hideTabBar = isFullscreenRoute;
 </script>
 
-<div class="flex min-h-dvh flex-col items-center bg-base-200">
-	<div class="relative flex w-full max-w-[420px] flex-1 flex-col bg-base-100">
+<div class="flex min-h-dvh flex-col items-center bg-muted">
+	<div class="relative flex w-full max-w-[420px] flex-1 flex-col bg-background">
 		<main class={isFullscreenRoute ? '' : 'flex-1 overflow-y-auto pb-24'}>
 			<slot />
 		</main>
 
 		{#if !hideTabBar}
-			<nav class="fixed bottom-0 left-1/2 w-full max-w-[420px] -translate-x-1/2 bg-base-100 border-t border-base-300 px-4 py-3">
+			<nav class="fixed bottom-0 left-1/2 w-full max-w-[420px] -translate-x-1/2 bg-background border-t border-border px-4 py-3">
 				<div class="flex items-center justify-around gap-2">
 					{#each tabs as tab}
 						<button
 							class="flex flex-1 items-center justify-center rounded-lg py-3 transition-colors {isActive(tab.href, currentPath)
-								? 'bg-primary text-primary-content'
-								: 'bg-base-200 text-base-content/50 hover:bg-base-300 hover:text-base-content'}"
+								? 'bg-primary text-primary-foreground'
+								: 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'}"
 							onclick={() => goto(tab.href)}
 							aria-label={$_(tab.labelKey)}
 						>

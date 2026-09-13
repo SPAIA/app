@@ -8,6 +8,8 @@
 	import { haversineKm, directionsUrl, formatDistanceRange } from '$lib/geo';
 	import { trackLocalSessionId } from '$lib/localSessions';
 	import { resetSaveProgress } from '$lib/sessionSave';
+	import { Button } from '$lib/components/ui/button';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	export let spot: Spot & { locality: string };
 	export let cover: { id: string } | null = null;
@@ -167,29 +169,30 @@
 
 {#if showFarModal}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-5">
-		<div class="flex w-full max-w-sm flex-col gap-3 rounded-xl bg-base-100 p-5 text-center shadow-xl">
+		<div class="flex w-full max-w-sm flex-col gap-3 rounded-xl bg-background p-5 text-center shadow-xl">
 			<span class="text-3xl">📍</span>
-			<p class="text-sm text-base-content">
+			<p class="text-sm text-foreground">
 				{$_('observe.setup.proximity.farWarning', {
 					values: { distance: distanceKm != null ? formatDistanceRange(distanceKm, accuracy) : '?' }
 				})}
 			</p>
 			{#if spot.lat != null && spot.lng != null}
-				<a
-					class="btn btn-outline w-full"
+				<Button
+					variant="outline"
+					class="w-full"
 					href={directionsUrl(spot.lat, spot.lng)}
 					target="_blank"
 					rel="noopener noreferrer"
 				>
 					{$_('observe.setup.proximity.directions')}
-				</a>
+				</Button>
 			{/if}
-			<button class="btn btn-primary w-full" onclick={beginSession}>
+			<Button variant="default" class="w-full" onclick={beginSession}>
 				{$_('observe.setup.proximity.continueAnyway')}
-			</button>
-			<button class="btn btn-ghost btn-sm" onclick={() => (showFarModal = false)}>
+			</Button>
+			<Button variant="ghost" size="sm" onclick={() => (showFarModal = false)}>
 				{$_('observe.setup.proximity.cancel')}
-			</button>
+			</Button>
 		</div>
 	</div>
 {/if}
@@ -202,38 +205,38 @@
 		<div class="flex flex-col items-center gap-3 px-5 pb-8 pt-6 text-center">
 			<span class="text-3xl">{spot.icon}</span>
 			<div>
-				<h1 class="text-xl font-medium text-base-content">{spot.name}</h1>
-				<p class="text-sm text-base-content/50">{spot.locality}</p>
+				<h1 class="text-xl font-medium text-foreground">{spot.name}</h1>
+				<p class="text-sm text-muted-foreground">{spot.locality}</p>
 			</div>
-			<button class="btn btn-primary btn-lg mt-2 w-full" onclick={checkProximity}>
+			<Button variant="default" size="lg" class="mt-2 w-full" onclick={checkProximity}>
 				{$_('observe.overview.cta')}
-			</button>
-			<a class="btn btn-ghost btn-sm w-full" href="/tutorial">
+			</Button>
+			<Button variant="ghost" size="sm" class="w-full" href="/tutorial">
 				{$_('observe.overview.tutorial')}
-			</a>
+			</Button>
 		</div>
 	</div>
 {:else if phase === 'locating' || phase === 'gpsError'}
 	<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">
 		<span class="text-3xl">{spot.icon}</span>
-		<h1 class="text-lg font-medium text-base-content">{spot.name}</h1>
+		<h1 class="text-lg font-medium text-foreground">{spot.name}</h1>
 
 		{#if phase === 'locating'}
-			<span class="loading loading-spinner loading-lg text-primary"></span>
-			<p class="text-sm text-base-content/50">{$_('observe.setup.proximity.checking')}</p>
+			<Spinner size="lg" class="text-primary" />
+			<p class="text-sm text-muted-foreground">{$_('observe.setup.proximity.checking')}</p>
 		{:else if phase === 'gpsError'}
-			<p class="text-sm text-error">{$_('observe.setup.proximity.error')}</p>
-			<button class="btn btn-primary w-full" onclick={checkProximity}>
+			<p class="text-sm text-destructive">{$_('observe.setup.proximity.error')}</p>
+			<Button variant="default" class="w-full" onclick={checkProximity}>
 				{$_('observe.setup.proximity.retry')}
-			</button>
+			</Button>
 		{/if}
 	</div>
 {:else if phase === 'photo'}
 	<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">
 		<span class="text-4xl">📷</span>
 		<div>
-			<p class="text-base font-medium text-base-content">{$_('observe.setup.photo.label')}</p>
-			<p class="mt-1 text-sm text-base-content/50">{$_('observe.setup.photo.hint')}</p>
+			<p class="text-base font-medium text-foreground">{$_('observe.setup.photo.label')}</p>
+			<p class="mt-1 text-sm text-muted-foreground">{$_('observe.setup.photo.hint')}</p>
 		</div>
 
 		<input
@@ -245,11 +248,11 @@
 			onchange={onFileSelected}
 		/>
 
-		<button class="btn btn-primary w-full" onclick={openFilePicker} disabled={preparingPhoto}>
+		<Button variant="default" class="w-full" onclick={openFilePicker} disabled={preparingPhoto}>
 			{$_('spot.add.photo.cta')}
-		</button>
-		<button class="btn btn-ghost btn-sm" onclick={skipPhoto}>
+		</Button>
+		<Button variant="ghost" size="sm" onclick={skipPhoto}>
 			{$_('observe.setup.photo.skip')}
-		</button>
+		</Button>
 	</div>
 {/if}

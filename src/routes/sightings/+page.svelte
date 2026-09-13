@@ -2,6 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
+	import { Button } from '$lib/components/ui/button';
 
 	export let data: PageData;
 
@@ -23,23 +24,23 @@
 </svelte:head>
 
 <div class="flex flex-col gap-4 px-5 py-6">
-	<p class="text-xs font-medium uppercase tracking-widest text-base-content/50">
+	<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
 		{$_('sightings.title')}
 	</p>
-	<h2 class="text-xl font-medium text-base-content">{$_('sightings.subtitle')}</h2>
-	<p class="text-sm text-base-content/60">{$_('sightings.description')}</p>
+	<h2 class="text-xl font-medium text-foreground">{$_('sightings.subtitle')}</h2>
+	<p class="text-sm text-muted-foreground">{$_('sightings.description')}</p>
 
 	<div class="flex flex-col gap-1.5">
 		{#each data.sightings as sighting}
-			<div class="flex items-center gap-3 rounded-xl border border-base-200 bg-base-100 px-3.5 py-2.5">
-				<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-base-200 text-lg">
+			<div class="flex items-center gap-3 rounded-xl border border-border bg-background px-3.5 py-2.5">
+				<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-lg">
 					{sighting.icon ?? '🐞'}
 				</span>
 				<div class="min-w-0 flex-1">
-					<div class="truncate text-sm font-medium text-base-content">
+					<div class="truncate text-sm font-medium text-foreground">
 						{sighting.insect_name}
 					</div>
-					<div class="truncate text-xs text-base-content/50">
+					<div class="truncate text-xs text-muted-foreground">
 						{sighting.space_name ?? sighting.locality ?? ''}
 						· {timeAgo(sighting.tapped_at)}
 					</div>
@@ -49,11 +50,11 @@
 				</span>
 			</div>
 		{:else}
-			<p class="py-8 text-center text-sm text-base-content/50">{$_('sightings.empty')}</p>
+			<p class="py-8 text-center text-sm text-muted-foreground">{$_('sightings.empty')}</p>
 		{/each}
 	</div>
 
-	<button class="btn btn-primary w-full" onclick={() => goto('/observe')}>
+	<Button variant="default" class="w-full" onclick={() => goto('/observe')}>
 		{$_('sightings.cta')}
-	</button>
+	</Button>
 </div>

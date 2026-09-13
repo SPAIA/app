@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	let loading = false;
 	let redeeming = false;
@@ -63,19 +66,19 @@
 
 <div class="flex flex-col gap-5 px-5 py-6">
 	<!-- Hero -->
-	<div class="relative overflow-hidden rounded-xl bg-base-content px-5 py-6">
+	<div class="relative overflow-hidden rounded-xl bg-foreground px-5 py-6">
 		<div class="pointer-events-none absolute -right-4 -bottom-4 text-[100px] leading-none opacity-[0.07]">🌿</div>
 		<h1 class="text-2xl font-medium leading-tight text-white">{$_('space_pack.title')}</h1>
 		<p class="mt-2 text-sm text-green-mid">{$_('space_pack.subtitle')}</p>
 	</div>
 
 	<!-- Pack contents -->
-	<div class="rounded-xl border border-base-300 bg-base-200 p-4">
+	<div class="rounded-xl border border-border bg-muted p-4">
 		<div class="flex flex-col gap-3">
 			{#each packItems as item}
 				<div class="flex items-start gap-3">
 					<span class="mt-0.5 text-base">{item.icon}</span>
-					<p class="text-sm text-base-content/70">{$_(item.key)}</p>
+					<p class="text-sm text-muted-foreground">{$_(item.key)}</p>
 				</div>
 			{/each}
 		</div>
@@ -84,7 +87,7 @@
 	<!-- Price block -->
 	<div class="flex items-baseline gap-2">
 		<span class="text-4xl font-medium text-primary">{$_('space_pack.price')}</span>
-		<span class="text-sm text-base-content/50">{$_('space_pack.shipping')}</span>
+		<span class="text-sm text-muted-foreground">{$_('space_pack.shipping')}</span>
 	</div>
 
 	<!-- Steps -->
@@ -92,41 +95,41 @@
 		{#each steps as step, i}
 			<div class="relative flex-1 text-center">
 				{#if i < steps.length - 1}
-					<span class="absolute right-[-6px] top-[10px] text-[11px] text-base-content/30">→</span>
+					<span class="absolute right-[-6px] top-[10px] text-[11px] text-muted-foreground">→</span>
 				{/if}
 				<div class="mx-auto mb-1 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-green-light text-[11px] font-medium text-primary">
 					{i + 1}
 				</div>
-				<div class="text-[9px] leading-tight text-base-content/50">{$_(step.key)}</div>
+				<div class="text-[9px] leading-tight text-muted-foreground">{$_(step.key)}</div>
 			</div>
 		{/each}
 	</div>
 
-	<button class="btn btn-primary w-full" onclick={handleOrder} disabled={loading}>
-		{#if loading}<span class="loading loading-spinner loading-sm"></span>{/if}
+	<Button variant="default" class="w-full" onclick={handleOrder} disabled={loading}>
+		{#if loading}<Spinner size="sm" />{/if}
 		{$_('space_pack.cta')}
-	</button>
+	</Button>
 
 	{#if !showCodeInput}
-		<button class="btn btn-ghost btn-sm w-full" onclick={() => (showCodeInput = true)}>
+		<Button variant="ghost" size="sm" class="w-full" onclick={() => (showCodeInput = true)}>
 			{$_('space_pack.code.link')}
-		</button>
+		</Button>
 	{:else}
 		<div class="flex flex-col gap-2">
 			<div class="flex gap-2">
-				<input
-					class="input input-bordered input-sm flex-1"
+				<Input
+					class="h-8 text-sm flex-1"
 					placeholder={$_('space_pack.code.placeholder')}
 					bind:value={code}
 					disabled={redeeming}
 				/>
-				<button class="btn btn-primary btn-sm" onclick={handleRedeemCode} disabled={redeeming || !code.trim()}>
-					{#if redeeming}<span class="loading loading-spinner loading-xs"></span>{/if}
+				<Button variant="default" size="sm" onclick={handleRedeemCode} disabled={redeeming || !code.trim()}>
+					{#if redeeming}<Spinner size="xs" />{/if}
 					{$_('space_pack.code.submit')}
-				</button>
+				</Button>
 			</div>
 			{#if codeError}
-				<p class="text-xs text-error">{codeError}</p>
+				<p class="text-xs text-destructive">{codeError}</p>
 			{/if}
 		</div>
 	{/if}

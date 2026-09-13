@@ -5,6 +5,7 @@
 	import { sessionStore } from '$lib/stores/session';
 	import InsectCard from './InsectCard.svelte';
 	import type { InsectType, SpotSessionComparison } from '$lib/types';
+	import { Button } from '$lib/components/ui/button';
 
 	export let insectTypes: InsectType[] = [];
 
@@ -88,28 +89,28 @@
 </script>
 
 <div class="flex flex-col gap-4 px-5 py-6">
-	<p class="text-xs font-medium uppercase tracking-widest text-base-content/50">
+	<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
 		{$_('cards.title')}
 	</p>
 
 	<!-- Stats row -->
 	<div class="grid grid-cols-2 gap-2">
-		<div class="rounded-lg border border-base-300 bg-base-200 py-2.5 text-center">
+		<div class="rounded-lg border border-border bg-muted py-2.5 text-center">
 			<div class="text-xl font-medium text-primary">{$sessionStore.totalCount}</div>
-			<div class="mt-0.5 text-[9px] uppercase tracking-wide text-base-content/50">{$_('cards.stats.sightings')}</div>
+			<div class="mt-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">{$_('cards.stats.sightings')}</div>
 		</div>
-		<div class="rounded-lg border border-base-300 bg-base-200 py-2.5 text-center">
+		<div class="rounded-lg border border-border bg-muted py-2.5 text-center">
 			<div class="text-xl font-medium text-primary">{tappedTypes.length}</div>
-			<div class="mt-0.5 text-[9px] uppercase tracking-wide text-base-content/50">{$_('cards.stats.types')}</div>
+			<div class="mt-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">{$_('cards.stats.types')}</div>
 		</div>
 	</div>
 
 	<!-- How this session compares to the spot's history, from any user -->
 	{#if comparison}
-		<div class="rounded-xl border border-base-300 bg-base-100 px-4 py-4">
+		<div class="rounded-xl border border-border bg-background px-4 py-4">
 			{#if comparison.lastSession}
 				{#if diff > 0}
-					<p class="text-sm text-base-content">
+					<p class="text-sm text-foreground">
 						{$_('cards.compare.more', {
 							values: {
 								diff,
@@ -120,7 +121,7 @@
 						})}
 					</p>
 				{:else if diff < 0}
-					<p class="text-sm text-base-content">
+					<p class="text-sm text-foreground">
 						{$_('cards.compare.fewer', {
 							values: {
 								diff: Math.abs(diff),
@@ -131,7 +132,7 @@
 						})}
 					</p>
 				{:else}
-					<p class="text-sm text-base-content">
+					<p class="text-sm text-foreground">
 						{$_('cards.compare.same', {
 							values: {
 								when: lastVisitWhen,
@@ -142,10 +143,10 @@
 					</p>
 				{/if}
 			{:else}
-				<p class="text-sm text-base-content">{$_('cards.compare.first')}</p>
+				<p class="text-sm text-foreground">{$_('cards.compare.first')}</p>
 			{/if}
 			{#if comparison.average}
-				<p class="mt-1.5 text-xs text-base-content/50">
+				<p class="mt-1.5 text-xs text-muted-foreground">
 					{$_('cards.compare.average', {
 						values: {
 							avgCount: Math.round(comparison.average.totalCount),
@@ -175,11 +176,11 @@
 	{/if}
 
 	<div class="flex flex-col gap-2">
-		<button class="btn btn-primary w-full" onclick={continueToConfirm}>
+		<Button variant="default" class="w-full" onclick={continueToConfirm}>
 			{$_('cards.cta.continue')}
-		</button>
-		<button class="btn btn-outline btn-sm w-full" onclick={() => goto('/explore')}>
+		</Button>
+		<Button variant="outline" size="sm" class="w-full" onclick={() => goto('/explore')}>
 			{$_('cards.cta.explore')}
-		</button>
+		</Button>
 	</div>
 </div>

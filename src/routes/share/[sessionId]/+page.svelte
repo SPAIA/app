@@ -39,12 +39,12 @@
 </svelte:head>
 
 <div class="flex flex-col gap-4 px-5 py-6">
-	<p class="text-xs font-medium uppercase tracking-widest text-base-content/50">
+	<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
 		{$_('nav.profile')} · {$_('share.cta')}
 	</p>
 
 	<!-- Share card -->
-	<div id="share-card" class="relative overflow-hidden rounded-2xl bg-base-content p-5">
+	<div id="share-card" class="relative overflow-hidden rounded-2xl bg-foreground p-5">
 		<div class="pointer-events-none absolute -right-5 -bottom-5 text-[120px] leading-none opacity-[0.06]">🐝</div>
 
 		<div class="mb-4 flex items-start justify-between">
@@ -102,29 +102,29 @@
 			<div class="text-[10px] leading-relaxed text-white/40">
 				#{(session.space_name ?? session.locality ?? '').replace(/\s/g, '')}<br>#SPAIA
 			</div>
-			<div class="flex h-11 w-11 items-center justify-center rounded-md bg-white text-[10px] font-medium text-base-content">QR</div>
+			<div class="flex h-11 w-11 items-center justify-center rounded-md bg-white text-[10px] font-medium text-foreground">QR</div>
 		</div>
 	</div>
 
 	<!-- Action buttons -->
 	<div class="grid grid-cols-2 gap-2">
-		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-base-300 bg-base-100 py-3 text-xs font-medium text-base-content" onclick={saveAsImage}>
+		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background py-3 text-xs font-medium text-foreground" onclick={saveAsImage}>
 			<span class="text-lg">🖼️</span>
 			{$_('share.action.image')}
 		</button>
-		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-base-300 bg-base-100 py-3 text-xs font-medium text-base-content" onclick={shareToStories}>
+		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background py-3 text-xs font-medium text-foreground" onclick={shareToStories}>
 			<span class="text-lg">📤</span>
 			{$_('share.action.stories')}
 		</button>
-		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-base-300 bg-base-100 py-3 text-xs font-medium text-base-content" onclick={copyLink}>
+		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background py-3 text-xs font-medium text-foreground" onclick={copyLink}>
 			<span class="text-lg">📋</span>
 			{$_('share.action.copy')}
 		</button>
-		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-base-300 bg-base-100 py-3 text-xs font-medium text-base-content">
+		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background py-3 text-xs font-medium text-foreground">
 			<span class="text-lg">💬</span>
 			{$_('share.action.friend')}
 		</button>
 	</div>
 
-	<p class="text-center text-[11px] text-base-content/40">{$_('share.footer')}</p>
+	<p class="text-center text-[11px] text-muted-foreground">{$_('share.footer')}</p>
 </div>

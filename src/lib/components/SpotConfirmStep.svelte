@@ -5,6 +5,11 @@
 	import type { HabitatFeatureCategory, SpotVisionResult } from '$lib/types';
 	import { completeSession } from '$lib/sessionSave';
 	import ChipListEditor from '$lib/components/ChipListEditor.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
+	import { Label } from '$lib/components/ui/label';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	// Shown after the observer has already seen their "Your finds" cards (see
 	// CardsStep) — this is where weather, habitat condition, and the spot's
@@ -107,7 +112,7 @@
 </script>
 
 <div class="flex flex-col gap-4 px-5 py-6">
-	<p class="text-xs font-medium uppercase tracking-widest text-base-content/50">
+	<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
 		{$_('spot.add.confirm.title')}
 	</p>
 
@@ -116,22 +121,21 @@
 	{/if}
 
 	{#if isNewSpot}
-		<label class="form-control">
-			<div class="label"><span class="label-text">{$_('spot.add.confirm.name.label')}</span></div>
-			<input
+		<div class="flex flex-col gap-1.5">
+			<Label>{$_('spot.add.confirm.name.label')}</Label>
+			<Input
 				type="text"
-				class="input input-bordered w-full"
 				placeholder={$_('spot.add.confirm.name.default')}
 				bind:value={spotName}
 			/>
-		</label>
+		</div>
 	{:else if spotName}
-		<h2 class="text-base font-medium text-base-content">{spotName}</h2>
+		<h2 class="text-base font-medium text-foreground">{spotName}</h2>
 	{/if}
 
 	{#if visionStatus === 'pending'}
-		<div class="flex items-center gap-2 text-sm text-base-content/50">
-			<span class="loading loading-spinner loading-sm"></span>
+		<div class="flex items-center gap-2 text-sm text-muted-foreground">
+			<Spinner size="sm" />
 			{$_('spot.add.analyzing')}
 		</div>
 	{:else if visionStatus === 'done'}
@@ -140,27 +144,25 @@
 				{$_('spot.add.confirm.changes.label')}: {vision.changes}
 			</p>
 		{:else if vision?.area_mismatch}
-			<p class="rounded-lg border border-base-300 bg-base-200 px-3 py-2.5 text-sm text-base-content/70">
+			<p class="rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-muted-foreground">
 				{$_('spot.add.confirm.area_mismatch')}
 			</p>
 		{/if}
 		{#if vision?.scene}
-			<label class="form-control">
-				<div class="label">
-					<span class="label-text text-xs font-medium uppercase tracking-widest text-base-content/50">
-						{$_('spot.add.confirm.scene.label')}
-					</span>
-				</div>
-				<textarea
-					class="textarea textarea-bordered w-full text-sm"
-					rows="2"
+			<div class="flex flex-col gap-1.5">
+				<Label class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+					{$_('spot.add.confirm.scene.label')}
+				</Label>
+				<Textarea
+					class="text-sm"
+					rows={2}
 					bind:value={sceneDescription}
-				></textarea>
-			</label>
+				></Textarea>
+			</div>
 		{/if}
 
 		<div>
-			<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-base-content/50">
+			<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
 				{$_('spot.add.confirm.plants.label')}
 			</p>
 			<ChipListEditor
@@ -175,7 +177,7 @@
 		</div>
 
 		<div>
-			<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-base-content/50">
+			<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
 				{$_('spot.add.confirm.habitat_features.label')}
 			</p>
 			<ChipListEditor
@@ -189,7 +191,7 @@
 	{/if}
 
 	<div>
-		<p class="mb-2 text-xs font-medium uppercase tracking-widest text-base-content/50">
+		<p class="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
 			{$_('observe.setup.weather.label')}
 		</p>
 		<div class="grid grid-cols-4 gap-2">
@@ -199,31 +201,30 @@
 					class:border-primary={selectedWeather === w.key}
 					class:bg-green-light={selectedWeather === w.key}
 					class:text-primary={selectedWeather === w.key}
-					class:border-base-300={selectedWeather !== w.key}
-					class:bg-base-100={selectedWeather !== w.key}
+					class:border-border={selectedWeather !== w.key}
+					class:bg-background={selectedWeather !== w.key}
 					onclick={() => (selectedWeather = w.key)}
 				>
 					<span class="mb-0.5 text-base">{w.icon}</span>
-					<span class="text-center text-[9px] leading-tight text-base-content/60">{$_(w.labelKey)}</span>
+					<span class="text-center text-[9px] leading-tight text-muted-foreground">{$_(w.labelKey)}</span>
 				</button>
 			{/each}
 		</div>
 	</div>
 
 	{#if !mediaId}
-		<label class="form-control">
-			<div class="label"><span class="label-text">{$_('observe.setup.condition.label')}</span></div>
-			<textarea
-				class="textarea textarea-bordered w-full"
-				rows="2"
+		<div class="flex flex-col gap-1.5">
+			<Label>{$_('observe.setup.condition.label')}</Label>
+			<Textarea
+				rows={2}
 				placeholder={$_('observe.setup.condition.placeholder')}
 				bind:value={condition}
-			></textarea>
-		</label>
+			></Textarea>
+		</div>
 	{/if}
 
-	<button class="btn btn-primary w-full" onclick={confirmAndContinue} disabled={saving || (isNewSpot && !spotName.trim())}>
-		{#if saving}<span class="loading loading-spinner loading-sm"></span>{/if}
+	<Button variant="default" class="w-full" onclick={confirmAndContinue} disabled={saving || (isNewSpot && !spotName.trim())}>
+		{#if saving}<Spinner size="sm" />{/if}
 		{$_('spot.add.confirm.cta')}
-	</button>
+	</Button>
 </div>

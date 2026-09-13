@@ -1,18 +1,20 @@
 <script lang="ts">
+	import { Button } from '$lib/components/ui/button';
+
 	export let value: string;
 	export let options: { value: string; label: string; onSelect: () => void }[];
 </script>
 
 <div class="flex gap-2">
 	{#each options as opt (opt.value)}
-		<button
+		<Button
 			type="button"
-			class="btn btn-sm flex-1"
-			class:btn-primary={value === opt.value}
-			class:btn-outline={value !== opt.value}
+			class="flex-1"
+			variant={value === opt.value ? 'default' : 'outline'}
+			size="sm"
 			onclick={opt.onSelect}
 		>
 			{opt.label}
-		</button>
+		</Button>
 	{/each}
 </div>

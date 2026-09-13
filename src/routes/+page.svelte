@@ -5,6 +5,8 @@
 	import type { Writable } from 'svelte/store';
 	import LegalFooter from '$lib/components/LegalFooter.svelte';
 	import { authClient } from '$lib/auth-client';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 
 	const authUser = getContext<Writable<App.Locals['user']>>('authUser');
 
@@ -32,11 +34,11 @@
 <div class="flex min-h-dvh flex-col overflow-y-auto">
 	<div class="flex flex-1 flex-col gap-10 px-5 py-10">
 		{#if $authUser}
-			<div class="flex items-center justify-end gap-2 text-[11px] text-base-content/50">
+			<div class="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
 				<span>{$_('landing.signedInAs', { values: { name: $authUser.name || $authUser.email } })}</span>
 				<span>·</span>
 				<button
-					class="font-medium text-base-content/70 hover:text-base-content disabled:opacity-50"
+					class="font-medium text-muted-foreground hover:text-foreground disabled:opacity-50"
 					onclick={handleLogout}
 					disabled={loggingOut}
 				>
@@ -48,36 +50,36 @@
 		<!-- Hero -->
 		<div class="flex flex-col items-center gap-4 pt-6 text-center">
 			<span class="text-5xl">🐛</span>
-			<h1 class="text-3xl font-semibold leading-tight text-base-content">{$_('landing.hero.headline')}</h1>
-			<p class="text-base-content/70">{$_('landing.hero.subheadline')}</p>
-			<span class="badge badge-neutral badge-outline mt-1">{$_('landing.stats.tagline')}</span>
+			<h1 class="text-3xl font-semibold leading-tight text-foreground">{$_('landing.hero.headline')}</h1>
+			<p class="text-muted-foreground">{$_('landing.hero.subheadline')}</p>
+			<Badge variant="outline" class="mt-1">{$_('landing.stats.tagline')}</Badge>
 
 			<div class="mt-4 flex w-full flex-col gap-2">
-				<button class="btn btn-primary w-full" onclick={() => goto('/explore')}>
+				<Button variant="default" class="w-full" onclick={() => goto('/explore')}>
 					{$_('landing.hero.cta.observe')}
-				</button>
+				</Button>
 				{#if !$authUser}
-					<button class="btn btn-ghost w-full" onclick={() => goto('/auth/login')}>
+					<Button variant="ghost" class="w-full" onclick={() => goto('/auth/login')}>
 						{$_('landing.hero.cta.login')}
-					</button>
+					</Button>
 				{/if}
 			</div>
 		</div>
 
 		<!-- How it works -->
 		<div class="flex flex-col gap-4">
-			<h2 class="text-center text-sm font-semibold uppercase tracking-wide text-base-content/50">
+			<h2 class="text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground">
 				{$_('landing.how.title')}
 			</h2>
 			<div class="flex flex-col gap-3">
 				{#each steps as step, i}
-					<div class="flex gap-3 rounded-xl bg-base-200 p-4">
-						<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-base-100 text-lg">
+					<div class="flex gap-3 rounded-xl bg-muted p-4">
+						<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background text-lg">
 							{step.emoji}
 						</span>
 						<div class="flex flex-col">
-							<span class="text-sm font-medium text-base-content">{i + 1}. {$_(step.titleKey)}</span>
-							<span class="text-sm text-base-content/60">{$_(step.bodyKey)}</span>
+							<span class="text-sm font-medium text-foreground">{i + 1}. {$_(step.titleKey)}</span>
+							<span class="text-sm text-muted-foreground">{$_(step.bodyKey)}</span>
 						</div>
 					</div>
 				{/each}
@@ -85,15 +87,15 @@
 		</div>
 
 		<!-- Closing CTA -->
-		<div class="flex flex-col items-center gap-3 rounded-2xl bg-base-content px-5 py-8 text-center">
-			<h2 class="text-lg font-medium text-base-100">{$_('landing.cta.title')}</h2>
-			<p class="text-sm text-base-100/70">{$_('landing.cta.body')}</p>
-			<button class="btn btn-primary mt-1 w-full max-w-xs" onclick={() => goto('/explore')}>
+		<div class="flex flex-col items-center gap-3 rounded-2xl bg-foreground px-5 py-8 text-center">
+			<h2 class="text-lg font-medium text-background">{$_('landing.cta.title')}</h2>
+			<p class="text-sm text-background/70">{$_('landing.cta.body')}</p>
+			<Button variant="default" class="mt-1 w-full max-w-xs" onclick={() => goto('/explore')}>
 				{$_('landing.cta.button')}
-			</button>
+			</Button>
 		</div>
 
-		<p class="text-center text-xs text-base-content/40">{$_('landing.footer.tagline')}</p>
+		<p class="text-center text-xs text-muted-foreground">{$_('landing.footer.tagline')}</p>
 	</div>
 
 	<div class="px-5 pb-8">

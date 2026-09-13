@@ -3,6 +3,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { sessionStore, resetSession } from '$lib/stores/session';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	let email = '';
 	let submitting = false;
@@ -49,50 +52,51 @@
 <div class="flex flex-col gap-5 px-5 py-6">
 	<!-- Hero -->
 	<div class="rounded-xl bg-primary px-5 py-5 text-center">
-		<p class="text-lg font-medium leading-snug text-primary-content">{$_('close.headline')}</p>
-		<p class="mt-2 text-sm text-primary-content/70">
+		<p class="text-lg font-medium leading-snug text-primary-foreground">{$_('close.headline')}</p>
+		<p class="mt-2 text-sm text-primary-foreground/70">
 			{$_('close.sub', { values: { count: $sessionStore.totalCount, duration: $sessionStore.totalDurationMin } })}
 		</p>
 	</div>
 
 	<!-- Email capture -->
 	{#if !submitted && !loggedIn}
-		<div class="flex flex-col gap-3 rounded-xl border border-base-300 bg-base-100 px-4 py-4">
-			<p class="text-sm font-medium text-base-content">{$_('email.cta')}</p>
-			<input
+		<div class="flex flex-col gap-3 rounded-xl border border-border bg-background px-4 py-4">
+			<p class="text-sm font-medium text-foreground">{$_('email.cta')}</p>
+			<Input
 				type="email"
-				class="input input-bordered w-full text-sm"
+				class="text-sm"
 				placeholder={$_('email.placeholder')}
 				bind:value={email}
 			/>
-			<button
-				class="btn btn-primary w-full"
+			<Button
+				variant="default"
+				class="w-full"
 				onclick={handleEmailSubmit}
 				disabled={submitting || !email}
 			>
-				{#if submitting}<span class="loading loading-spinner loading-sm"></span>{/if}
+				{#if submitting}<Spinner size="sm" />{/if}
 				{$_('email.submit')}
-			</button>
-			<button class="btn btn-ghost btn-sm text-base-content/40" onclick={handleSkip}>
+			</Button>
+			<Button variant="ghost" size="sm" class="text-muted-foreground" onclick={handleSkip}>
 				{$_('email.skip')}
-			</button>
+			</Button>
 		</div>
 	{:else}
 		{#if email}
-			<div class="rounded-xl border border-base-300 bg-base-100 px-4 py-4 text-center">
-				<p class="text-sm font-medium text-base-content">Check your email</p>
-				<p class="mt-1 text-xs text-base-content/50">We sent a magic link to <strong>{email}</strong> — click it to view your sightings.</p>
+			<div class="rounded-xl border border-border bg-background px-4 py-4 text-center">
+				<p class="text-sm font-medium text-foreground">Check your email</p>
+				<p class="mt-1 text-xs text-muted-foreground">We sent a magic link to <strong>{email}</strong> — click it to view your sightings.</p>
 			</div>
 		{/if}
 		<div class="flex flex-col gap-2">
 			{#if sessionId}
-				<button class="btn btn-primary w-full" onclick={handleShare}>
+				<Button variant="default" class="w-full" onclick={handleShare}>
 					{$_('share.cta')}
-				</button>
+				</Button>
 			{/if}
-			<button class="btn btn-outline w-full" onclick={handleExplore}>
+			<Button variant="outline" class="w-full" onclick={handleExplore}>
 				{$_('cards.cta.explore')}
-			</button>
+			</Button>
 		</div>
 	{/if}
 </div>

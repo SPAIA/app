@@ -4,6 +4,9 @@
 	import { LEVEL_TITLE_KEYS } from '$lib/gamification';
 	import { authClient } from '$lib/auth-client';
 	import LegalFooter from '$lib/components/LegalFooter.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import * as Select from '$lib/components/ui/select';
+	import { Spinner } from '$lib/components/ui/spinner';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -61,16 +64,16 @@
 {#if !profile}
 	<div class="flex flex-col gap-4 px-5 py-12 text-center">
 		<span class="text-5xl">🐛</span>
-		<p class="text-base-content/60">{$_('collection.anon.prompt')}</p>
-		<button class="btn btn-primary mx-auto" onclick={() => goto('/auth/login')}>
+		<p class="text-muted-foreground">{$_('collection.anon.prompt')}</p>
+		<Button class="mx-auto" onclick={() => goto('/auth/login')}>
 			{$_('collection.anon.cta')}
-		</button>
+		</Button>
 		<LegalFooter />
 	</div>
 {:else}
 	<div class="flex flex-col gap-4 px-5 py-6">
 		<!-- Collection header -->
-		<div class="flex items-center gap-3 rounded-xl bg-base-content p-4">
+		<div class="flex items-center gap-3 rounded-xl bg-foreground p-4">
 			<button
 				onclick={() => goto('/profile/edit')}
 				class="shrink-0 overflow-hidden rounded-full ring-2 ring-white/30 focus:outline-none"
@@ -96,26 +99,26 @@
 
 		<!-- Global stats -->
 		<div class="grid grid-cols-3 gap-2">
-			<div class="rounded-xl border border-base-300 bg-base-100 py-3 text-center">
+			<div class="rounded-xl border border-border bg-background py-3 text-center">
 				<div class="text-lg font-medium text-primary">{totalSightings}</div>
-				<div class="mt-0.5 text-[9px] uppercase tracking-wide text-base-content/50">{$_('collection.stats.sightings')}</div>
+				<div class="mt-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">{$_('collection.stats.sightings')}</div>
 			</div>
-			<div class="rounded-xl border border-base-300 bg-base-100 py-3 text-center">
+			<div class="rounded-xl border border-border bg-background py-3 text-center">
 				<div class="text-lg font-medium text-primary">{locationSets.length}</div>
-				<div class="mt-0.5 text-[9px] uppercase tracking-wide text-base-content/50">{$_('collection.stats.locations')}</div>
+				<div class="mt-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">{$_('collection.stats.locations')}</div>
 			</div>
-			<div class="rounded-xl border border-base-300 bg-base-100 py-3 text-center">
+			<div class="rounded-xl border border-border bg-background py-3 text-center">
 				<div class="text-lg font-medium text-primary">{data.collection.length}</div>
-				<div class="mt-0.5 text-[9px] uppercase tracking-wide text-base-content/50">{$_('collection.stats.types')}</div>
+				<div class="mt-0.5 text-[9px] uppercase tracking-wide text-muted-foreground">{$_('collection.stats.types')}</div>
 			</div>
 		</div>
 
 		<!-- Streak bar -->
-		<div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-100 px-3.5 py-3">
+		<div class="flex items-center gap-3 rounded-xl border border-border bg-background px-3.5 py-3">
 			<span class="shrink-0 text-3xl font-medium text-primary">{streakDays}</span>
 			<div class="flex-1">
-				<p class="text-sm font-medium text-base-content">{$_('collection.streak.label')}</p>
-				<p class="text-[10px] text-base-content/50">{$_('collection.streak.sub')}</p>
+				<p class="text-sm font-medium text-foreground">{$_('collection.streak.label')}</p>
+				<p class="text-[10px] text-muted-foreground">{$_('collection.streak.sub')}</p>
 				<div class="mt-1.5 flex gap-1">
 					{#each streakDayStates as state}
 						<div
@@ -135,17 +138,17 @@
 
 		<!-- Location sets -->
 		<div class="flex items-center justify-between">
-			<p class="text-sm font-medium text-base-content">{$_('collection.locations.title')}</p>
+			<p class="text-sm font-medium text-foreground">{$_('collection.locations.title')}</p>
 			<button class="text-[11px] text-primary">{$_('collection.locations.see_all')}</button>
 		</div>
 
 		{#each locationSets as set}
-			<div class="overflow-hidden rounded-xl border border-base-200 bg-base-100">
-				<div class="flex items-center gap-2.5 border-b border-base-200 px-3.5 py-3">
+			<div class="overflow-hidden rounded-xl border border-border bg-background">
+				<div class="flex items-center gap-2.5 border-b border-border px-3.5 py-3">
 					<span class="text-xl">{set.space_icon}</span>
 					<div class="flex-1 min-w-0">
-						<p class="text-sm font-medium text-base-content">{set.space_name}</p>
-						<p class="text-[10px] text-base-content/40">{set.sightings.length} types found</p>
+						<p class="text-sm font-medium text-foreground">{set.space_name}</p>
+						<p class="text-[10px] text-muted-foreground">{set.sightings.length} types found</p>
 					</div>
 					<span class="shrink-0 text-xs font-medium text-primary">
 						{set.sightings.reduce((sum, s) => sum + s.count, 0)} sightings
@@ -155,7 +158,7 @@
 					{#each set.sightings as sighting}
 						<div class="flex w-16 shrink-0 flex-col items-center gap-1 rounded-[10px] border border-primary bg-green-light px-1.5 py-2.5">
 							<span class="text-xl">{sighting.icon}</span>
-							<span class="text-center text-[8px] font-medium leading-tight text-base-content/70">{$_(`insect.${sighting.insect_name}`)}</span>
+							<span class="text-center text-[8px] font-medium leading-tight text-muted-foreground">{$_(`insect.${sighting.insect_name}`)}</span>
 						</div>
 					{/each}
 				</div>
@@ -163,23 +166,23 @@
 		{/each}
 
 		{#if lastSession}
-			<button class="btn btn-primary w-full" onclick={() => goto(`/share/${lastSession.id}`)}>
+			<Button class="w-full" onclick={() => goto(`/share/${lastSession.id}`)}>
 				{$_('collection.cta.share')}
-			</button>
+			</Button>
 		{/if}
 
 		<!-- Owned spots -->
 		{#if data.spots.length > 0}
 			<div class="flex items-center justify-between">
-				<p class="text-sm font-medium text-base-content">{$_('profile.spaces.title')}</p>
+				<p class="text-sm font-medium text-foreground">{$_('profile.spaces.title')}</p>
 			</div>
 
-			<div class="overflow-hidden rounded-xl border border-base-200 bg-base-100">
-				<div class="flex flex-col divide-y divide-base-200">
+			<div class="overflow-hidden rounded-xl border border-border bg-background">
+				<div class="flex flex-col divide-y divide-border">
 					{#each data.spots as spot}
 						<div class="flex items-center gap-2.5 px-3.5 py-2.5">
 							<span class="text-base">{spot.icon}</span>
-							<span class="flex-1 min-w-0 truncate text-xs text-base-content/70">{spot.name}</span>
+							<span class="flex-1 min-w-0 truncate text-xs text-muted-foreground">{spot.name}</span>
 							<a href="/space/{spot.space_slug}/spot/{spot.slug}/edit" class="shrink-0 text-[11px] font-medium text-primary">
 								{$_('profile.spaces.edit')}
 							</a>
@@ -190,25 +193,26 @@
 		{/if}
 
 		<!-- Language selector -->
-		<div class="flex items-center justify-between rounded-xl border border-base-200 bg-base-100 px-3.5 py-3">
-			<p class="text-sm font-medium text-base-content">{$_('profile.language.label')}</p>
-			<select
-				class="select select-sm select-bordered"
-				value={$locale}
-				onchange={(e) => setLanguage(e.currentTarget.value)}
-			>
-				{#each languages as lang}
-					<option value={lang.code}>{lang.label}</option>
-				{/each}
-			</select>
+		<div class="flex items-center justify-between rounded-xl border border-border bg-background px-3.5 py-3">
+			<p class="text-sm font-medium text-foreground">{$_('profile.language.label')}</p>
+			<Select.Root type="single" value={$locale ?? undefined} onValueChange={(v) => v && setLanguage(v)}>
+				<Select.Trigger size="sm">
+					{languages.find((lang) => lang.code === $locale)?.label ?? $locale}
+				</Select.Trigger>
+				<Select.Content>
+					{#each languages as lang}
+						<Select.Item value={lang.code} label={lang.label}>{lang.label}</Select.Item>
+					{/each}
+				</Select.Content>
+			</Select.Root>
 		</div>
 
-		<button class="btn btn-outline w-full" onclick={handleLogout} disabled={loggingOut}>
-			{#if loggingOut}<span class="loading loading-spinner loading-sm"></span>{/if}
+		<Button variant="outline" class="w-full" onclick={handleLogout} disabled={loggingOut}>
+			{#if loggingOut}<Spinner size="sm" />{/if}
 			{$_('profile.logout')}
-		</button>
+		</Button>
 
-		<p class="text-center text-[11px] text-base-content/40">{$_('collection.footer')}</p>
+		<p class="text-center text-[11px] text-muted-foreground">{$_('collection.footer')}</p>
 		<LegalFooter />
 	</div>
 {/if}

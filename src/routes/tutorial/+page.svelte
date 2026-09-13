@@ -2,6 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
 	import { insectImage } from '$lib/insectImage';
+	import { Button } from '$lib/components/ui/button';
 	import type { PageData } from './$types';
 
 	export let data: PageData;
@@ -31,14 +32,14 @@
 <!-- 6rem matches +layout.svelte's `main` pb-24, which reserves space above the fixed bottom nav. -->
 <div class="flex h-[calc(100dvh-6rem)] flex-col gap-4 px-5 py-6">
 	<div class="flex items-center gap-3">
-		<button onclick={done} class="btn btn-ghost btn-sm btn-circle" aria-label={$_('tutorial.back')}>
+		<Button variant="ghost" size="icon-sm" onclick={done} aria-label={$_('tutorial.back')}>
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
 			</svg>
-		</button>
+		</Button>
 		<div>
-			<h1 class="text-lg font-medium text-base-content">{$_('observe.intro.title')}</h1>
-			<p class="mt-1 text-sm text-base-content/60">{$_('observe.intro.body')}</p>
+			<h1 class="text-lg font-medium text-foreground">{$_('observe.intro.title')}</h1>
+			<p class="mt-1 text-sm text-muted-foreground">{$_('observe.intro.body')}</p>
 		</div>
 	</div>
 
@@ -50,12 +51,12 @@
 		>
 			{#each data.insectTypes as insect}
 				<div
-					class="flex h-full w-[78%] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-base-300 bg-base-100 text-center"
+					class="flex h-full w-[78%] shrink-0 snap-center flex-col overflow-hidden rounded-3xl border border-border bg-background text-center"
 				>
 					<img src={insectImage(insect.name)} alt="" class="aspect-square w-full object-cover" />
 					<div class="flex flex-1 flex-col items-center justify-center gap-2 px-6">
-						<span class="text-xl font-semibold text-base-content">{$_(`insect.${insect.name}`)}</span>
-						<span class="text-sm text-base-content/60">{$_(`observe.intro.tip.${insect.name}`)}</span>
+						<span class="text-xl font-semibold text-foreground">{$_(`insect.${insect.name}`)}</span>
+						<span class="text-sm text-muted-foreground">{$_(`observe.intro.tip.${insect.name}`)}</span>
 					</div>
 				</div>
 			{/each}
@@ -67,12 +68,12 @@
 			<span
 				class="h-1.5 w-1.5 rounded-full transition-colors"
 				class:bg-primary={i === activeIndex}
-				class:bg-base-300={i !== activeIndex}
+				class:bg-muted={i !== activeIndex}
 			></span>
 		{/each}
 	</div>
 
-	<button class="btn btn-primary w-full" onclick={done}>
+	<Button variant="default" class="w-full" onclick={done}>
 		{$_('tutorial.done')}
-	</button>
+	</Button>
 </div>

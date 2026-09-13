@@ -2,6 +2,12 @@
 	import { _ } from 'svelte-i18n';
 	import { enhance } from '$app/forms';
 	import type { PageData, ActionData } from './$types';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
+	import { Textarea } from '$lib/components/ui/textarea';
+	import { Label } from '$lib/components/ui/label';
+	import * as Alert from '$lib/components/ui/alert';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	export let data: PageData;
 	export let form: ActionData;
@@ -48,20 +54,20 @@
 </svelte:head>
 
 <div class="flex flex-col gap-5 px-5 py-6">
-	<h1 class="text-lg font-medium text-base-content">{$_('profile.title')}</h1>
+	<h1 class="text-lg font-medium text-foreground">{$_('profile.title')}</h1>
 
 	{#if form?.success}
-		<div class="alert alert-success text-sm">{$_('profile.saved')}</div>
+		<Alert.Root class="text-sm border-primary/30 bg-primary/10 text-primary">{$_('profile.saved')}</Alert.Root>
 	{/if}
 	{#if form?.error}
-		<div class="alert alert-error text-sm">{form.error}</div>
+		<Alert.Root variant="destructive" class="text-sm">{form.error}</Alert.Root>
 	{/if}
 
 	<form method="POST" action="?/save" use:enhance class="flex flex-col gap-5">
 		<!-- Avatar -->
 		<div class="flex flex-col items-center gap-3">
 			<div class="relative">
-				<div class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-base-200 text-4xl ring-2 ring-base-300">
+				<div class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-muted text-4xl ring-2 ring-border">
 					{#if avatarPreview}
 						<img src={avatarPreview} alt="avatar" class="h-full w-full object-cover" />
 					{:else}
@@ -70,26 +76,28 @@
 				</div>
 				{#if uploading}
 					<div class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
-						<span class="loading loading-spinner loading-sm text-white"></span>
+						<Spinner size="sm" class="text-white" />
 					</div>
 				{/if}
 			</div>
 
 			{#if uploadError}
-				<p class="text-xs text-error">{uploadError}</p>
+				<p class="text-xs text-destructive">{uploadError}</p>
 			{/if}
 
 			<!-- Hidden inputs carry values into the form action -->
 			<input type="hidden" name="avatar_url" value={avatarUrl} />
 
-			<button
+			<Button
 				type="button"
-				class="btn btn-ghost btn-sm text-primary"
+				variant="ghost"
+				size="sm"
+				class="text-primary"
 				onclick={() => fileInput.click()}
 				disabled={uploading}
 			>
 				{$_('profile.avatar.change')}
-			</button>
+			</Button>
 			<input
 				bind:this={fileInput}
 				type="file"
@@ -100,36 +108,32 @@
 		</div>
 
 		<!-- Display name -->
-		<label class="form-control">
-			<div class="label"><span class="label-text">{$_('profile.name.label')}</span></div>
-			<input
+		<div class="flex flex-col gap-1.5">
+			<Label>{$_('profile.name.label')}</Label>
+			<Input
 				type="text"
 				name="display_name"
-				class="input input-bordered w-full"
 				bind:value={displayName}
-				maxlength="50"
+				maxlength={50}
 				placeholder="Bugmeister"
 			/>
-		</label>
+		</div>
 
 		<!-- Bio -->
-		<label class="form-control">
-			<div class="label"><span class="label-text">{$_('profile.bio.label')}</span></div>
-			<textarea
+		<div class="flex flex-col gap-1.5">
+			<Label>{$_('profile.bio.label')}</Label>
+			<Textarea
 				name="bio"
-				class="textarea textarea-bordered w-full"
-				rows="4"
+				rows={4}
 				bind:value={bio}
-				maxlength="300"
+				maxlength={300}
 				placeholder={$_('profile.bio.placeholder')}
-			></textarea>
-			<div class="label">
-				<span class="label-text-alt text-base-content/40">{bio.length}/300</span>
-			</div>
-		</label>
+			/>
+			<p class="text-muted-foreground text-xs">{bio.length}/300</p>
+		</div>
 
-		<button type="submit" class="btn btn-primary w-full" disabled={uploading}>
+		<Button type="submit" variant="default" class="w-full" disabled={uploading}>
 			{$_('profile.save')}
-		</button>
+		</Button>
 	</form>
 </div>

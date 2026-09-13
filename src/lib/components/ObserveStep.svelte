@@ -6,6 +6,7 @@
 	import { autosaveSession } from '$lib/sessionSave';
 	import { insectImage } from '$lib/insectImage';
 	import type { InsectType } from '$lib/types';
+	import { Button } from '$lib/components/ui/button';
 
 	export let insectTypes: InsectType[] = [];
 
@@ -114,26 +115,30 @@
 
 <div class="relative flex flex-col">
 	<!-- Timer display: sticky so it stays visible while the insect grid scrolls beneath it -->
-	<div class="sticky top-0 z-20 bg-base-100 px-5 pb-4 pt-6">
-		<div class="rounded-xl border border-base-300 bg-base-200 p-4 text-center">
+	<div class="sticky top-0 z-20 bg-background px-5 pb-4 pt-6">
+		<div class="rounded-xl border border-border bg-muted p-4 text-center">
 			<div class="flex items-center justify-between gap-3">
-				<button
-					class="btn btn-ghost btn-sm shrink-0"
+				<Button
+					variant="ghost"
+					size="sm"
+					class="shrink-0"
 					aria-label={$_('observe.timer.minus')}
 					onclick={() => adjustTime(-1)}
 				>
 					−1 min
-				</button>
+				</Button>
 				<div class="font-mono text-4xl font-medium text-primary">{formatTime(timeLeft)}</div>
-				<button
-					class="btn btn-ghost btn-sm shrink-0"
+				<Button
+					variant="ghost"
+					size="sm"
+					class="shrink-0"
 					aria-label={$_('observe.timer.plus')}
 					onclick={() => adjustTime(1)}
 				>
 					+1 min
-				</button>
+				</Button>
 			</div>
-			<div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-base-300">
+			<div class="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border">
 				<div
 					class="h-full rounded-full bg-primary transition-all duration-1000"
 					style="width: {progressPercent}%"
@@ -143,9 +148,9 @@
 
 		<!-- Running totals -->
 		<div class="mt-4 flex justify-center gap-6 text-sm">
-			<span class="text-base-content/60">
+			<span class="text-muted-foreground">
 				{$_('observe.timer.total')}:
-				<strong class="text-base-content">{$sessionStore.totalCount}</strong>
+				<strong class="text-foreground">{$sessionStore.totalCount}</strong>
 			</span>
 		</div>
 	</div>
@@ -158,7 +163,7 @@
 				<div
 					role="button"
 					tabindex="0"
-					class="relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border border-base-300 bg-base-200 transition-all"
+					class="relative flex aspect-square flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg border border-border bg-muted transition-all"
 					style="transform: scale({buttonScales[insect.name] ?? 1})"
 					onclick={() => tapInsect(insect)}
 					onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), tapInsect(insect))}
@@ -176,13 +181,13 @@
 						</button>
 					{/if}
 					<img src={insectImage(insect.name)} alt="" class="h-16 w-16" />
-					<span class="px-1 text-center text-xs font-medium leading-tight text-base-content/70">{$_(`insect.${insect.name}`)}</span>
+					<span class="px-1 text-center text-xs font-medium leading-tight text-muted-foreground">{$_(`insect.${insect.name}`)}</span>
 				</div>
 			{/each}
 		</div>
 
-		<button class="btn btn-ghost btn-sm text-base-content/40" onclick={advance}>
+		<Button variant="ghost" size="sm" class="text-muted-foreground" onclick={advance}>
 			{$_('observe.timer.finish')}
-		</button>
+		</Button>
 	</div>
 </div>
