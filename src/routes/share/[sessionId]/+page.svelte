@@ -64,7 +64,7 @@
 		<h2 class="mb-1 text-2xl font-medium leading-snug text-white">
 			{session.total_count} creatures.<br>{session.duration_min} minutes.<br>Plain sight.
 		</h2>
-		<p class="mb-4 text-xs text-green-mid">{session.space_name ?? $_('app.name')} · Session</p>
+		<p class="mb-4 text-xs text-accent">{session.space_name ?? $_('app.name')} · Session</p>
 
 		<!-- Stats -->
 		<div class="mb-4 grid grid-cols-2 gap-2">

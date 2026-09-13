@@ -139,7 +139,7 @@
 		const map = new mapLib.Map({ container: mapContainer, style: styleUrl, center, zoom });
 		mapInstance = map;
 
-		const marker = new mapLib.Marker({ draggable: true, color: '#0F6E56' }).setLngLat(center).addTo(map);
+		const marker = new mapLib.Marker({ draggable: true, color: '#1B9468' }).setLngLat(center).addTo(map);
 		markerInstance = marker;
 
 		marker.on('dragend', () => {
@@ -489,7 +489,7 @@
 						items={editablePlants.map((p) => p.name)}
 						addPlaceholder={$_('spot.add.confirm.plants.addPlaceholder')}
 						removeLabel={$_('spot.add.confirm.remove')}
-						chipClass="bg-green-light text-primary"
+						chipClass="bg-accent text-primary"
 						chipRemoveClass="text-primary/60 hover:text-primary"
 						onAdd={addPlant}
 						onRemove={removePlant}

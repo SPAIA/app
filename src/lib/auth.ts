@@ -66,6 +66,15 @@ export function getAuth(env: AuthEnv, requestURL?: URL) {
 			}),
 			type: 'sqlite'
 		},
+		advanced: {
+			database: {
+				// Better Auth's schema check introspects via sqlite_master, which
+				// D1 (local and remote) rejects with SQLITE_AUTH -- and since getAuth()
+				// builds a fresh instance per request, it would re-run on every call.
+				// Our migrations are the source of truth, so skip it.
+				validateSchema: false
+			}
+		},
 		emailAndPassword: {
 			enabled: true
 		},

@@ -106,7 +106,7 @@
 		const map = new mapLib.Map({ container: mapContainer, style: styleUrl, center, zoom });
 		mapInstance = map;
 
-		const marker = new mapLib.Marker({ draggable: true, color: '#0F6E56' })
+		const marker = new mapLib.Marker({ draggable: true, color: '#1B9468' })
 			.setLngLat(center)
 			.addTo(map);
 		markerInstance = marker;
@@ -289,7 +289,7 @@
 								<li>
 									<button
 										type="button"
-										class="w-full px-3 py-2 text-left text-sm hover:bg-green-light"
+										class="w-full px-3 py-2 text-left text-sm hover:bg-accent"
 										onclick={() => pickSearchResult(r)}
 									>
 										{r.label}

@@ -140,7 +140,7 @@
 		</div>
 	{:else if visionStatus === 'done'}
 		{#if vision?.changes}
-			<p class="rounded-lg bg-green-light px-3 py-2.5 text-sm text-green-dark">
+			<p class="rounded-lg bg-accent px-3 py-2.5 text-sm text-accent-foreground">
 				{$_('spot.add.confirm.changes.label')}: {vision.changes}
 			</p>
 		{:else if vision?.area_mismatch}
@@ -169,8 +169,8 @@
 				items={editablePlants.map((p) => p.name)}
 				addPlaceholder={$_('spot.add.confirm.plants.addPlaceholder')}
 				removeLabel={$_('spot.add.confirm.remove')}
-				chipClass="bg-green-light text-green-dark"
-				chipRemoveClass="text-green-dark/60 hover:text-green-dark"
+				chipClass="bg-accent text-accent-foreground"
+				chipRemoveClass="text-accent-foreground/60 hover:text-accent-foreground"
 				onAdd={addPlant}
 				onRemove={removePlant}
 			/>
@@ -199,7 +199,7 @@
 				<button
 					class="flex flex-col items-center rounded-lg border py-2 text-xs transition-all"
 					class:border-primary={selectedWeather === w.key}
-					class:bg-green-light={selectedWeather === w.key}
+					class:bg-accent={selectedWeather === w.key}
 					class:text-primary={selectedWeather === w.key}
 					class:border-border={selectedWeather !== w.key}
 					class:bg-background={selectedWeather !== w.key}

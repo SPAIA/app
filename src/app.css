@@ -1,140 +1,300 @@
+/* ============================================================
+   SPAIA — shadcn theme
+   Tailwind v4 + shadcn-svelte
+   Generated 2026-09-13 · pairs with SPAIA-design-guidelines.md
+   ------------------------------------------------------------
+   Type:   Montserrat (display · 16px+) · IBM Plex Sans (text) · DM Mono (machine)
+   Brand:  mint  #3CF4A2   navy #0C2464   white #FFFFFF
+   Rule:   navy is the ink and the primary fill.
+           mint is the signal colour and ALWAYS carries navy on top.
+           White text on mint is 1.43:1 — never ship it.
+   ============================================================ */
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn-svelte/tailwind.css";
 @import "@fontsource-variable/montserrat";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/dm-mono/400.css";
+@import "@fontsource/dm-mono/500.css";
 
 @custom-variant dark (&:is(.dark *));
 
-@theme {
-  --font-sans: 'Montserrat Variable', sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, monospace;
-  --color-green-light: #E0FCEF;
-  --color-green-mid:   #3CF4A2;
-  --color-green-dark:  #047857;
-  --font-heading: 'Montserrat Variable', sans-serif;
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-foreground: var(--foreground);
-  --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
-body {
-  font-family: var(--font-sans);
-  color: rgb(12, 36, 100);
-  background-color: rgb(242, 242, 242);
-}
-
+/* ------------------------------------------------------------
+   LIGHT
+   ------------------------------------------------------------ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.147 0.004 49.25);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.147 0.004 49.25);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.147 0.004 49.25);
-  --primary: oklch(0.859 0.184 158.422);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.97 0.001 106.424);
-  --muted-foreground: oklch(0.553 0.013 58.071);
-  --accent: oklch(0.508 0.118 165.612);
-  --accent-foreground: oklch(0.979 0.021 166.113);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.923 0.003 48.717);
-  --input: oklch(0.923 0.003 48.717);
-  --ring: oklch(0.709 0.01 56.259);
-  --chart-1: oklch(0.869 0.005 56.366);
-  --chart-2: oklch(0.553 0.013 58.071);
-  --chart-3: oklch(0.444 0.011 73.639);
-  --chart-4: oklch(0.374 0.01 67.558);
-  --chart-5: oklch(0.268 0.007 34.298);
-  --radius: 0.3rem;
-  --sidebar: oklch(0.985 0.001 106.423);
-  --sidebar-foreground: oklch(0.147 0.004 49.25);
-  --sidebar-primary: oklch(0.859 0.184 158.422);
-  --sidebar-primary-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-accent: oklch(0.97 0.001 106.424);
-  --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
-  --sidebar-border: oklch(0.923 0.003 48.717);
-  --sidebar-ring: oklch(0.709 0.01 56.259);
+  --radius: 0.875rem;                                 /* card = 18px via --radius-xl */
+
+  --background:            oklch(0.9728 0.0057 264.53);  /* #F4F6FA  cool paper */
+  --foreground:            oklch(0.2894 0.1169 264.41);  /* #0C2464  navy ink   */
+
+  --card:                  oklch(1.0000 0.0000 0);       /* #FFFFFF */
+  --card-foreground:       oklch(0.2894 0.1169 264.41);  /* #0C2464 */
+
+  --popover:               oklch(1.0000 0.0000 0);       /* #FFFFFF */
+  --popover-foreground:    oklch(0.2894 0.1169 264.41);  /* #0C2464 */
+
+  --primary:               oklch(0.2894 0.1169 264.41);  /* #0C2464  navy  */
+  --primary-foreground:    oklch(1.0000 0.0000 0);       /* #FFFFFF  14.5:1 */
+
+  --secondary:             oklch(0.9598 0.0091 258.34);  /* #EEF2F8 */
+  --secondary-foreground:  oklch(0.2894 0.1169 264.41);  /* #0C2464 */
+
+  --muted:                 oklch(0.9787 0.0057 264.53);  /* #F6F8FC  inset panel */
+  --muted-foreground:      oklch(0.5291 0.0602 265.84);  /* #5B6B8F  5.3:1 on card */
+
+  --accent:                oklch(0.8587 0.1844 158.42);  /* #3CF4A2  mint  */
+  --accent-foreground:     oklch(0.2894 0.1169 264.41);  /* #0C2464  10.1:1 */
+
+  --destructive:           oklch(0.5385 0.1818 32.56);   /* #C1341A */
+  --destructive-foreground:oklch(1.0000 0.0000 0);       /* #FFFFFF  5.6:1 */
+
+  --border:                oklch(0.9449 0.0133 262.38);  /* #E8EDF6 */
+  --input:                 oklch(0.9449 0.0133 262.38);  /* #E8EDF6 */
+  --ring:                  oklch(0.2894 0.1169 264.41);  /* #0C2464  NOT mint — see guidelines §3 */
+
+  /* charts — categorical, fixed order, never cycled */
+  --chart-1:               oklch(0.5926 0.1219 162.50);  /* #1B9468  green   */
+  --chart-2:               oklch(0.5193 0.1712 260.03);  /* #2563C9  blue    */
+  --chart-3:               oklch(0.6344 0.1352 64.06);   /* #C2761A  amber   */
+  --chart-4:               oklch(0.5510 0.1945 293.54);  /* #7B51D6  violet  */
+  --chart-5:               oklch(0.5221 0.1614 4.40);    /* #B0355E  rose    */
+
+  /* activity heat ramp — sequential, low → high */
+  --heat-0:                oklch(0.9728 0.0057 264.53);  /* #F4F6FA  monitored, no detections */
+  --heat-1:                oklch(0.9724 0.0223 164.53);  /* #E9FBF2 */
+  --heat-2:                oklch(0.9201 0.0642 167.43);  /* #BCF3DC */
+  --heat-3:                oklch(0.8606 0.1129 165.86);  /* #83E9C0 */
+  --heat-4:                oklch(0.7850 0.1486 162.33);  /* #46D69C */
+  --heat-5:                oklch(0.6491 0.1362 162.70);  /* #17A876 */
+  --heat-6:                oklch(0.4809 0.0997 163.63);  /* #0B6F4E */
+
+  --sidebar:                       oklch(1.0000 0.0000 0);
+  --sidebar-foreground:            oklch(0.2894 0.1169 264.41);
+  --sidebar-primary:               oklch(0.2894 0.1169 264.41);
+  --sidebar-primary-foreground:    oklch(1.0000 0.0000 0);
+  --sidebar-accent:                oklch(0.9598 0.0091 258.34);
+  --sidebar-accent-foreground:     oklch(0.2894 0.1169 264.41);
+  --sidebar-border:                oklch(0.9449 0.0133 262.38);
+  --sidebar-ring:                  oklch(0.2894 0.1169 264.41);
 }
 
+/* ------------------------------------------------------------
+   DARK
+   primary flips to mint — on a navy ground, mint is the only
+   fill bright enough to read as the primary action.
+   ------------------------------------------------------------ */
 .dark {
-  --background: oklch(0.147 0.004 49.25);
-  --foreground: oklch(0.985 0.001 106.423);
-  --card: oklch(0.216 0.006 56.043);
-  --card-foreground: oklch(0.985 0.001 106.423);
-  --popover: oklch(0.216 0.006 56.043);
-  --popover-foreground: oklch(0.985 0.001 106.423);
-  --primary: oklch(0.859 0.184 158.422);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.268 0.007 34.298);
-  --muted-foreground: oklch(0.709 0.01 56.259);
-  --accent: oklch(0.432 0.095 166.913);
-  --accent-foreground: oklch(0.979 0.021 166.113);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.553 0.013 58.071);
-  --chart-1: oklch(0.869 0.005 56.366);
-  --chart-2: oklch(0.553 0.013 58.071);
-  --chart-3: oklch(0.444 0.011 73.639);
-  --chart-4: oklch(0.374 0.01 67.558);
-  --chart-5: oklch(0.268 0.007 34.298);
-  --sidebar: oklch(0.216 0.006 56.043);
-  --sidebar-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-primary: oklch(0.859 0.184 158.422);
-  --sidebar-primary-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-accent: oklch(0.268 0.007 34.298);
-  --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.553 0.013 58.071);
+  --background:            oklch(0.2070 0.0633 261.09);  /* #061634  deep navy */
+  --foreground:            oklch(0.9531 0.0166 259.42);  /* #E9F0FB  15.6:1   */
+
+  --card:                  oklch(0.2894 0.1169 264.41);  /* #0C2464 */
+  --card-foreground:       oklch(0.9531 0.0166 259.42);  /* #E9F0FB */
+
+  --popover:               oklch(0.2894 0.1169 264.41);  /* #0C2464 */
+  --popover-foreground:    oklch(0.9531 0.0166 259.42);  /* #E9F0FB */
+
+  --primary:               oklch(0.8587 0.1844 158.42);  /* #3CF4A2  mint  */
+  --primary-foreground:    oklch(0.2894 0.1169 264.41);  /* #0C2464  10.1:1 */
+
+  --secondary:             oklch(0.3295 0.1126 264.04);  /* #16306E */
+  --secondary-foreground:  oklch(0.9531 0.0166 259.42);  /* #E9F0FB */
+
+  --muted:                 oklch(0.2983 0.0947 262.76);  /* #122A5C */
+  --muted-foreground:      oklch(0.7622 0.0649 264.08);  /* #9DB2DC  6.8:1 on card */
+
+  --accent:                oklch(0.8587 0.1844 158.42);  /* #3CF4A2 */
+  --accent-foreground:     oklch(0.2894 0.1169 264.41);  /* #0C2464 */
+
+  --destructive:           oklch(0.6792 0.1753 33.57);   /* #F0674A */
+  --destructive-foreground:oklch(0.2049 0.0508 35.74);   /* #2A0D06 */
+
+  --border:                oklch(0.3704 0.1197 263.14);  /* #1C3B7E */
+  --input:                 oklch(0.4065 0.1251 262.50);  /* #22458C */
+  --ring:                  oklch(0.8587 0.1844 158.42);  /* #3CF4A2  mint reads as a ring on navy */
+
+  --chart-1:               oklch(0.8587 0.1844 158.42);  /* #3CF4A2 */
+  --chart-2:               oklch(0.7236 0.1443 258.39);  /* #6BA6FF */
+  --chart-3:               oklch(0.7999 0.1463 78.74);   /* #F0B13C */
+  --chart-4:               oklch(0.7152 0.1538 299.00);  /* #B18BF5 */
+  --chart-5:               oklch(0.7112 0.1570 4.25);    /* #F07396 */
+
+  /* anchor flips: the ramp now runs from the surface UP to full mint */
+  --heat-0:                oklch(0.2513 0.0855 263.00);  /* #0A1E54  monitored, no detections */
+  --heat-1:                oklch(0.3321 0.0560 167.46);  /* #123F30 */
+  --heat-2:                oklch(0.4526 0.0872 165.32);  /* #14654A */
+  --heat-3:                oklch(0.5926 0.1219 162.50);  /* #1B9468 */
+  --heat-4:                oklch(0.7403 0.1534 161.67);  /* #2AC88C */
+  --heat-5:                oklch(0.8587 0.1844 158.42);  /* #3CF4A2 */
+  --heat-6:                oklch(0.8587 0.1844 158.42);  /* #3CF4A2  ramp is 5 steps in dark */
+
+  --sidebar:                       oklch(0.2894 0.1169 264.41);
+  --sidebar-foreground:            oklch(0.9531 0.0166 259.42);
+  --sidebar-primary:               oklch(0.8587 0.1844 158.42);
+  --sidebar-primary-foreground:    oklch(0.2894 0.1169 264.41);
+  --sidebar-accent:                oklch(0.3295 0.1126 264.04);
+  --sidebar-accent-foreground:     oklch(0.9531 0.0166 259.42);
+  --sidebar-border:                oklch(0.3704 0.1197 263.14);
+  --sidebar-ring:                  oklch(0.8587 0.1844 158.42);
+}
+
+/* ------------------------------------------------------------
+   THEME MAPPING
+   ------------------------------------------------------------ */
+@theme inline {
+  /* Three roles — see guidelines §6.
+       display  what you look at   — headlines, card titles, displayed figures. NEVER below 16px.
+       sans     what you read      — body, captions, buttons, table cells, form fields.
+       mono     what a machine wrote — labels, tags, axis text, device IDs, timestamps.
+                                       Weight 500 below 11px; DM Mono has no bold, and
+                                       doesn't need one — caps + tracking carry the emphasis. */
+  --font-display: 'Montserrat Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, SFMono-Regular, monospace;
+  /* legacy alias — dialog/drawer titles still use the font-heading utility */
+  --font-heading: var(--font-display);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-heat-0: var(--heat-0);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
+  --color-heat-5: var(--heat-5);
+  --color-heat-6: var(--heat-6);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
-	* {
-		@apply border-border outline-ring/50;
+  * {
+    @apply border-border outline-ring/50;
   }
-	body {
-		@apply bg-background text-foreground;
+  /* Headings take the display face; running text stays on the sans. */
+  h1, h2, h3, h4, [data-slot="card-title"] {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
   }
-	html {
-		@apply font-sans;
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01";
+  }
+  html {
+    @apply font-sans;
+  }
+  /* digits line up in columns wherever they're compared */
+  .tabular, table td, [data-slot="card"] .value {
+    font-variant-numeric: tabular-nums;
   }
 }
+
+/* ------------------------------------------------------------
+   SPAIA COMPONENT OVERRIDES
+   Two deviations from stock shadcn. Both deliberate.
+   ------------------------------------------------------------ */
+@layer components {
+  /* 1. Buttons are pills, not rounded rectangles — matches the preset. */
+  [data-slot="button"] {
+    @apply rounded-full;
+  }
+
+  /* 2. Inset panel: the soft block that holds a value inside a card.
+        Used for every metric readout. Not a stock shadcn part. */
+  .spaia-inset {
+    @apply bg-muted rounded-md px-4 py-3;
+  }
+  /* DM Mono at 500 below 11px — it thins out at 400 on the heat-map axis. */
+  .spaia-inset-label {
+    @apply text-[10px] uppercase tracking-[0.13em] text-muted-foreground;
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+  /* A displayed figure wears the display face — Montserrat's geometric digits
+     have presence at this size and stay column-true with tnum on (verified).
+     Plex Sans still has NO weight above 700: never font-extrabold on body text. */
+  .spaia-inset-value {
+    @apply text-2xl tracking-tight;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* The display face. One per surface, minimum 40px, line-height floor 1.12
+     — Montserrat's diaeresis sits high and German headlines are full of
+     umlauts, so tighter leading collides (mähen, Grünflächen, Säume). */
+  .spaia-display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.5rem, 5vw, 7rem);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Card and section titles also take the display face — 16px floor. */
+  .spaia-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* ------------------------------------------------------------
+   HEAT MAP HELPER
+   Cells take a step class; zero takes heat-0, never a ramp step.
+   Keep the 2px gap — it's what makes adjacent cells readable.
+   ------------------------------------------------------------ */
+.heat-grid {
+  display: grid;
+  gap: 2px;
+}
+.heat-cell {
+  border-radius: 2px;
+  background: var(--heat-0);
+}
+.heat-1 { background: var(--heat-1); }
+.heat-2 { background: var(--heat-2); }
+.heat-3 { background: var(--heat-3); }
+.heat-4 { background: var(--heat-4); }
+.heat-5 { background: var(--heat-5); }
+.heat-6 { background: var(--heat-6); }

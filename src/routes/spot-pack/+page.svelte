@@ -70,7 +70,7 @@
 	<div class="relative overflow-hidden rounded-xl bg-foreground px-5 py-6">
 		<div class="pointer-events-none absolute -right-4 -bottom-4 text-[100px] leading-none opacity-[0.07]">📍</div>
 		<h1 class="text-2xl font-medium leading-tight text-white">{$_('spot_pack.title')}</h1>
-		<p class="mt-2 text-sm text-green-mid">{$_('spot_pack.subtitle')}</p>
+		<p class="mt-2 text-sm text-accent">{$_('spot_pack.subtitle')}</p>
 	</div>
 
 	<!-- Pack contents -->
@@ -98,7 +98,7 @@
 				{#if i < steps.length - 1}
 					<span class="absolute right-[-6px] top-[10px] text-[11px] text-muted-foreground">→</span>
 				{/if}
-				<div class="mx-auto mb-1 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-green-light text-[11px] font-medium text-primary">
+				<div class="mx-auto mb-1 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-accent text-[11px] font-medium text-primary">
 					{i + 1}
 				</div>
 				<div class="text-[9px] leading-tight text-muted-foreground">{$_(step.key)}</div>

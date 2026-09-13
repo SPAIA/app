@@ -87,7 +87,7 @@
 			</button>
 			<div class="flex-1 min-w-0">
 				<p class="text-sm font-medium text-white">{profile.display_name ?? 'Bugmeister'}</p>
-				<p class="text-[11px] text-green-mid">{$_(levelTitleKey)}{profile.home_locality ? ` · ${profile.home_locality}` : ''}</p>
+				<p class="text-[11px] text-accent">{$_(levelTitleKey)}{profile.home_locality ? ` · ${profile.home_locality}` : ''}</p>
 			</div>
 			<button
 				onclick={() => goto('/profile/edit')}
@@ -126,8 +126,8 @@
 							class:bg-primary={state === 'done' || state === 'today'}
 							class:text-white={state === 'done' || state === 'today'}
 							class:ring-2={state === 'today'}
-							class:ring-[#0F6E56]={state === 'today'}
-							class:bg-green-light={state === 'empty'}
+							class:ring-chart-1={state === 'today'}
+							class:bg-accent={state === 'empty'}
 						>
 							{#if state !== 'empty'}✓{/if}
 						</div>
@@ -156,7 +156,7 @@
 				</div>
 				<div class="flex gap-1.5 overflow-x-auto px-3 py-2.5 scrollbar-none">
 					{#each set.sightings as sighting}
-						<div class="flex w-16 shrink-0 flex-col items-center gap-1 rounded-[10px] border border-primary bg-green-light px-1.5 py-2.5">
+						<div class="flex w-16 shrink-0 flex-col items-center gap-1 rounded-[10px] border border-primary bg-accent px-1.5 py-2.5">
 							<span class="text-xl">{sighting.icon}</span>
 							<span class="text-center text-[8px] font-medium leading-tight text-muted-foreground">{$_(`insect.${sighting.insect_name}`)}</span>
 						</div>

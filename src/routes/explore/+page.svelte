@@ -7,6 +7,7 @@
 	import type { SpotSummary } from '$lib/db/queries';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';
+	import * as Drawer from '$lib/components/ui/drawer';
 
 	export let data: PageData;
 
@@ -14,6 +15,7 @@
 
 	let mapContainer: HTMLDivElement;
 	let mapInstance: import('maplibre-gl').Map | null = null;
+	let open = false;
 	let selectedSpot: MapSpot | null = null;
 	let summary: (SpotSummary & { cover: { id: string } | null }) | null = null;
 	let summaryLoading = false;
@@ -28,6 +30,7 @@
 
 	async function selectSpot(spot: MapSpot) {
 		selectedSpot = spot;
+		open = true;
 		summary = null;
 		summaryLoading = true;
 		try {
@@ -39,8 +42,7 @@
 	}
 
 	function closeCard() {
-		selectedSpot = null;
-		summary = null;
+		open = false;
 	}
 
 	function startObserving() {
@@ -167,74 +169,78 @@
 		</p>
 	{/if}
 
-	{#if !selectedSpot}
+	{#if !open}
 		<Button variant="outline" size="sm" class="absolute inset-x-4 bottom-24 z-10 bg-background" onclick={() => goto('/space-pack')}>
 			{$_('explore.cta.space')}
 		</Button>
 	{/if}
 </div>
 
-<!-- Spot detail bottom sheet -->
-{#if selectedSpot}
-	<button class="fixed inset-0 z-40 w-full bg-black/40" aria-label={$_('explore.spot.close')} onclick={closeCard}></button>
-	<div class="fixed bottom-0 left-1/2 z-50 max-h-[80vh] w-full max-w-105 -translate-x-1/2 overflow-y-auto rounded-t-2xl border-t border-border bg-background">
-		{#if summary?.cover}
-			<img src="/api/media/{summary.cover.id}" alt="" class="h-40 w-full rounded-t-2xl object-cover" />
-		{/if}
-		<div class="flex flex-col gap-2 p-5">
-			<div class="mb-2 flex items-center gap-3">
+<!-- Spot detail drawer -->
+<Drawer.Root bind:open>
+	<Drawer.Content>
+		{#if selectedSpot}
+			<Drawer.Header class="flex-row items-center gap-3 text-left">
 				<span class="text-2xl">{selectedSpot.icon}</span>
-				<h3 class="text-lg font-medium text-foreground">{selectedSpot.name}</h3>
-			</div>
+				<Drawer.Title class="text-lg font-medium">{selectedSpot.name}</Drawer.Title>
+			</Drawer.Header>
 
-			{#if summaryLoading}
-				<div class="flex justify-center py-6">
-					<Spinner size="sm" />
-				</div>
-			{:else if summary}
-				{#if summary.observationCount === 0}
-					<p class="mb-2 text-sm text-muted-foreground">{$_('explore.spot.noObservations')}</p>
-				{:else}
-					<div class="mb-2 rounded-xl border border-border bg-muted py-3 text-center">
-						<div class="text-2xl font-medium text-primary">{summary.observationCount}</div>
-						<div class="mt-0.5 text-[10px] text-muted-foreground">
-							{$_('explore.spot.observations', { values: { count: summary.observationCount } })}
-						</div>
+			<div class="flex flex-col gap-2 overflow-y-auto px-4 pb-4">
+				{#if summary?.cover}
+					<img src="/api/media/{summary.cover.id}" alt="" class="mb-2 h-40 w-full rounded-2xl object-cover" />
+				{/if}
+
+				{#if summaryLoading}
+					<div class="flex justify-center py-6">
+						<Spinner size="sm" />
 					</div>
-
-					{#if summary.lastObservedAt}
-						<p class="mb-2 text-xs text-muted-foreground">
-							{$_('explore.spot.lastObserved', { values: { date: formatDate(summary.lastObservedAt) } })}
-						</p>
-					{/if}
-
-					{#if summary.topInsects.length}
-						<div class="mb-2">
-							<p class="mb-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-								{$_('explore.spot.topInsects')}
-							</p>
-							<div class="flex flex-col gap-1.5">
-								{#each summary.topInsects as insect}
-									<div class="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-										<span class="flex items-center gap-2 text-sm text-foreground">
-											{#if insect.icon}<span>{insect.icon}</span>{/if}
-											{insect.name}
-										</span>
-										<span class="text-xs font-medium text-muted-foreground">{insect.count}</span>
-									</div>
-								{/each}
+				{:else if summary}
+					{#if summary.observationCount === 0}
+						<p class="mb-2 text-sm text-muted-foreground">{$_('explore.spot.noObservations')}</p>
+					{:else}
+						<div class="mb-2 rounded-xl border border-border bg-muted py-3 text-center">
+							<div class="text-2xl font-medium text-primary">{summary.observationCount}</div>
+							<div class="mt-0.5 text-[10px] text-muted-foreground">
+								{$_('explore.spot.observations', { values: { count: summary.observationCount } })}
 							</div>
 						</div>
+
+						{#if summary.lastObservedAt}
+							<p class="mb-2 text-xs text-muted-foreground">
+								{$_('explore.spot.lastObserved', { values: { date: formatDate(summary.lastObservedAt) } })}
+							</p>
+						{/if}
+
+						{#if summary.topInsects.length}
+							<div class="mb-2">
+								<p class="mb-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+									{$_('explore.spot.topInsects')}
+								</p>
+								<div class="flex flex-col gap-1.5">
+									{#each summary.topInsects as insect}
+										<div class="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
+											<span class="flex items-center gap-2 text-sm text-foreground">
+												{#if insect.icon}<span>{insect.icon}</span>{/if}
+												{insect.name}
+											</span>
+											<span class="text-xs font-medium text-muted-foreground">{insect.count}</span>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
 					{/if}
 				{/if}
-			{/if}
+			</div>
 
-			<Button variant="default" class="w-full" onclick={startObserving}>
-				{$_('space.cta.observe')}
-			</Button>
-			<Button variant="ghost" size="sm" class="w-full" onclick={closeCard}>
-				{$_('explore.spot.close')}
-			</Button>
-		</div>
-	</div>
-{/if}
+			<Drawer.Footer>
+				<Button variant="default" class="w-full" onclick={startObserving}>
+					{$_('space.cta.observe')}
+				</Button>
+				<Button variant="ghost" size="sm" class="w-full" onclick={closeCard}>
+					{$_('explore.spot.close')}
+				</Button>
+			</Drawer.Footer>
+		{/if}
+	</Drawer.Content>
+</Drawer.Root>

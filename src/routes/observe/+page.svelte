@@ -8,6 +8,7 @@
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';
+	import * as Drawer from '$lib/components/ui/drawer';
 
 	export let data: PageData;
 
@@ -19,6 +20,7 @@
 	let userLat: number | null = null;
 	let userLng: number | null = null;
 
+	let open = false;
 	let selectedSpot: MapSpot | null = null;
 	let selectedDistanceKm: number | null = null;
 	let cover: { id: string } | null = null;
@@ -42,6 +44,7 @@
 
 	async function selectSpot(spot: MapSpot) {
 		selectedSpot = spot;
+		open = true;
 		cover = null;
 		selectedDistanceKm =
 			userLat != null && userLng != null && spot.lat != null && spot.lng != null
@@ -59,8 +62,7 @@
 	}
 
 	function closeCard() {
-		selectedSpot = null;
-		cover = null;
+		open = false;
 	}
 
 	function handleCreateSpot() {
@@ -207,7 +209,7 @@
 		</div>
 	{/if}
 
-	{#if !selectedSpot}
+	{#if !open}
 		{#if data.spots.length === 0}
 			<p class="pointer-events-none absolute inset-x-4 bottom-36 text-center text-xs text-muted-foreground">
 				{$_('observe.nearest.none')}
@@ -219,54 +221,56 @@
 	{/if}
 </div>
 
-<!-- Spot detail bottom sheet -->
-{#if selectedSpot}
-	<button class="fixed inset-0 z-40 w-full bg-black/40" aria-label={$_('explore.spot.close')} onclick={closeCard}></button>
-	<div class="fixed bottom-0 left-1/2 z-50 max-h-[80vh] w-full max-w-105 -translate-x-1/2 overflow-y-auto rounded-t-2xl border-t border-border bg-background">
-		{#if coverLoading}
-			<div class="flex h-40 w-full items-center justify-center">
-				<Spinner size="sm" />
-			</div>
-		{:else if cover}
-			<img src="/api/media/{cover.id}" alt="" class="h-40 w-full rounded-t-2xl object-cover" />
-		{/if}
-		<div class="flex flex-col items-center gap-4 p-5 text-center">
-			<span class="text-4xl">{selectedSpot.icon}</span>
-			<div>
-				{#if isNearest}
-					<p class="text-sm text-muted-foreground">{$_('observe.nearest.heading')}</p>
-				{/if}
-				<h2 class="text-xl font-medium text-foreground">{selectedSpot.name}</h2>
-				{#if selectedDistanceKm != null}
-					<p class="mt-1 text-sm text-muted-foreground">
-						{$_('observe.nearest.distance', { values: { distance: formatDistanceRange(selectedDistanceKm, accuracy) } })}
-					</p>
-				{/if}
-			</div>
-
-			<Button variant="default" class="w-full" onclick={() => goto(`/observe/${selectedSpot!.slug}`)}>
-				{$_('observe.nearest.cta', { values: { name: selectedSpot.name } })}
-			</Button>
-			{#if selectedSpot.lat != null && selectedSpot.lng != null}
-				<Button
-					variant="outline"
-					class="w-full"
-					href={directionsUrl(selectedSpot.lat, selectedSpot.lng)}
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					{$_('observe.nearest.directions')}
-				</Button>
+<!-- Spot detail drawer -->
+<Drawer.Root bind:open>
+	<Drawer.Content>
+		{#if selectedSpot}
+			{#if coverLoading}
+				<div class="flex h-40 w-full items-center justify-center">
+					<Spinner size="sm" />
+				</div>
+			{:else if cover}
+				<img src="/api/media/{cover.id}" alt="" class="mb-2 h-40 w-full rounded-2xl object-cover" />
 			{/if}
-			<Button variant="outline" class="w-full" onclick={handleCreateSpot}>
-				{$_('observe.nearest.addSpot')}
-			</Button>
-			<Button variant="ghost" size="sm" class="w-full" onclick={closeCard}>
-				{$_('explore.spot.close')}
-			</Button>
-		</div>
-	</div>
-{/if}
+
+			<Drawer.Header>
+				<div class="text-4xl">{selectedSpot.icon}</div>
+				{#if isNearest}
+					<Drawer.Description>{$_('observe.nearest.heading')}</Drawer.Description>
+				{/if}
+				<Drawer.Title class="text-xl font-medium">{selectedSpot.name}</Drawer.Title>
+				{#if selectedDistanceKm != null}
+					<Drawer.Description>
+						{$_('observe.nearest.distance', { values: { distance: formatDistanceRange(selectedDistanceKm, accuracy) } })}
+					</Drawer.Description>
+				{/if}
+			</Drawer.Header>
+
+			<Drawer.Footer>
+				<Button variant="default" class="w-full" onclick={() => goto(`/observe/${selectedSpot!.slug}`)}>
+					{$_('observe.nearest.cta', { values: { name: selectedSpot.name } })}
+				</Button>
+				{#if selectedSpot.lat != null && selectedSpot.lng != null}
+					<Button
+						variant="outline"
+						class="w-full"
+						href={directionsUrl(selectedSpot.lat, selectedSpot.lng)}
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						{$_('observe.nearest.directions')}
+					</Button>
+				{/if}
+				<Button variant="outline" class="w-full" onclick={handleCreateSpot}>
+					{$_('observe.nearest.addSpot')}
+				</Button>
+				<Button variant="ghost" size="sm" class="w-full" onclick={closeCard}>
+					{$_('explore.spot.close')}
+				</Button>
+			</Drawer.Footer>
+		{/if}
+	</Drawer.Content>
+</Drawer.Root>
 
 {#if showProximityModal}
 	<div class="fixed inset-0 z-60 flex items-center justify-center bg-black/50 px-5">
