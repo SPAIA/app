@@ -4,17 +4,8 @@ import { createSpace, getSpaceOrder, updateSpaceOrderSpaceId } from '$lib/db/que
 
 interface CreateSpaceBody {
 	spaceName: string;
-	/** Reverse-geocoded from the creator's position; may be missing if geolocation failed. */
-	locality?: string | null;
-	country?: string | null;
-	town?: string | null;
-	region?: string | null;
-	postcode?: string | null;
-	countryGeonameId?: number | null;
-	regionGeonameId?: number | null;
-	townGeonameId?: number | null;
-	localityGeonameId?: number | null;
 	spaceOrderId: string;
+	description?: string | null;
 	lat?: number | null;
 	lng?: number | null;
 	/** GeoJSON Polygon/MultiPolygon geometry (as a JSON string) traced on the map, if any. */
@@ -29,22 +20,7 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	if (!user) return json({ error: 'Unauthorized' }, { status: 401 });
 
 	const body = (await request.json()) as CreateSpaceBody;
-	const {
-		spaceName,
-		locality,
-		country,
-		town,
-		region,
-		postcode,
-		countryGeonameId,
-		regionGeonameId,
-		townGeonameId,
-		localityGeonameId,
-		spaceOrderId,
-		lat,
-		lng,
-		boundaryGeojson
-	} = body;
+	const { spaceName, spaceOrderId, description, lat, lng, boundaryGeojson } = body;
 
 	if (!spaceName || !spaceOrderId) {
 		return json({ error: 'Missing required fields' }, { status: 400 });
@@ -72,15 +48,9 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 	const spaceId = await createSpace(db, {
 		slug,
 		name: spaceName,
-		locality: locality || '',
-		country: country ?? null,
-		town: town ?? null,
-		region: region ?? null,
-		postcode: postcode ?? null,
-		country_geoname_id: countryGeonameId ?? null,
-		region_geoname_id: regionGeonameId ?? null,
-		town_geoname_id: townGeonameId ?? null,
-		locality_geoname_id: localityGeonameId ?? null,
+		description: description ?? null,
+		locality: '',
+		country: null,
 		icon: '🌿',
 		lat: lat ?? null,
 		lng: lng ?? null,

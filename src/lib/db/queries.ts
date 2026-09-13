@@ -665,6 +665,7 @@ export async function redeemCode(
 export async function createSpace(
 	db: D1Database,
 	space: Pick<Space, 'slug' | 'name' | 'locality' | 'country' | 'icon' | 'lat' | 'lng' | 'owner_id'> & {
+		description?: string | null;
 		town?: string | null;
 		region?: string | null;
 		postcode?: string | null;
@@ -678,15 +679,16 @@ export async function createSpace(
 	const result = await db
 		.prepare(`
 			INSERT INTO spaces (
-				slug, name, locality, country, town, region, postcode,
+				slug, name, description, locality, country, town, region, postcode,
 				country_geoname_id, region_geoname_id, town_geoname_id, locality_geoname_id,
 				icon, lat, lng, owner_id, boundary_geojson
 			)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`)
 		.bind(
 			space.slug,
 			space.name,
+			space.description ?? null,
 			space.locality,
 			space.country,
 			space.town ?? null,

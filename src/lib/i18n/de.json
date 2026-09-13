@@ -190,6 +190,8 @@
   "space.new.title": "Benenn deinen Space",
   "space.new.name.label": "Space-Name",
   "space.new.name.placeholder": "z.B. Mein Garten, Balkongarten",
+  "space.new.description.label": "Beschreibung",
+  "space.new.description.placeholder": "Was ist an diesem Ort besonders?",
   "space.new.location.label": "Standort",
   "space.new.location.gps": "Meinen Standort verwenden",
   "space.new.location.search": "Adresse eingeben",

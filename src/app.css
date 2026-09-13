@@ -14,6 +14,16 @@
   --color-secondary-content:#18181B;
   --color-accent:           #3CF4A2;
   --color-accent-content:   #18181B;
+  --color-neutral:          #18181B;
+  --color-neutral-content:  #ffffff;
+  --color-info:             #3B82F6;
+  --color-info-content:     #ffffff;
+  --color-success:          #047857;
+  --color-success-content:  #ffffff;
+  --color-warning:          #F59E0B;
+  --color-warning-content:  #18181B;
+  --color-error:            #DC2626;
+  --color-error-content:    #ffffff;
   --color-base-100:         #ffffff;
   --color-base-200:         #F4F4F5;
   --color-base-300:         #E4E4E7;
@@ -21,6 +31,11 @@
   --radius-field:           0.5rem;
   --radius-selector:        0.5rem;
   --radius-box:             0.5rem;
+  --size-field:             0.25rem;
+  --size-selector:          0.25rem;
+  --border:                 1px;
+  --depth:                  0;
+  --noise:                  0;
 }
 
 @theme {

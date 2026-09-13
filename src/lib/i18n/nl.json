@@ -190,6 +190,8 @@
   "space.new.title": "Geef je space een naam",
   "space.new.name.label": "Spacenaam",
   "space.new.name.placeholder": "bijv. Mijn Tuin, Balkontuin",
+  "space.new.description.label": "Beschrijving",
+  "space.new.description.placeholder": "Wat is bijzonder aan deze plek?",
   "space.new.location.label": "Locatie",
   "space.new.location.gps": "Mijn locatie gebruiken",
   "space.new.location.search": "Adres invoeren",

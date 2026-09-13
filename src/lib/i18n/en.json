@@ -208,6 +208,8 @@
   "space.new.title": "Name your space",
   "space.new.name.label": "Space name",
   "space.new.name.placeholder": "e.g. My Garden, Balcony Garden",
+  "space.new.description.label": "Description",
+  "space.new.description.placeholder": "What's special about this place?",
   "space.new.location.label": "Location",
   "space.new.location.gps": "Use my location",
   "space.new.location.search": "Enter an address",

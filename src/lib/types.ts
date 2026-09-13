@@ -11,6 +11,7 @@ export interface Space {
 	id: number;
 	slug: string;
 	name: string;
+	description: string | null;
 	locality: string;
 	country: string | null;
 	/** City/town from reverse geocoding — distinct from `locality`, which can be a neighbourhood. */
