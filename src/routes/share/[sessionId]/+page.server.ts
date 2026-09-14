@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { getSessionById, getSessionSightings } from '$lib/db/queries';
+import { getSessionById, getSessionSightings, getMediaForEntity } from '$lib/db/queries';
 import type { D1Database } from '$lib/db/queries';
 import { error } from '@sveltejs/kit';
 
@@ -11,6 +11,8 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 	if (!session) throw error(404, 'Session not found');
 
 	const sightings = await getSessionSightings(db, params.sessionId);
+	const media = await getMediaForEntity(db, 'session', params.sessionId);
+	const image = media[0] ?? null;
 
-	return { session, sightings };
+	return { session, sightings, image };
 };

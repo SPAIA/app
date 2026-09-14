@@ -7,7 +7,9 @@
 
 	$: session = data.session;
 	$: sightings = data.sightings;
+	$: image = data.image;
 	$: url = $page.url.href;
+	$: imageUrl = image ? `${$page.url.origin}/api/media/${image.id}` : null;
 
 	async function saveAsImage() {
 		const { default: html2canvas } = await import('html2canvas');
@@ -36,6 +38,10 @@
 	<meta property="og:title" content="SPAIA: {session.total_count} insects in {session.duration_min} min" />
 	<meta property="og:description" content="{session.total_count} sightings{session.locality ? ` in ${session.locality}` : ''}. Join the insect observation network." />
 	<meta property="og:url" content={url} />
+	{#if imageUrl}
+		<meta property="og:image" content={imageUrl} />
+		<meta name="twitter:card" content="summary_large_image" />
+	{/if}
 </svelte:head>
 
 <div class="flex flex-col gap-4 px-5 py-6">
@@ -46,6 +52,10 @@
 	<!-- Share card -->
 	<div id="share-card" class="relative overflow-hidden rounded-2xl bg-foreground p-5">
 		<div class="pointer-events-none absolute -right-5 -bottom-5 text-[120px] leading-none opacity-[0.06]">🐝</div>
+
+		{#if imageUrl}
+			<img src={imageUrl} alt="" class="mb-4 aspect-video w-full rounded-xl object-cover" crossorigin="anonymous" />
+		{/if}
 
 		<div class="mb-4 flex items-start justify-between">
 			<div>
