@@ -2,7 +2,7 @@
 	import { _ } from 'svelte-i18n';
 	import { onMount } from 'svelte';
 	import { sessionStore } from '$lib/stores/session';
-	import type { Spot, SpotVisionResult } from '$lib/types';
+	import type { Spot, SpotVisionResult, WeatherObservation } from '$lib/types';
 	import { syncClock, clockOffsetMs, nowISO, timeOfDayLabel } from '$lib/time';
 	import { resizeImageFile } from '$lib/media/resizeImage';
 	import { haversineKm, directionsUrl, formatDistanceRange } from '$lib/geo';
@@ -56,6 +56,7 @@
 
 				sessionId = crypto.randomUUID();
 				trackLocalSessionId(sessionId);
+				void fetchWeather(lat, lng);
 				phase = 'photo';
 			},
 			() => {
@@ -69,10 +70,37 @@
 		fileInput?.click();
 	}
 
+	// Kicked off as soon as GPS resolves (well before the observer reaches
+	// the post-count screen) so the real Bright Sky reading is already in the store
+	// by the time it's needed — no photo required, unlike the old DeepSeek
+	// weather guess. Best-effort: a failed fetch just leaves the weather
+	// chips unset for the observer to pick by hand.
+	async function fetchWeather(weatherLat: number, weatherLng: number) {
+		try {
+			const res = await fetch('/api/weather', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ lat: weatherLat, lng: weatherLng })
+			});
+			if (!res.ok) return;
+			const data = (await res.json()) as { observation: WeatherObservation | null };
+			if (!data.observation) return;
+			sessionStore.update((s) => ({
+				...s,
+				weatherObservationId: data.observation!.id,
+				weatherObservation: data.observation,
+				weather: s.weather ?? data.observation!.bucket,
+				windy: !!data.observation!.windy
+			}));
+		} catch (err) {
+			console.error('Weather fetch failed', err);
+		}
+	}
+
 	// The photo upload + DeepSeek Vision read run in the background from here on — the
 	// observer moves straight into the timer/count instead of waiting on them. Results
 	// land in sessionStore and are shown for confirmation after the count (see
-	// SpotConfirmStep), whenever the fetch below happens to resolve.
+	// CardsStep), whenever the fetch below happens to resolve.
 	async function onFileSelected(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
@@ -146,7 +174,7 @@
 			spotId: spot.id,
 			spotName,
 			locality: spot.locality,
-			// Weather and habitat condition are captured after the count, in SpotConfirmStep.
+			// Weather and habitat condition are captured after the count, in CardsStep.
 			// If the background vision read already landed, keep its scene; otherwise fall
 			// back to the spot name for now — uploadPhoto backfills this once it resolves.
 			focalArea: s.focalArea || spotName,

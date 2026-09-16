@@ -14,9 +14,11 @@ import type {
 	PlantRank,
 	HabitatFeatureCategory,
 	PlantObservationSource,
-	SpotSessionComparison
+	SpotSessionComparison,
+	WeatherObservation
 } from '$lib/types';
 import { normalizePlantName, findBestNameMatch } from '$lib/textMatch';
+import { haversineKm } from '$lib/geo';
 
 export interface D1Database {
 	prepare(query: string): D1PreparedStatement;
@@ -227,6 +229,14 @@ export async function incrementSpotInsectCount(
 		.run();
 }
 
+/** Server-side half of the undo ("−") button — mirrors incrementSpotInsectCount. */
+export async function decrementSpotInsectCount(db: D1Database, spotId: number, insectName: string): Promise<void> {
+	await db
+		.prepare(`UPDATE spot_insect_stats SET total_count = MAX(0, total_count - 1) WHERE spot_id = ? AND insect_name = ?`)
+		.bind(spotId, insectName)
+		.run();
+}
+
 /** Adds a just-completed session's duration to the spot's running total minutes observed. */
 export async function addSpotMinutesObserved(db: D1Database, spotId: number, minutes: number): Promise<void> {
 	await db
@@ -394,6 +404,28 @@ export async function getSessionSightings(db: D1Database, sessionId: string): Pr
 }
 
 /**
+ * One row per species, not one row per tap — `sightings` stores an individual
+ * row (count always 1) for every button press, see insertSighting. Reads that
+ * show a per-species breakdown (the share card) need this, not the raw rows.
+ */
+export async function getSessionSightingsAggregated(
+	db: D1Database,
+	sessionId: string
+): Promise<{ name: string; count: number }[]> {
+	const result = await db
+		.prepare(`
+			SELECT insect_name as name, SUM(count) as count
+			FROM sightings
+			WHERE session_id = ?
+			GROUP BY insect_name
+			ORDER BY count DESC
+		`)
+		.bind(sessionId)
+		.all<{ name: string; count: number }>();
+	return result.results;
+}
+
+/**
  * Upserts a session row. Called repeatedly during a live observation (once at
  * start, then on every autosave) as well as once more at completion — so a
  * page reload or dropped connection mid-session never loses progress.
@@ -409,8 +441,8 @@ export async function createSession(
 ): Promise<void> {
 	await db
 		.prepare(`
-			INSERT INTO sessions (id, user_id, space_id, space_name, spot_id, spot_name, locality, weather, condition, focal_area, lat, lng, duration_min, started_at, clock_offset_ms, total_count)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO sessions (id, user_id, space_id, space_name, spot_id, spot_name, locality, weather, weather_observation_id, condition, notes, wind_observed, focal_area, lat, lng, duration_min, started_at, clock_offset_ms, total_count)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT(id) DO UPDATE SET
 				user_id = CASE WHEN excluded.user_id NOT LIKE 'anon:%' THEN excluded.user_id ELSE sessions.user_id END,
 				space_id = excluded.space_id,
@@ -419,7 +451,10 @@ export async function createSession(
 				spot_name = excluded.spot_name,
 				locality = excluded.locality,
 				weather = excluded.weather,
+				weather_observation_id = excluded.weather_observation_id,
 				condition = excluded.condition,
+				notes = excluded.notes,
+				wind_observed = excluded.wind_observed,
 				focal_area = excluded.focal_area,
 				lat = excluded.lat,
 				lng = excluded.lng,
@@ -437,7 +472,10 @@ export async function createSession(
 			session.spot_name,
 			session.locality,
 			session.weather,
+			session.weather_observation_id,
 			session.condition,
+			session.notes,
+			session.wind_observed,
 			session.focal_area,
 			session.lat,
 			session.lng,
@@ -514,6 +552,14 @@ export async function claimSessionsByIds(
 /**
  * Records a single sighting — one row per button press, stamped with the
  * moment the button was actually pressed (not the session-complete time).
+ *
+ * Idempotent on (session_id, insect_name, tapped_at) — see
+ * idx_sightings_dedupe (0027_sightings_dedupe.sql). The autosave/complete
+ * save path is at-least-once (a lost response makes the client resend the
+ * same tap batch), so a resent tap must be a no-op here rather than a second
+ * row, or downstream totals (and spot_insect_stats) drift up. Returns
+ * whether a row was actually inserted, so callers only bump derived counters
+ * (e.g. incrementSpotInsectCount) on a real insert.
  */
 export async function insertSighting(
 	db: D1Database,
@@ -521,14 +567,43 @@ export async function insertSighting(
 	insectTypeId: number | null,
 	insectName: string,
 	tappedAt: string
-): Promise<void> {
-	await db
+): Promise<boolean> {
+	const result = (await db
 		.prepare(`
 			INSERT INTO sightings (session_id, insect_type_id, insect_name, count, tapped_at)
 			VALUES (?, ?, ?, 1, ?)
+			ON CONFLICT (session_id, insect_name, tapped_at) DO NOTHING
 		`)
 		.bind(sessionId, insectTypeId, insectName, tappedAt)
-		.run();
+		.run()) as { success: boolean; meta: { changes: number } };
+	return result.meta.changes > 0;
+}
+
+/**
+ * Server-side half of the undo ("−") button (see ObserveStep.removeLastTap):
+ * removes the most recently tapped sighting of one species in this session,
+ * if one made it to the database. Called unconditionally on every undo,
+ * whether or not that specific tap had actually reached the server yet —
+ * autosave is delta-based and can lag a few seconds behind taps — so this is
+ * a no-op (returns false) when there's nothing to remove. Without this, an
+ * undo only unwinds the observer's local count; the already-saved row (and
+ * the spot_insect_stats increment that came with it) would sit there
+ * forever, silently inflating the session's real totals.
+ */
+export async function deleteLastSighting(db: D1Database, sessionId: string, insectName: string): Promise<boolean> {
+	const result = (await db
+		.prepare(`
+			DELETE FROM sightings
+			WHERE id = (
+				SELECT id FROM sightings
+				WHERE session_id = ? AND insect_name = ?
+				ORDER BY tapped_at DESC
+				LIMIT 1
+			)
+		`)
+		.bind(sessionId, insectName)
+		.run()) as { success: boolean; meta: { changes: number } };
+	return result.meta.changes > 0;
 }
 
 export async function getUserCollection(
@@ -930,6 +1005,20 @@ export async function findOrCreatePlant(
 	return plantId;
 }
 
+/** Incidental wildlife spotted during a session — mice, snails, and so on. Write-once at completion, like the taps loop it sits next to. */
+export async function recordSessionCreatures(
+	db: D1Database,
+	sessionId: string,
+	creatures: { creature: string; label: string | null }[]
+): Promise<void> {
+	for (const c of creatures) {
+		await db
+			.prepare('INSERT INTO session_creatures (session_id, creature, label) VALUES (?, ?, ?)')
+			.bind(sessionId, c.creature, c.label)
+			.run();
+	}
+}
+
 export async function recordHabitatFeatures(
 	db: D1Database,
 	params: { spotId: number; mediaId: string; features: { category: HabitatFeatureCategory; label: string }[]; source: string }
@@ -962,4 +1051,146 @@ export async function deleteHabitatFeaturesForMedia(db: D1Database, spotId: numb
 /** Drops a photo's plant observations so an edited set can replace them. */
 export async function deletePlantObservationsForMedia(db: D1Database, spotId: number, mediaId: string): Promise<void> {
 	await db.prepare('DELETE FROM plant_observations WHERE spot_id = ? AND media_id = ?').bind(spotId, mediaId).run();
+}
+
+type WeatherObservationInsert = Omit<WeatherObservation, 'id' | 'fetched_at' | 'created_at' | 'windy'> & { windy: boolean };
+
+/**
+ * A cached reading within `maxAgeMinutes` and ~2km of (lat, lng), if one
+ * exists — checked before ever calling Bright Sky, so nearby/recent sessions
+ * reuse one row instead of each spending their own API call. The bounding
+ * box keeps the SQL scan cheap (uses idx_weather_observations_lookup); the
+ * exact haversine distance is then checked in JS on the handful of rows the
+ * box returns.
+ */
+export async function findNearbyWeatherObservation(
+	db: D1Database,
+	params: { lat: number; lng: number; maxAgeMinutes: number; maxDistanceKm?: number }
+): Promise<WeatherObservation | null> {
+	const maxDistanceKm = params.maxDistanceKm ?? 2;
+	// ~0.02° of latitude is ~2.2km; longitude degrees shrink toward the poles,
+	// so widening by 1/cos(lat) keeps the box roughly circular at this latitude.
+	const latPad = 0.02;
+	const lngPad = latPad / Math.max(0.15, Math.cos((params.lat * Math.PI) / 180));
+
+	const result = await db
+		.prepare(`
+			SELECT * FROM weather_observations
+			WHERE lat BETWEEN ? AND ?
+				AND lng BETWEEN ? AND ?
+				AND fetched_at >= datetime('now', ?)
+			ORDER BY fetched_at DESC
+			LIMIT 20
+		`)
+		.bind(
+			params.lat - latPad,
+			params.lat + latPad,
+			params.lng - lngPad,
+			params.lng + lngPad,
+			`-${params.maxAgeMinutes} minutes`
+		)
+		.all<WeatherObservation>();
+
+	const candidates = result.results
+		.map((row) => ({ row, distanceKm: haversineKm(params.lat, params.lng, row.lat, row.lng) }))
+		.filter((c) => c.distanceKm <= maxDistanceKm)
+		.sort((a, b) => a.distanceKm - b.distanceKm);
+
+	return candidates[0]?.row ?? null;
+}
+
+/**
+ * Same idea as findNearbyWeatherObservation, but for backfill: matches on the
+ * exact historical hour instead of a freshness window, so many sessions at
+ * the same spot on the same day reuse one row instead of one insert each.
+ */
+export async function findWeatherObservationForHour(
+	db: D1Database,
+	params: { lat: number; lng: number; observedAt: string; maxDistanceKm?: number }
+): Promise<WeatherObservation | null> {
+	const maxDistanceKm = params.maxDistanceKm ?? 2;
+	const latPad = 0.02;
+	const lngPad = latPad / Math.max(0.15, Math.cos((params.lat * Math.PI) / 180));
+
+	const result = await db
+		.prepare(`
+			SELECT * FROM weather_observations
+			WHERE lat BETWEEN ? AND ?
+				AND lng BETWEEN ? AND ?
+				AND observed_at = ?
+			LIMIT 20
+		`)
+		.bind(params.lat - latPad, params.lat + latPad, params.lng - lngPad, params.lng + lngPad, params.observedAt)
+		.all<WeatherObservation>();
+
+	const candidates = result.results
+		.map((row) => ({ row, distanceKm: haversineKm(params.lat, params.lng, row.lat, row.lng) }))
+		.filter((c) => c.distanceKm <= maxDistanceKm)
+		.sort((a, b) => a.distanceKm - b.distanceKm);
+
+	return candidates[0]?.row ?? null;
+}
+
+/** Sessions still missing a real weather reading — the backfill worklist. */
+export async function getSessionsMissingWeather(db: D1Database): Promise<{ id: string; lat: number; lng: number; started_at: string }[]> {
+	const result = await db
+		.prepare(`
+			SELECT id, lat, lng, started_at FROM sessions
+			WHERE weather_observation_id IS NULL AND lat IS NOT NULL AND lng IS NOT NULL AND started_at IS NOT NULL
+		`)
+		.all<{ id: string; lat: number; lng: number; started_at: string }>();
+	return result.results;
+}
+
+/** Links a session to a weather observation and sets its display bucket — used by backfill. */
+export async function setSessionWeatherObservation(
+	db: D1Database,
+	sessionId: string,
+	weatherObservationId: number,
+	bucket: 'sunny' | 'partly' | 'overcast' | 'rainy'
+): Promise<void> {
+	await db
+		.prepare('UPDATE sessions SET weather_observation_id = ?, weather = ? WHERE id = ?')
+		.bind(weatherObservationId, bucket, sessionId)
+		.run();
+}
+
+export async function createWeatherObservation(db: D1Database, row: WeatherObservationInsert): Promise<number> {
+	const result = (await db
+		.prepare(`
+			INSERT INTO weather_observations (
+				source, lat, lng, observed_at, station_id, station_name, station_distance_m,
+				temperature_c, precipitation_mm, wind_speed_kmh, wind_gust_speed_kmh, cloud_cover_pct,
+				sunshine_min, relative_humidity_pct, pressure_msl_hpa, condition, icon, bucket, windy, raw_response
+			)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`)
+		.bind(
+			row.source,
+			row.lat,
+			row.lng,
+			row.observed_at,
+			row.station_id,
+			row.station_name,
+			row.station_distance_m,
+			row.temperature_c,
+			row.precipitation_mm,
+			row.wind_speed_kmh,
+			row.wind_gust_speed_kmh,
+			row.cloud_cover_pct,
+			row.sunshine_min,
+			row.relative_humidity_pct,
+			row.pressure_msl_hpa,
+			row.condition,
+			row.icon,
+			row.bucket,
+			row.windy ? 1 : 0,
+			row.raw_response
+		)
+		.run()) as { success: boolean; meta: { last_row_id: number } };
+	return result.meta.last_row_id;
+}
+
+export async function getWeatherObservationById(db: D1Database, id: number): Promise<WeatherObservation | null> {
+	return db.prepare('SELECT * FROM weather_observations WHERE id = ?').bind(id).first<WeatherObservation>();
 }

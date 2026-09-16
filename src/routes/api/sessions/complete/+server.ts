@@ -9,7 +9,8 @@ import {
 	getSpotSessionComparison,
 	getProfile,
 	upsertProfile,
-	getInsectTypes
+	getInsectTypes,
+	recordSessionCreatures
 } from '$lib/db/queries';
 import { updateStreak } from '$lib/gamification';
 
@@ -25,7 +26,12 @@ interface CompleteBody {
 	/** Authoritative running total (taps here is just the delta, not the full count). */
 	totalCount: number;
 	weather: string | null;
+	weatherObservationId: number | null;
 	condition: string | null;
+	notes: string | null;
+	windObserved: string | null;
+	/** Incidental wildlife spotted — mice, snails, and so on. Written once here, not autosaved. */
+	otherCreatures: { creature: string; label: string | null }[];
 	focalArea: string;
 	lat: number | null;
 	lng: number | null;
@@ -52,7 +58,11 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		taps,
 		totalCount,
 		weather,
+		weatherObservationId,
 		condition,
+		notes,
+		windObserved,
+		otherCreatures,
 		focalArea,
 		lat,
 		lng,
@@ -87,7 +97,10 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		spot_name: spotName ?? null,
 		locality: locality ?? null,
 		weather: (weather as 'sunny' | 'partly' | 'overcast' | 'rainy') ?? null,
+		weather_observation_id: weatherObservationId ?? null,
 		condition: condition || null,
+		notes: notes || null,
+		wind_observed: (windObserved as 'still' | 'light_breeze' | 'leaves_moving' | 'branches_moving') || null,
 		focal_area: focalArea || null,
 		lat,
 		lng,
@@ -101,12 +114,16 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
 	await completeSession(db, sessionId, finalTotalCount);
 	if (spotId) await addSpotMinutesObserved(db, spotId, durationMin);
+	if (Array.isArray(otherCreatures) && otherCreatures.length) {
+		await recordSessionCreatures(db, sessionId, otherCreatures);
+	}
 
 	// One row per button press, each stamped with the time it was pressed.
 	for (const tap of taps) {
 		const insect = insectTypes.find((i) => i.name === tap.name);
-		await insertSighting(db, sessionId, insect?.id ?? null, tap.name, tap.tappedAt);
-		if (spotId) await incrementSpotInsectCount(db, spotId, insect?.id ?? null, tap.name);
+		const inserted = await insertSighting(db, sessionId, insect?.id ?? null, tap.name, tap.tappedAt);
+		// A resent tap (see insertSighting) already counted the first time it landed.
+		if (inserted && spotId) await incrementSpotInsectCount(db, spotId, insect?.id ?? null, tap.name);
 	}
 
 	// Streak is a signed-in feature; don't create junk profiles for anon owners.

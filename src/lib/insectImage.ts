@@ -1,20 +1,20 @@
-// insect_types.name -> static/spaia-icons filename.
+// insect_types.name -> static/spaia_emoji filename.
 const FILENAME_BY_NAME: Record<string, string> = {
-	Bees: 'bees',
-	Butterflies: 'butterflies-moths',
-	Flies: 'flies',
-	Beetles: 'beetles',
-	Ants: 'ants',
-	Wasps: 'wasps',
-	Spiders: 'spiders',
-	Bugs: 'true-bugs',
-	Grasshoppers: 'grasshoppers-crickets',
-	Dragonflies: 'dragonflies-damselflies',
-	Caterpillars: 'caterpillars-larvae',
-	Other: 'other-not-sure'
+	Bees: 'bee',
+	Butterflies: 'butterfly',
+	Flies: 'fly',
+	Beetles: 'beetle',
+	Ants: 'ant',
+	Wasps: 'wasp',
+	Spiders: 'spider',
+	Bugs: 'truebug',
+	Grasshoppers: 'grasshopper',
+	Dragonflies: 'dragonfly',
+	Caterpillars: 'catepillar',
+	Other: 'other-not-sure-separate'
 };
 
 export function insectImage(name: string): string {
 	const slug = FILENAME_BY_NAME[name] ?? name.toLowerCase();
-	return `/spaia-icons/${slug}.svg`;
+	return `/spaia_emoji/${slug}.png`;
 }

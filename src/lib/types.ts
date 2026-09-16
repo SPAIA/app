@@ -136,8 +136,38 @@ export interface SpotVisionResult {
 	changes: string | null;
 	/** True when a previous photo was supplied but doesn't seem to show the same physical area — "changes" is skipped in that case. */
 	area_mismatch: boolean;
-	/** Best guess at current weather, read off the photo — null if it can't be told. */
-	weather: 'sunny' | 'partly' | 'overcast' | 'rainy' | null;
+}
+
+/**
+ * A real weather reading from Bright Sky (DWD open data), cached in
+ * weather_observations. Carries far more than the UI shows today (wind,
+ * cloud cover, station provenance, the raw payload) so it doesn't need a
+ * schema change the next time something wants more than the 4-bucket label.
+ */
+export interface WeatherObservation {
+	id: number;
+	source: 'brightsky' | 'manual';
+	lat: number;
+	lng: number;
+	observed_at: string;
+	fetched_at: string;
+	station_id: string | null;
+	station_name: string | null;
+	station_distance_m: number | null;
+	temperature_c: number | null;
+	precipitation_mm: number | null;
+	wind_speed_kmh: number | null;
+	wind_gust_speed_kmh: number | null;
+	cloud_cover_pct: number | null;
+	sunshine_min: number | null;
+	relative_humidity_pct: number | null;
+	pressure_msl_hpa: number | null;
+	condition: string | null;
+	icon: string | null;
+	bucket: 'sunny' | 'partly' | 'overcast' | 'rainy';
+	windy: number;
+	raw_response: string | null;
+	created_at: string;
 }
 
 export interface Profile {
@@ -162,8 +192,14 @@ export interface Session {
 	spot_name: string | null;
 	locality: string | null;
 	weather: 'sunny' | 'partly' | 'overcast' | 'rainy' | null;
+	/** The real Bright Sky reading `weather` was derived from — null for sessions predating this or not yet backfilled. */
+	weather_observation_id: number | null;
 	/** Free-text habitat condition, taken only when the observer skipped the observation photo. */
 	condition: string | null;
+	/** Anything else worth remembering that isn't a tappable insect — mice, snails, tracks. */
+	notes: string | null;
+	/** Manual 4-step wind read, paired with weather_observations.wind_speed_kmh — neither overwrites the other. */
+	wind_observed: 'still' | 'light_breeze' | 'leaves_moving' | 'branches_moving' | null;
 	focal_area: string | null;
 	lat: number | null;
 	lng: number | null;

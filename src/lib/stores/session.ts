@@ -1,8 +1,10 @@
 import { writable } from 'svelte/store';
-import type { SpotVisionResult } from '$lib/types';
+import type { SpotVisionResult, WeatherObservation } from '$lib/types';
 
 export type WeatherOption = 'sunny' | 'partly' | 'overcast' | 'rainy';
-export type SessionStep = 'setup' | 'observe' | 'thankyou' | 'confirm' | 'cards' | 'summary';
+/** Paired with the automatic DWD wind_speed_kmh reading — neither overwrites the other. */
+export type WindOption = 'still' | 'light_breeze' | 'leaves_moving' | 'branches_moving';
+export type SessionStep = 'setup' | 'observe' | 'thankyou' | 'cards' | 'summary';
 /** DeepSeek Vision runs in the background right after the spot photo is taken — see SetupStep. */
 export type VisionStatus = 'none' | 'pending' | 'done' | 'error';
 
@@ -22,8 +24,20 @@ export interface SessionState {
 	/** Neighbourhood/locality reverse-geocoded from the session GPS fix. */
 	locality: string | null;
 	weather: WeatherOption | null;
+	/** The Bright Sky reading `weather` was derived from — set in the background once geolocation resolves, see SetupStep. */
+	weatherObservationId: number | null;
+	/** The full reading, kept only for display (temperature, source, station) — the server already has it via weatherObservationId. */
+	weatherObservation: WeatherObservation | null;
+	/** True when the linked weather observation reads as windy — a derived fact, not something the observer sets. */
+	windy: boolean;
 	/** Free-text habitat condition, taken only when the observer skipped the observation photo. */
 	condition: string | null;
+	/** Anything else worth remembering that isn't a tappable insect — mice, snails, tracks. */
+	notes: string;
+	/** Manual 4-step wind read, paired with the automatic windy flag above — neither overwrites the other. */
+	windObserved: WindOption | null;
+	/** Incidental wildlife spotted that isn't a tappable insect type — mice, snails, and so on. */
+	otherCreatures: { creature: string; label: string | null }[];
 	/** Short scene description — from the spot's DeepSeek Vision read, or typed by hand if AI is unavailable. */
 	focalArea: string;
 	/** Set once the spot photo upload resolves, so the vision result can be shown after the count. */
@@ -58,7 +72,13 @@ const initialState: SessionState = {
 	spotName: null,
 	locality: null,
 	weather: null,
+	weatherObservationId: null,
+	weatherObservation: null,
+	windy: false,
 	condition: null,
+	notes: '',
+	windObserved: null,
+	otherCreatures: [],
 	focalArea: '',
 	photoUrl: null,
 	mediaId: null,

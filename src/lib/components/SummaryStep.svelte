@@ -12,7 +12,7 @@
 	let submitted = false;
 
 	// The session is already persisted (anonymously) by the time we reach this
-	// step — see SpotConfirmStep. Here the email only *claims* that saved session.
+	// step — see CardsStep. Here the email only *claims* that saved session.
 	$: sessionId = $sessionStore.sessionId;
 	$: loggedIn = !!$page.data.user;
 

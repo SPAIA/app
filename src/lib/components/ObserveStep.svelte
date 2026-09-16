@@ -3,7 +3,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { sessionStore } from '$lib/stores/session';
 	import { nowISO } from '$lib/time';
-	import { autosaveSession } from '$lib/sessionSave';
+	import { autosaveSession, undoTap } from '$lib/sessionSave';
 	import { insectImage } from '$lib/insectImage';
 	import type { InsectType } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
@@ -100,6 +100,10 @@
 			};
 		});
 
+		// Tells the server to remove the row if the undone tap had already been
+		// autosaved (a no-op otherwise — see $lib/sessionSave.undoTap), then
+		// flushes anything else still pending as usual.
+		void undoTap(insect.name, $sessionStore.spotId);
 		void autosaveSession();
 		scheduleIdleSave();
 	}
