@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { directionsUrl, findNearestSpot, formatDistanceKm, formatDistanceRange, haversineKm } from '$lib/geo';
 	import type { Spot } from '$lib/types';
-	import type { SpotSummary } from '$lib/db/queries';
+	import type { SpotSummary } from '$lib/server/db/spots';
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';

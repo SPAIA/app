@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { createSpace, getSpaceOrder, updateSpaceOrderSpaceId } from '$lib/db/queries';
+import { createSpace } from '$lib/server/db/spaces';
+import { getSpaceOrder, updateSpaceOrderSpaceId } from '$lib/server/db/orders';
 
 interface CreateSpaceBody {
 	spaceName: string;

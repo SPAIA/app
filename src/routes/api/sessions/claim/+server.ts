@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { setSessionClaimEmail } from '$lib/db/queries';
+import { setSessionClaimEmail } from '$lib/server/db/sessions';
 import { getAuth } from '$lib/auth';
 
 interface ClaimBody {

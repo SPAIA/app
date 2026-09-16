@@ -1,4 +1,4 @@
-import type { D1Database } from '$lib/db/queries';
+import type { D1Database } from '$lib/server/db/d1';
 import type { R2Bucket } from '@cloudflare/workers-types';
 
 declare global {

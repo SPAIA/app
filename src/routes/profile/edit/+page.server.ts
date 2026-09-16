@@ -1,6 +1,6 @@
 import { redirect, fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { getProfile, updateProfileFields } from '$lib/db/queries';
+import { getProfile, updateProfileFields } from '$lib/server/db/profiles';
 
 export const load: PageServerLoad = async ({ locals, platform }) => {
 	const db = platform?.env?.DB;

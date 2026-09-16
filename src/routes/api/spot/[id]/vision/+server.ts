@@ -4,11 +4,10 @@ import {
 	deleteHabitatFeaturesForMedia,
 	deletePlantObservationsForMedia,
 	findOrCreatePlant,
-	getSpotById,
 	recordHabitatFeatures,
-	recordPlantObservations,
-	refreshSpotAiDescription
-} from '$lib/db/queries';
+	recordPlantObservations
+} from '$lib/server/db/plants';
+import { getSpotById, refreshSpotAiDescription } from '$lib/server/db/spots';
 import type { HabitatFeatureCategory, PlantRank, SpotVisionResult } from '$lib/types';
 
 interface VisionEditBody {

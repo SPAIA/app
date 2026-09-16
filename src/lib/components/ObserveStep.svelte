@@ -3,39 +3,25 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { sessionStore } from '$lib/stores/session';
 	import { nowISO } from '$lib/time';
-	import { autosaveSession, undoTap } from '$lib/sessionSave';
+	import { persistLocal } from '$lib/session/sync';
 	import { insectImage } from '$lib/insectImage';
 	import type { InsectType } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
 
 	export let insectTypes: InsectType[] = [];
 
-	/** Autosave fires on every tap; while idle it also fires on this heartbeat. */
-	const IDLE_SAVE_MS = 15000;
-
 	let timeLeft = $sessionStore.durationMin * 60;
 	let totalSeconds = timeLeft;
 	let interval: ReturnType<typeof setInterval>;
-	let idleSaveTimer: ReturnType<typeof setTimeout>;
 	let buttonScales: Record<string, number> = {};
 
 	onMount(() => {
 		interval = setInterval(tick, 1000);
-		scheduleIdleSave();
 	});
 
 	onDestroy(() => {
 		clearInterval(interval);
-		clearTimeout(idleSaveTimer);
 	});
-
-	function scheduleIdleSave() {
-		clearTimeout(idleSaveTimer);
-		idleSaveTimer = setTimeout(() => {
-			void autosaveSession();
-			scheduleIdleSave();
-		}, IDLE_SAVE_MS);
-	}
 
 	function tick() {
 		if (timeLeft > 0) {
@@ -47,8 +33,8 @@
 	}
 
 	function advance() {
-		void autosaveSession();
 		sessionStore.update((s) => ({ ...s, step: 'thankyou' }));
+		persistLocal();
 	}
 
 	function adjustTime(deltaMinutes: number) {
@@ -63,12 +49,11 @@
 				...s.counts,
 				[insect.name]: (s.counts[insect.name] ?? 0) + 1
 			},
-			taps: [...s.taps, { name: insect.name, tappedAt: nowISO() }],
+			taps: [...s.taps, { id: crypto.randomUUID(), name: insect.name, tappedAt: nowISO() }],
 			totalCount: s.totalCount + 1
 		}));
 
-		void autosaveSession();
-		scheduleIdleSave();
+		persistLocal();
 
 		// Animate button
 		buttonScales[insect.name] = 0.93;
@@ -100,12 +85,9 @@
 			};
 		});
 
-		// Tells the server to remove the row if the undone tap had already been
-		// autosaved (a no-op otherwise — see $lib/sessionSave.undoTap), then
-		// flushes anything else still pending as usual.
-		void undoTap(insect.name, $sessionStore.spotId);
-		void autosaveSession();
-		scheduleIdleSave();
+		// Purely local — the next sync (30s heartbeat or completion) makes the
+		// server match this snapshot, sightings and all. See $lib/session/sync.
+		persistLocal();
 	}
 
 	$: progressPercent = totalSeconds > 0 ? ((totalSeconds - timeLeft) / totalSeconds) * 100 : 0;

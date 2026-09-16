@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { createMedia, getMediaForEntity } from '$lib/db/queries';
+import { createMedia, getMediaForEntity } from '$lib/server/db/media';
 import { getImageDimensions } from '$lib/media/imageDimensions';
 import type { MediaEntityType, MediaType } from '$lib/types';
 

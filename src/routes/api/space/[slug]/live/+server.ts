@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getSpaceBySlug, getSpaceLiveData } from '$lib/db/queries';
-import type { D1Database } from '$lib/db/queries';
+import { getSpaceBySlug, getSpaceLiveData } from '$lib/server/db/spaces';
+import type { D1Database } from '$lib/server/db/d1';
 import type { LiveSpaceData } from '$lib/types';
 
 export const GET: RequestHandler = async ({ params, platform, setHeaders }) => {

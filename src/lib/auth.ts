@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth';
 import { magicLink } from 'better-auth/plugins/magic-link';
 import { bearer } from 'better-auth/plugins/bearer';
 import { D1Dialect } from 'kysely-d1';
-import type { D1Database } from '$lib/db/queries';
+import type { D1Database } from '$lib/server/db/d1';
 
 export interface AuthEnv {
 	DB: D1Database;

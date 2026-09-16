@@ -1,6 +1,7 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getMediaForEntity, getSpotById, getSpotSummary } from '$lib/db/queries';
+import { getMediaForEntity } from '$lib/server/db/media';
+import { getSpotById, getSpotSummary } from '$lib/server/db/spots';
 
 // Stats + cover image for a spot's map card: observation count, last-observed
 // date, and the most-counted insects there.

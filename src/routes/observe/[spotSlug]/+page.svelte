@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { sessionStore, resetSession } from '$lib/stores/session';
-	import { resetSaveProgress } from '$lib/sessionSave';
+	import { resetSyncProgress, startSessionSync, stopSessionSync } from '$lib/session/sync';
 	import SetupStep from '$lib/components/SetupStep.svelte';
 	import ObserveStep from '$lib/components/ObserveStep.svelte';
 	import ThankYouStep from '$lib/components/ThankYouStep.svelte';
@@ -16,7 +16,12 @@
 	// leftover in-memory session from a previously visited spot.
 	onMount(() => {
 		resetSession();
-		resetSaveProgress();
+		resetSyncProgress();
+		startSessionSync();
+	});
+
+	onDestroy(() => {
+		stopSessionSync();
 	});
 
 	$: step = $sessionStore.step;

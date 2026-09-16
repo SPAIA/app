@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getMediaById, deleteMedia } from '$lib/db/queries';
+import { getMediaById, deleteMedia } from '$lib/server/db/media';
 
 // Serve a media file straight from R2 through the Worker.
 export const GET: RequestHandler = async ({ params, platform }) => {

@@ -1,13 +1,10 @@
 import { error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import {
-	getProfile,
-	getAllSpotsForExport,
-	getAllSessionsForExport,
-	getAllSightingsForExport,
-	getAllWeatherObservationsForExport,
-	getJoinedObservationsForExport
-} from '$lib/db/queries';
+import { getProfile } from '$lib/server/db/profiles';
+import { getAllSpotsForExport } from '$lib/server/db/spots';
+import { getAllSessionsForExport } from '$lib/server/db/sessions';
+import { getAllSightingsForExport, getJoinedObservationsForExport } from '$lib/server/db/sightings';
+import { getAllWeatherObservationsForExport } from '$lib/server/db/weather';
 import { toCsv } from '$lib/server/csv';
 
 const EXPORTS = {

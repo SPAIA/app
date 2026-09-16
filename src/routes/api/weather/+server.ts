@@ -1,6 +1,6 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { findNearbyWeatherObservation, createWeatherObservation, getWeatherObservationById } from '$lib/db/queries';
+import { findNearbyWeatherObservation, createWeatherObservation, getWeatherObservationById } from '$lib/server/db/weather';
 import { fetchCurrentWeather } from '$lib/server/weather';
 
 const CACHE_MAX_AGE_MINUTES = 60;

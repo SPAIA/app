@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import Stripe from 'stripe';
-import { getSpaceOrder, updateSpaceOrderStatus } from '$lib/db/queries';
-import type { D1Database } from '$lib/db/queries';
+import { getSpaceOrder, updateSpaceOrderStatus } from '$lib/server/db/orders';
+import type { D1Database } from '$lib/server/db/d1';
 
 export const POST: RequestHandler = async ({ request, platform }) => {
 	const env = platform?.env as {

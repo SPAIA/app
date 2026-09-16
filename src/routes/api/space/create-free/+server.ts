@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { createSpaceOrder, updateSpaceOrderStatus, redeemCode } from '$lib/db/queries';
+import { createSpaceOrder, updateSpaceOrderStatus, redeemCode } from '$lib/server/db/orders';
 
 const REDEEM_ERROR_MESSAGES: Record<string, string> = {
 	not_found: 'Code not recognized',

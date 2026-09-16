@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import type { Spot } from '$lib/types';
-	import type { SpotSummary } from '$lib/db/queries';
+	import type { SpotSummary } from '$lib/server/db/spots';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import * as Drawer from '$lib/components/ui/drawer';

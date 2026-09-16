@@ -7,7 +7,7 @@
 	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
 	import { readLocalSessionIds, clearLocalSessionIds } from '$lib/localSessions';
-	import { listOfflineSessions, removeOfflineSession } from '$lib/offlineSession';
+	import { listLocalSnapshots, removeLocalSnapshot } from '$lib/session/snapshot';
 	import type { LayoutData } from './$types';
 
 	export let data: LayoutData;
@@ -37,19 +37,22 @@
 			});
 	});
 
-	// Push any session left behind by a crash, kill, or lost connection on a
-	// previous visit — see $lib/offlineSession + $lib/sessionSave. Best-effort;
-	// whatever doesn't land here retries again on the next app load.
+	// Push any session snapshot left behind by a crash, kill, or lost
+	// connection on a previous visit — see $lib/session/snapshot +
+	// $lib/session/sync. Same idempotent PUT as the live 30s sync, so a
+	// completed snapshot whose earlier response never arrived is safe to
+	// resend here. Best-effort; whatever doesn't land retries again on the
+	// next app load. A completed snapshot is removed locally once the server
+	// confirms it; an in-progress one is left in place (it isn't done yet).
 	onMount(() => {
-		for (const pending of listOfflineSessions()) {
-			const url = pending.completing ? '/api/sessions/complete' : '/api/sessions/autosave';
-			fetch(url, {
-				method: 'POST',
+		for (const snapshot of listLocalSnapshots()) {
+			fetch(`/api/sessions/${snapshot.id}`, {
+				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(pending)
+				body: JSON.stringify(snapshot)
 			})
 				.then((res) => {
-					if (res.ok) removeOfflineSession(pending.sessionId);
+					if (res.ok && snapshot.status === 'complete') removeLocalSnapshot(snapshot.id);
 				})
 				.catch(() => {
 					// still offline — retried on the next app load

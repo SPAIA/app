@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getSpotSessionComparison } from '$lib/db/queries';
+import { getSpotSessionComparison } from '$lib/server/db/spots';
 
 // How an in-progress session's tally stacks up against this spot's history —
 // fetched from the "Your finds" screen, before the session is actually

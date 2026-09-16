@@ -1,7 +1,9 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { getInsectTypes, getMediaForEntity, getSpotBySlug } from '$lib/db/queries';
-import type { D1Database } from '$lib/db/queries';
+import { getInsectTypes } from '$lib/server/db/sightings';
+import { getMediaForEntity } from '$lib/server/db/media';
+import { getSpotBySlug } from '$lib/server/db/spots';
+import type { D1Database } from '$lib/server/db/d1';
 
 export const load: PageServerLoad = async ({ params, platform }) => {
 	const db = platform?.env?.DB as D1Database | undefined;

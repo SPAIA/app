@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { getSpaceBySlug, getSpaceSessions, getMediaForEntity } from '$lib/db/queries';
+import { getSpaceBySlug, getSpaceSessions } from '$lib/server/db/spaces';
+import { getMediaForEntity } from '$lib/server/db/media';
 import { error, redirect } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params, locals, platform }) => {

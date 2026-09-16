@@ -229,6 +229,8 @@ export interface Sighting {
 	insect_name: string;
 	count: number;
 	tapped_at: string;
+	/** Stable client-generated id (crypto.randomUUID()) — identity for snapshot reconciliation, not array position. Null on rows predating this. */
+	tap_id: string | null;
 }
 
 export interface SpaceOrder {

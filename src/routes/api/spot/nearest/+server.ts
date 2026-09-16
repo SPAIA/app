@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getAllSpots, getSpotsBySpace } from '$lib/db/queries';
-import type { D1Database } from '$lib/db/queries';
+import { getAllSpots, getSpotsBySpace } from '$lib/server/db/spots';
+import type { D1Database } from '$lib/server/db/d1';
 import { findNearestSpot } from '$lib/geo';
 
 export const GET: RequestHandler = async ({ url, platform }) => {

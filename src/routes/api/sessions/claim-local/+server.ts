@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { claimSessionsByIds } from '$lib/db/queries';
+import { claimSessionsByIds } from '$lib/server/db/sessions';
 
 interface ClaimLocalBody {
 	sessionIds: string[];

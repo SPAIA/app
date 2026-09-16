@@ -7,7 +7,7 @@
 	import { resizeImageFile } from '$lib/media/resizeImage';
 	import { haversineKm, directionsUrl, formatDistanceRange } from '$lib/geo';
 	import { trackLocalSessionId } from '$lib/localSessions';
-	import { resetSaveProgress, autosaveSession } from '$lib/sessionSave';
+	import { persistLocal, resetSyncProgress, syncNow } from '$lib/session/sync';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';
 
@@ -110,8 +110,9 @@
 			durationMin: DEFAULT_DURATION_MIN,
 			totalDurationMin: DEFAULT_DURATION_MIN
 		}));
-		resetSaveProgress();
-		void autosaveSession();
+		resetSyncProgress();
+		persistLocal();
+		void syncNow();
 	}
 
 	function openFilePicker() {
@@ -211,7 +212,7 @@
 
 	function beginSession() {
 		// sessionId/spotId/spaceId/lat/lng/etc. were already written by
-		// startProvisionalSession (and already autosaved) — only the fields that
+		// startProvisionalSession (and already synced) — only the fields that
 		// actually change at the real start of counting are reset here.
 		showFarModal = false;
 		sessionStore.update((s) => ({
@@ -226,7 +227,7 @@
 			startedAt: nowISO(),
 			step: 'observe'
 		}));
-		void autosaveSession();
+		persistLocal();
 	}
 
 	onMount(() => {

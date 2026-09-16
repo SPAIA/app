@@ -1,6 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { getSessionById, getSessionSightingsAggregated, getMediaForEntity } from '$lib/db/queries';
-import type { D1Database } from '$lib/db/queries';
+import { getSessionById } from '$lib/server/db/sessions';
+import { getSessionSightingsAggregated } from '$lib/server/db/sightings';
+import { getMediaForEntity } from '$lib/server/db/media';
+import type { D1Database } from '$lib/server/db/d1';
 import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params, platform }) => {

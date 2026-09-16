@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getSpotById, getSpotBySlug, renameSpot } from '$lib/db/queries';
+import { getSpotById, getSpotBySlug, renameSpot } from '$lib/server/db/spots';
 import { uniqueSlug } from '$lib/slug';
 
 interface RenameBody {

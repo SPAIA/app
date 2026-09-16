@@ -1,16 +1,8 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import {
-	createMedia,
-	findOrCreatePlant,
-	getPreviousObservationPhoto,
-	getSpotById,
-	getSpotBySlug,
-	recordHabitatFeatures,
-	recordPlantObservations,
-	refreshSpotAiDescription,
-	updateSpotVisionResult
-} from '$lib/db/queries';
+import { createMedia, getPreviousObservationPhoto } from '$lib/server/db/media';
+import { findOrCreatePlant, recordHabitatFeatures, recordPlantObservations } from '$lib/server/db/plants';
+import { getSpotById, getSpotBySlug, refreshSpotAiDescription, updateSpotVisionResult } from '$lib/server/db/spots';
 import { getImageDimensions } from '$lib/media/imageDimensions';
 import { describeSpotPhoto } from '$lib/server/deepseekVision';
 import { uniqueSlug } from '$lib/slug';

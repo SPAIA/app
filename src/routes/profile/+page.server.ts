@@ -1,12 +1,8 @@
 import type { PageServerLoad } from './$types';
-import {
-	getProfile,
-	upsertProfile,
-	getUserCollection,
-	getUserSessions,
-	claimSessionsByEmail,
-	getSpotsByOwner
-} from '$lib/db/queries';
+import { getProfile, upsertProfile } from '$lib/server/db/profiles';
+import { getUserCollection } from '$lib/server/db/sightings';
+import { getUserSessions, claimSessionsByEmail } from '$lib/server/db/sessions';
+import { getSpotsByOwner } from '$lib/server/db/spots';
 
 export const load: PageServerLoad = async ({ locals, platform }) => {
 	const db = platform?.env?.DB;

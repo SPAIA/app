@@ -1,6 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
-import { getMediaForEntity, getSpaceBySlug, getSpotBySlug, updateSpotFields } from '$lib/db/queries';
+import { getMediaForEntity } from '$lib/server/db/media';
+import { getSpaceBySlug } from '$lib/server/db/spaces';
+import { getSpotBySlug, updateSpotFields } from '$lib/server/db/spots';
 
 export const load: PageServerLoad = async ({ params, locals, platform }) => {
 	const db = platform?.env?.DB;

@@ -58,10 +58,10 @@
 		</p>
 	</div>
 
-	<!-- The final save (completeSession, in CardsStep) may not have reached the
-	     server — don't let this screen imply the count is safely stored when it
-	     might only be on this device. It's still queued: the app retries on the
-	     next tap/heartbeat and again on the next app load (see +layout.svelte). -->
+	<!-- The final sync (completeSessionSync, in CardsStep) may not have reached
+	     the server — don't let this screen imply the count is safely stored when
+	     it might only be on this device. It's still queued locally and retries
+	     on the next app load (see +layout.svelte). -->
 	{#if $sessionStore.syncStatus === 'error'}
 		<p class="rounded-lg bg-destructive/10 px-3 py-2.5 text-center text-sm text-destructive">
 			{$_('close.notSynced')}

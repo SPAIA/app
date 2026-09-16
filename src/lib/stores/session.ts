@@ -10,12 +10,14 @@ export type VisionStatus = 'none' | 'pending' | 'done' | 'error';
 
 /** A single button press, recorded at the moment it happens. */
 export interface Tap {
+	/** Stable client-generated id (crypto.randomUUID()) — identity for reconciliation, not array position. */
+	id: string;
 	name: string;
 	tappedAt: string; // ISO timestamp of the actual press
 }
 
 export interface SessionState {
-	/** Set once the session is persisted server-side (on completion). */
+	/** Minted client-side the moment the observer starts a spot (see SetupStep.startProvisionalSession) — not tied to any particular sync having landed. */
 	sessionId: string | null;
 	spaceId: number | null;
 	spotId: number | null;
@@ -63,6 +65,8 @@ export interface SessionState {
 	step: SessionStep;
 	/** Whether the latest local state has reached the server. Drives sync-status UI in ObserveStep/SummaryStep. */
 	syncStatus: 'idle' | 'pending' | 'synced' | 'error';
+	/** The canonical lifecycle state carried in SessionSnapshot — see $lib/session/snapshot. */
+	status: 'in_progress' | 'complete';
 }
 
 const initialState: SessionState = {
@@ -95,7 +99,8 @@ const initialState: SessionState = {
 	taps: [],
 	totalCount: 0,
 	step: 'setup',
-	syncStatus: 'idle'
+	syncStatus: 'idle',
+	status: 'in_progress'
 };
 
 export const sessionStore = writable<SessionState>({ ...initialState });

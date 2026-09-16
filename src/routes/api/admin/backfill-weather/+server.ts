@@ -1,12 +1,12 @@
 import { error, json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { getProfile } from '$lib/server/db/profiles';
 import {
-	getProfile,
 	getSessionsMissingWeather,
 	findWeatherObservationForHour,
 	createWeatherObservation,
 	setSessionWeatherObservation
-} from '$lib/db/queries';
+} from '$lib/server/db/weather';
 import { fetchHistoricalWeather, closestReading } from '$lib/server/weather';
 
 /** Politeness delay between distinct provider day-fetches — no documented rate limit for Bright Sky, but no reason to hammer a free public service; also keeps Visual Crossing calls well under its rate limits. */

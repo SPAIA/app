@@ -6,7 +6,7 @@
 	import type { WeatherOption, WindOption } from '$lib/stores/session';
 	import InsectCard from './InsectCard.svelte';
 	import type { HabitatFeatureCategory, InsectType, SpotSessionComparison, SpotVisionResult } from '$lib/types';
-	import { completeSession } from '$lib/sessionSave';
+	import { completeSessionSync } from '$lib/session/sync';
 	import ChipListEditor from '$lib/components/ChipListEditor.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -214,7 +214,7 @@
 			}
 		}
 
-		await completeSession();
+		await completeSessionSync();
 
 		saving = false;
 		sessionStore.update((s) => ({ ...s, step: 'summary' }));

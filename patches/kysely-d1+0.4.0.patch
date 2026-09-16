@@ -1,0 +1,26 @@
+diff --git a/node_modules/kysely-d1/dist/index.cjs b/node_modules/kysely-d1/dist/index.cjs
+index 906657a..d22600f 100644
+--- a/node_modules/kysely-d1/dist/index.cjs
++++ b/node_modules/kysely-d1/dist/index.cjs
+@@ -92,8 +92,6 @@ class D1Connection {
+                 : BigInt(results.meta.last_row_id),
+             rows: results?.results || [],
+             numAffectedRows,
+-            // @ts-ignore deprecated in kysely >= 0.23, keep for backward compatibility.
+-            numUpdatedOrDeletedRows: numAffectedRows,
+         };
+     }
+     async beginTransaction() {
+diff --git a/node_modules/kysely-d1/dist/index.js b/node_modules/kysely-d1/dist/index.js
+index 644f6b9..2187bb0 100644
+--- a/node_modules/kysely-d1/dist/index.js
++++ b/node_modules/kysely-d1/dist/index.js
+@@ -88,8 +88,6 @@ class D1Connection {
+                 : BigInt(results.meta.last_row_id),
+             rows: results?.results || [],
+             numAffectedRows,
+-            // @ts-ignore deprecated in kysely >= 0.23, keep for backward compatibility.
+-            numUpdatedOrDeletedRows: numAffectedRows,
+         };
+     }
+     async beginTransaction() {
