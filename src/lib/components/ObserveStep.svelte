@@ -157,6 +157,17 @@
 				<strong class="text-foreground">{$sessionStore.totalCount}</strong>
 			</span>
 		</div>
+
+		<!-- Sync status: never let the observer believe a count is safely saved when it isn't yet. -->
+		{#if $sessionStore.syncStatus === 'error'}
+			<p class="mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-center text-xs text-destructive">
+				{$_('observe.sync.error')}
+			</p>
+		{:else if $sessionStore.syncStatus === 'pending'}
+			<p class="mt-2 text-center text-xs text-muted-foreground">
+				{$_('observe.sync.saving')}
+			</p>
+		{/if}
 	</div>
 
 	<div class="flex flex-col gap-4 px-5 pb-6">

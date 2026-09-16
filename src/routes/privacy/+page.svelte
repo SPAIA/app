@@ -56,7 +56,7 @@
 			<li>To run your account and remember your sightings, cards, and streaks.</li>
 			<li>To show spots, spaces, and leaderboards to you and other observers.</li>
 			<li>To read the scene in a photo you submit (habitat, plants) using an AI image-analysis service, so we can pre-fill details for you.</li>
-			<li>To look up real weather conditions for your session's time and location from Bright Sky, a public weather API built on Deutscher Wetterdienst (DWD) open data.</li>
+			<li>To look up real weather conditions for your session's time and location, from Bright Sky (a public weather API built on Deutscher Wetterdienst (DWD) open data) for German locations, or Visual Crossing for other locations.</li>
 			<li>To process payments for space/spot packs.</li>
 			<li>To aggregate anonymised sighting counts for biodiversity research and public leaderboards.</li>
 		</ul>
@@ -72,7 +72,8 @@
 			<li><span class="font-medium">Stripe</span> — payment processing for space/spot packs.</li>
 			<li><span class="font-medium">Resend</span> — sending account emails (magic links, confirmations).</li>
 			<li><span class="font-medium">DeepSeek</span> — AI analysis of photos you submit, to detect habitat features. This provider is located outside the EU; photos sent to it are used only to generate the description shown back to you.</li>
-			<li><span class="font-medium">Bright Sky</span> — a public weather API (built on Deutscher Wetterdienst open data) we query with your session's approximate location and time to record real weather conditions.</li>
+			<li><span class="font-medium">Bright Sky</span> — a public weather API (built on Deutscher Wetterdienst open data) we query with your session's approximate location and time to record real weather conditions, for locations in Germany.</li>
+			<li><span class="font-medium">Visual Crossing</span> — a weather API we query the same way, for locations outside Germany.</li>
 			<li><span class="font-medium">Stadia Maps</span> — map tiles shown when placing a pin.</li>
 			<li><span class="font-medium">OpenStreetMap (Nominatim)</span> and <span class="font-medium">BigDataCloud</span> — turning addresses and GPS coordinates into place names.</li>
 		</ul>

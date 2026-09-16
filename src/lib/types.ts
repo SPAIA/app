@@ -139,14 +139,15 @@ export interface SpotVisionResult {
 }
 
 /**
- * A real weather reading from Bright Sky (DWD open data), cached in
- * weather_observations. Carries far more than the UI shows today (wind,
+ * A real weather reading, cached in weather_observations — from Bright Sky
+ * (DWD open data) for German locations, Visual Crossing everywhere else (see
+ * $lib/server/weather). Carries far more than the UI shows today (wind,
  * cloud cover, station provenance, the raw payload) so it doesn't need a
  * schema change the next time something wants more than the 4-bucket label.
  */
 export interface WeatherObservation {
 	id: number;
-	source: 'brightsky' | 'manual';
+	source: 'brightsky' | 'visualcrossing' | 'manual';
 	lat: number;
 	lng: number;
 	observed_at: string;
@@ -190,7 +191,7 @@ export interface Session {
 	spot_id: number | null;
 	locality: string | null;
 	weather: 'sunny' | 'partly' | 'overcast' | 'rainy' | null;
-	/** The real Bright Sky reading `weather` was derived from — null for sessions predating this or not yet backfilled. */
+	/** The real weather reading `weather` was derived from — null for sessions predating this or not yet backfilled. */
 	weather_observation_id: number | null;
 	/** Free-text habitat condition, taken only when the observer skipped the observation photo. */
 	condition: string | null;

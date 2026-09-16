@@ -119,14 +119,17 @@
 	$: weatherObservation = $sessionStore.weatherObservation;
 	// The station name/distance are real fields off the Bright Sky reading, not a
 	// static "auto" label — falls back to a generic label only if a reading somehow
-	// carries no station (current_weather always returns one in practice).
+	// carries no station (current_weather always returns one in practice). Visual
+	// Crossing readings (non-German locations) have no single station to name.
 	$: weatherSourceLabel = !weatherObservation
 		? ''
-		: weatherObservation.source !== 'brightsky'
+		: weatherObservation.source === 'manual'
 			? $_('weather.source.manual')
-			: weatherObservation.station_name
-				? $_('weather.source.auto', { values: { station: weatherObservation.station_name } })
-				: $_('weather.source.autoGeneric');
+			: weatherObservation.source === 'visualcrossing'
+				? $_('weather.source.autoVisualCrossing')
+				: weatherObservation.station_name
+					? $_('weather.source.auto', { values: { station: weatherObservation.station_name } })
+					: $_('weather.source.autoGeneric');
 
 	$: if (!seeded && vision) {
 		seeded = true;

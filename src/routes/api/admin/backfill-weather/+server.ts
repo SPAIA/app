@@ -7,9 +7,9 @@ import {
 	createWeatherObservation,
 	setSessionWeatherObservation
 } from '$lib/db/queries';
-import { fetchHistoricalWeather, closestReading } from '$lib/server/brightSky';
+import { fetchHistoricalWeather, closestReading } from '$lib/server/weather';
 
-/** Politeness delay between distinct Bright Sky day-fetches — no documented rate limit, but no reason to hammer a free public service. */
+/** Politeness delay between distinct provider day-fetches — no documented rate limit for Bright Sky, but no reason to hammer a free public service; also keeps Visual Crossing calls well under its rate limits. */
 const DELAY_MS = 250;
 
 function sleep(ms: number) {
@@ -22,10 +22,10 @@ function roundCoord(n: number): number {
 }
 
 // One-off admin tool: fills in weather_observation_id for sessions saved
-// before real weather (Bright Sky) existed. Groups sessions by (rounded
-// location, day) so a spot with many historical sessions on the same day
-// costs one Bright Sky call, not one per session — see
-// findWeatherObservationForHour for the row-level reuse on top of that.
+// before real weather existed. Groups sessions by (rounded location, day) so
+// a spot with many historical sessions on the same day costs one provider
+// call, not one per session — see findWeatherObservationForHour for the
+// row-level reuse on top of that.
 export const POST: RequestHandler = async ({ locals, platform }) => {
 	const db = platform?.env?.DB;
 	if (!db) throw error(503, 'Database unavailable');
@@ -34,6 +34,7 @@ export const POST: RequestHandler = async ({ locals, platform }) => {
 	const profile = await getProfile(db, locals.user.id);
 	if (profile?.role !== 'admin') throw error(403, 'Admin only');
 
+	const visualCrossingApiKey = platform?.env?.VISUAL_CROSSING_API_KEY;
 	const sessions = await getSessionsMissingWeather(db);
 
 	const groups = new Map<string, { lat: number; lng: number; date: string; sessions: typeof sessions }>();
@@ -57,11 +58,11 @@ export const POST: RequestHandler = async ({ locals, platform }) => {
 	for (const group of groups.values()) {
 		let dayReadings: Awaited<ReturnType<typeof fetchHistoricalWeather>>;
 		try {
-			dayReadings = await fetchHistoricalWeather({ lat: group.lat, lng: group.lng, date: group.date });
+			dayReadings = await fetchHistoricalWeather({ lat: group.lat, lng: group.lng, date: group.date, visualCrossingApiKey });
 			apiCalls++;
 			await sleep(DELAY_MS);
 		} catch (err) {
-			console.error('Bright Sky historical fetch failed', group, err);
+			console.error('Historical weather fetch failed', group, err);
 			skipped += group.sessions.length;
 			continue;
 		}

@@ -58,6 +58,16 @@
 		</p>
 	</div>
 
+	<!-- The final save (completeSession, in CardsStep) may not have reached the
+	     server — don't let this screen imply the count is safely stored when it
+	     might only be on this device. It's still queued: the app retries on the
+	     next tap/heartbeat and again on the next app load (see +layout.svelte). -->
+	{#if $sessionStore.syncStatus === 'error'}
+		<p class="rounded-lg bg-destructive/10 px-3 py-2.5 text-center text-sm text-destructive">
+			{$_('close.notSynced')}
+		</p>
+	{/if}
+
 	<!-- Email capture -->
 	{#if !submitted && !loggedIn}
 		<div class="flex flex-col gap-3 rounded-xl border border-border bg-background px-4 py-4">

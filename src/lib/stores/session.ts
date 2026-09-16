@@ -23,7 +23,7 @@ export interface SessionState {
 	/** Neighbourhood/locality reverse-geocoded from the session GPS fix. */
 	locality: string | null;
 	weather: WeatherOption | null;
-	/** The Bright Sky reading `weather` was derived from — set in the background once geolocation resolves, see SetupStep. */
+	/** The real weather reading `weather` was derived from — set in the background once geolocation resolves, see SetupStep. */
 	weatherObservationId: number | null;
 	/** The full reading, kept only for display (temperature, source, station) — the server already has it via weatherObservationId. */
 	weatherObservation: WeatherObservation | null;
@@ -61,6 +61,8 @@ export interface SessionState {
 	taps: Tap[];
 	totalCount: number;
 	step: SessionStep;
+	/** Whether the latest local state has reached the server. Drives sync-status UI in ObserveStep/SummaryStep. */
+	syncStatus: 'idle' | 'pending' | 'synced' | 'error';
 }
 
 const initialState: SessionState = {
@@ -92,7 +94,8 @@ const initialState: SessionState = {
 	counts: {},
 	taps: [],
 	totalCount: 0,
-	step: 'setup'
+	step: 'setup',
+	syncStatus: 'idle'
 };
 
 export const sessionStore = writable<SessionState>({ ...initialState });

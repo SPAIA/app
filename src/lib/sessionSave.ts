@@ -1,5 +1,6 @@
 import { get } from 'svelte/store';
 import { sessionStore, type SessionState } from './stores/session';
+import { saveOfflineSession, removeOfflineSession } from './offlineSession';
 import type { SpotSessionComparison } from './types';
 
 /**
@@ -49,6 +50,49 @@ function buildPayload(s: SessionState, newTaps: SessionState['taps']) {
 	};
 }
 
+/**
+ * Writes the full current session state to localStorage before every save
+ * attempt (not just the delta `send` posts) so it survives a crash or kill
+ * that happens before — or instead of — a successful network round trip.
+ */
+function persistOfflineSnapshot(completing: boolean): void {
+	const s = get(sessionStore);
+	if (!s.sessionId) return;
+	saveOfflineSession({
+		sessionId: s.sessionId,
+		taps: s.taps,
+		totalCount: s.totalCount,
+		weather: s.weather,
+		weatherObservationId: s.weatherObservationId,
+		condition: s.condition,
+		notes: s.notes,
+		windObserved: s.windObserved,
+		otherCreatures: s.otherCreatures,
+		focalArea: s.focalArea,
+		lat: s.lat,
+		lng: s.lng,
+		durationMin: s.totalDurationMin,
+		spaceId: s.spaceId,
+		spotId: s.spotId,
+		locality: s.locality,
+		startedAt: s.startedAt,
+		clockOffsetMs: s.clockOffsetMs,
+		completing
+	});
+}
+
+function markSyncPending(): void {
+	sessionStore.update((s) => ({ ...s, syncStatus: 'pending' }));
+}
+
+function markSynced(): void {
+	sessionStore.update((s) => ({ ...s, syncStatus: 'synced' }));
+}
+
+function markSyncError(): void {
+	sessionStore.update((s) => ({ ...s, syncStatus: 'error' }));
+}
+
 async function send(url: string): Promise<Response | null> {
 	const s = get(sessionStore);
 	if (!s.sessionId) return null;
@@ -75,7 +119,14 @@ async function send(url: string): Promise<Response | null> {
  * already saved. Safe to call often — on every tap and on an idle heartbeat.
  */
 export function autosaveSession(): Promise<void> {
-	const result = queue.then(() => send('/api/sessions/autosave')).then(() => undefined);
+	persistOfflineSnapshot(false);
+	markSyncPending();
+	const result = queue
+		.then(() => send('/api/sessions/autosave'))
+		.then((res) => {
+			if (res) markSynced();
+			else markSyncError();
+		});
 	queue = result;
 	return result;
 }
@@ -86,9 +137,21 @@ export interface CompleteSessionResult {
 
 /** Final save: same delta as autosave, but marks the session complete. */
 export function completeSession(): Promise<CompleteSessionResult | null> {
+	persistOfflineSnapshot(true);
+	markSyncPending();
+	const sessionId = get(sessionStore).sessionId;
 	const result = queue
 		.then(() => send('/api/sessions/complete'))
-		.then((res) => (res ? res.json() : null)) as Promise<CompleteSessionResult | null>;
+		.then((res) => {
+			if (!res) {
+				markSyncError();
+				return null;
+			}
+			markSynced();
+			// Confirmed server-side — nothing left here worth recovering.
+			if (sessionId) removeOfflineSession(sessionId);
+			return res.json();
+		}) as Promise<CompleteSessionResult | null>;
 	queue = result.then(() => undefined);
 	return result;
 }

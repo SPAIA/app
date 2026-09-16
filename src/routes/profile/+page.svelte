@@ -12,6 +12,24 @@
 	export let data: PageData;
 
 	let loggingOut = false;
+	let backfillRunning = false;
+	let backfillResult: { updated: number; skipped: number; apiCalls: number; sessionsConsidered: number } | null = null;
+	let backfillError = '';
+
+	async function runWeatherBackfill() {
+		backfillRunning = true;
+		backfillError = '';
+		backfillResult = null;
+		try {
+			const res = await fetch('/api/admin/backfill-weather', { method: 'POST' });
+			if (!res.ok) throw new Error(`Request failed (${res.status})`);
+			backfillResult = await res.json();
+		} catch (err) {
+			backfillError = err instanceof Error ? err.message : 'Backfill failed';
+		} finally {
+			backfillRunning = false;
+		}
+	}
 
 	const languages = [
 		{ code: 'en', label: 'English' },
@@ -206,6 +224,26 @@
 				</Select.Content>
 			</Select.Root>
 		</div>
+
+		<!-- Admin tools -->
+		{#if profile.role === 'admin'}
+			<div class="flex flex-col gap-2 rounded-xl border border-border bg-background px-3.5 py-3">
+				<p class="text-sm font-medium text-foreground">Admin</p>
+				<Button variant="outline" class="w-full" onclick={() => goto('/admin')}>Export data</Button>
+				<Button variant="outline" class="w-full" onclick={runWeatherBackfill} disabled={backfillRunning}>
+					{#if backfillRunning}<Spinner size="sm" />{/if}
+					Backfill weather
+				</Button>
+				{#if backfillResult}
+					<p class="text-[11px] text-muted-foreground">
+						Updated {backfillResult.updated}, skipped {backfillResult.skipped} ({backfillResult.apiCalls} API calls, {backfillResult.sessionsConsidered} considered)
+					</p>
+				{/if}
+				{#if backfillError}
+					<p class="text-[11px] text-destructive">{backfillError}</p>
+				{/if}
+			</div>
+		{/if}
 
 		<Button variant="outline" class="w-full" onclick={handleLogout} disabled={loggingOut}>
 			{#if loggingOut}<Spinner size="sm" />{/if}

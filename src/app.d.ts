@@ -31,6 +31,7 @@ declare global {
 				EMAIL_FROM: string;
 				STADIA_API_KEY: string;
 				DEEPSEEK_API_KEY: string;
+				VISUAL_CROSSING_API_KEY: string;
 				STRIPE_SECRET_KEY: string;
 				STRIPE_WEBHOOK_SECRET: string;
 				STRIPE_PRICE_ID: string;

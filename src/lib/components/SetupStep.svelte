@@ -7,7 +7,7 @@
 	import { resizeImageFile } from '$lib/media/resizeImage';
 	import { haversineKm, directionsUrl, formatDistanceRange } from '$lib/geo';
 	import { trackLocalSessionId } from '$lib/localSessions';
-	import { resetSaveProgress } from '$lib/sessionSave';
+	import { resetSaveProgress, autosaveSession } from '$lib/sessionSave';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';
 
@@ -17,13 +17,16 @@
 	// If you're far from the spot we just warn — doesn't block observing.
 	const PROXIMITY_THRESHOLD_KM = 0.1;
 
-	type Phase = 'overview' | 'locating' | 'gpsError' | 'photo';
+	type Phase = 'overview' | 'locating' | 'photo';
 	let phase: Phase = 'overview';
 	let showFarWarning = false;
 	let showFarModal = false;
 
 	/** Default observation length — the duration picker was removed to get straight to counting. */
 	const DEFAULT_DURATION_MIN = 5;
+
+	/** Don't make the observer wait indefinitely for a GPS fix — fall back to the spot's own coordinates. */
+	const GPS_TIMEOUT_MS = 6000;
 
 	let lat: number | null = null;
 	let lng: number | null = null;
@@ -37,33 +40,78 @@
 
 	function checkProximity() {
 		phase = 'locating';
+		let settled = false;
 
-		if (!navigator.geolocation) {
-			phase = 'gpsError';
-			return;
-		}
+		// Whichever settles first wins — a slow/denied/never-arriving GPS fix
+		// must not leave the observer stuck on a spinner. Falls back to the
+		// spot's own saved coordinates instead of blocking.
+		function finish(pos: GeolocationPosition | null) {
+			if (settled) return;
+			settled = true;
 
-		navigator.geolocation.getCurrentPosition(
-			(pos) => {
+			if (pos) {
 				lat = pos.coords.latitude;
 				lng = pos.coords.longitude;
 				accuracy = pos.coords.accuracy;
+			} else {
+				lat = spot.lat ?? null;
+				lng = spot.lng ?? null;
+				accuracy = null;
+			}
 
-				if (spot.lat != null && spot.lng != null) {
-					distanceKm = haversineKm(lat, lng, spot.lat, spot.lng);
-					showFarWarning = distanceKm > PROXIMITY_THRESHOLD_KM;
-				}
+			if (pos && spot.lat != null && spot.lng != null && lat != null && lng != null) {
+				distanceKm = haversineKm(lat, lng, spot.lat, spot.lng);
+				showFarWarning = distanceKm > PROXIMITY_THRESHOLD_KM;
+			}
 
-				sessionId = crypto.randomUUID();
-				trackLocalSessionId(sessionId);
-				void fetchWeather(lat, lng);
-				phase = 'photo';
+			startProvisionalSession();
+			if (lat != null && lng != null) void fetchWeather(lat, lng);
+			phase = 'photo';
+		}
+
+		if (!navigator.geolocation) {
+			finish(null);
+			return;
+		}
+
+		const timer = setTimeout(() => finish(null), GPS_TIMEOUT_MS);
+		navigator.geolocation.getCurrentPosition(
+			(pos) => {
+				clearTimeout(timer);
+				finish(pos);
 			},
 			() => {
-				phase = 'gpsError';
+				clearTimeout(timer);
+				finish(null);
 			},
-			{ enableHighAccuracy: true, timeout: 10000 }
+			{ enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS }
 		);
+	}
+
+	// Mints the session id and creates its server-side row right away — before
+	// the photo even uploads — so a crash, kill, or lost connection between
+	// here and the observer's first tap never leaves an orphaned photo with no
+	// session behind it (see /api/sessions/[id]/photo, which uploads under this
+	// id immediately after).
+	function startProvisionalSession() {
+		sessionId = crypto.randomUUID();
+		trackLocalSessionId(sessionId);
+		sessionStore.update((s) => ({
+			...s,
+			sessionId,
+			spaceId: spot.space_id,
+			spotId: spot.id,
+			spotName,
+			locality: spot.locality,
+			lat,
+			lng,
+			startedAt: nowISO(),
+			clockOffsetMs: clockOffsetMs(),
+			durationMin: DEFAULT_DURATION_MIN,
+			totalDurationMin: DEFAULT_DURATION_MIN
+		}));
+		resetSaveProgress();
+		void autosaveSession();
 	}
 
 	function openFilePicker() {
@@ -71,10 +119,11 @@
 	}
 
 	// Kicked off as soon as GPS resolves (well before the observer reaches
-	// the post-count screen) so the real Bright Sky reading is already in the store
-	// by the time it's needed — no photo required, unlike the old DeepSeek
-	// weather guess. Best-effort: a failed fetch just leaves the weather
-	// chips unset for the observer to pick by hand.
+	// the post-count screen) so the real weather reading (Bright Sky or Visual
+	// Crossing, see $lib/server/weather) is already in the store by the time
+	// it's needed — no photo required, unlike the old DeepSeek weather guess.
+	// Best-effort: a failed fetch just leaves the weather chips unset for the
+	// observer to pick by hand.
 	async function fetchWeather(weatherLat: number, weatherLng: number) {
 		try {
 			const res = await fetch('/api/weather', {
@@ -161,30 +210,23 @@
 	}
 
 	function beginSession() {
+		// sessionId/spotId/spaceId/lat/lng/etc. were already written by
+		// startProvisionalSession (and already autosaved) — only the fields that
+		// actually change at the real start of counting are reset here.
 		showFarModal = false;
-		resetSaveProgress();
 		sessionStore.update((s) => ({
 			...s,
-			sessionId,
 			counts: {},
 			taps: [],
 			totalCount: 0,
-			spaceId: spot.space_id,
-			spotId: spot.id,
-			spotName,
-			locality: spot.locality,
 			// Weather and habitat condition are captured after the count, in CardsStep.
 			// If the background vision read already landed, keep its scene; otherwise fall
 			// back to the spot name for now — uploadPhoto backfills this once it resolves.
 			focalArea: s.focalArea || spotName,
-			lat,
-			lng,
-			durationMin: DEFAULT_DURATION_MIN,
-			totalDurationMin: DEFAULT_DURATION_MIN,
-			clockOffsetMs: clockOffsetMs(),
 			startedAt: nowISO(),
 			step: 'observe'
 		}));
+		void autosaveSession();
 	}
 
 	onMount(() => {
@@ -243,20 +285,12 @@
 			</Button>
 		</div>
 	</div>
-{:else if phase === 'locating' || phase === 'gpsError'}
+{:else if phase === 'locating'}
 	<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">
 		<span class="text-3xl">{spot.icon}</span>
 		<h1 class="text-lg font-medium text-foreground">{spot.name}</h1>
-
-		{#if phase === 'locating'}
-			<Spinner size="lg" class="text-primary" />
-			<p class="text-sm text-muted-foreground">{$_('observe.setup.proximity.checking')}</p>
-		{:else if phase === 'gpsError'}
-			<p class="text-sm text-destructive">{$_('observe.setup.proximity.error')}</p>
-			<Button variant="default" class="w-full" onclick={checkProximity}>
-				{$_('observe.setup.proximity.retry')}
-			</Button>
-		{/if}
+		<Spinner size="lg" class="text-primary" />
+		<p class="text-sm text-muted-foreground">{$_('observe.setup.proximity.checking')}</p>
 	</div>
 {:else if phase === 'photo'}
 	<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">

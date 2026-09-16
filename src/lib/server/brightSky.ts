@@ -81,7 +81,7 @@ interface HistoricalWeatherResponse {
 }
 
 export interface WeatherObservationRow {
-	source: 'brightsky';
+	source: 'brightsky' | 'visualcrossing';
 	lat: number;
 	lng: number;
 	observed_at: string;
@@ -104,8 +104,8 @@ export interface WeatherObservationRow {
 }
 
 const RAINY_CONDITIONS = new Set(['rain', 'sleet', 'snow', 'hail', 'thunderstorm']);
-/** Sustained wind ≥ this reads as "windy" — Beaufort ~5, the point branches visibly move. */
-const WINDY_THRESHOLD_KMH = 30;
+/** Sustained wind ≥ this reads as "windy" — Beaufort ~5, the point branches visibly move. Shared with visualCrossing.ts so both providers agree on the same reading. */
+export const WINDY_THRESHOLD_KMH = 30;
 
 /** Buckets a raw reading into the 4 values the UI has always shown. */
 export function mapToBucket(reading: BrightSkyReading): WeatherObservationRow['bucket'] {

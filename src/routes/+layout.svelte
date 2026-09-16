@@ -7,6 +7,7 @@
 	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
 	import { readLocalSessionIds, clearLocalSessionIds } from '$lib/localSessions';
+	import { listOfflineSessions, removeOfflineSession } from '$lib/offlineSession';
 	import type { LayoutData } from './$types';
 
 	export let data: LayoutData;
@@ -34,6 +35,26 @@
 			.catch(() => {
 				// offline — retried on the next authenticated page load
 			});
+	});
+
+	// Push any session left behind by a crash, kill, or lost connection on a
+	// previous visit — see $lib/offlineSession + $lib/sessionSave. Best-effort;
+	// whatever doesn't land here retries again on the next app load.
+	onMount(() => {
+		for (const pending of listOfflineSessions()) {
+			const url = pending.completing ? '/api/sessions/complete' : '/api/sessions/autosave';
+			fetch(url, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(pending)
+			})
+				.then((res) => {
+					if (res.ok) removeOfflineSession(pending.sessionId);
+				})
+				.catch(() => {
+					// still offline — retried on the next app load
+				});
+		}
 	});
 
 	const tabs = [

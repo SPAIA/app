@@ -18,7 +18,7 @@
 		{
 			table: 'weather_observations',
 			label: 'Weather observations',
-			description: 'Raw Bright Sky weather readings.'
+			description: 'Raw weather readings (Bright Sky for Germany, Visual Crossing elsewhere).'
 		}
 	];
 </script>
