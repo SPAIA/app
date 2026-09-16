@@ -187,9 +187,7 @@ export interface Session {
 	id: string;
 	user_id: string;
 	space_id: number | null;
-	space_name: string | null;
 	spot_id: number | null;
-	spot_name: string | null;
 	locality: string | null;
 	weather: 'sunny' | 'partly' | 'overcast' | 'rainy' | null;
 	/** The real Bright Sky reading `weather` was derived from — null for sessions predating this or not yet backfilled. */

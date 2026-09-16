@@ -18,7 +18,6 @@ export interface SessionState {
 	/** Set once the session is persisted server-side (on completion). */
 	sessionId: string | null;
 	spaceId: number | null;
-	spaceName: string | null;
 	spotId: number | null;
 	spotName: string | null;
 	/** Neighbourhood/locality reverse-geocoded from the session GPS fix. */
@@ -67,7 +66,6 @@ export interface SessionState {
 const initialState: SessionState = {
 	sessionId: null,
 	spaceId: null,
-	spaceName: null,
 	spotId: null,
 	spotName: null,
 	locality: null,

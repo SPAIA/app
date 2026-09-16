@@ -170,7 +170,6 @@
 			taps: [],
 			totalCount: 0,
 			spaceId: spot.space_id,
-			spaceName: null,
 			spotId: spot.id,
 			spotName,
 			locality: spot.locality,

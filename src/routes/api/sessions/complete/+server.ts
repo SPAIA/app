@@ -38,7 +38,6 @@ interface CompleteBody {
 	durationMin: number;
 	spaceId: number | null;
 	spotId: number | null;
-	spotName: string | null;
 	/** Locality reverse-geocoded from the session GPS fix, if any. */
 	locality: string | null;
 	/** Server-aligned ISO start time (already corrected for device clock skew). */
@@ -69,7 +68,6 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		durationMin,
 		spaceId,
 		spotId,
-		spotName,
 		locality,
 		startedAt,
 		clockOffsetMs
@@ -92,9 +90,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		id: sessionId,
 		user_id: userId,
 		space_id: spaceId,
-		space_name: null,
 		spot_id: spotId ?? null,
-		spot_name: spotName ?? null,
 		locality: locality ?? null,
 		weather: (weather as 'sunny' | 'partly' | 'overcast' | 'rainy') ?? null,
 		weather_observation_id: weatherObservationId ?? null,

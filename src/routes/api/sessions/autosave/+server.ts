@@ -23,7 +23,6 @@ interface AutosaveBody {
 	durationMin: number;
 	spaceId: number | null;
 	spotId: number | null;
-	spotName: string | null;
 	locality: string | null;
 	startedAt: string | null;
 	clockOffsetMs: number;
@@ -57,7 +56,6 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		durationMin,
 		spaceId,
 		spotId,
-		spotName,
 		locality,
 		startedAt,
 		clockOffsetMs
@@ -79,9 +77,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		id: sessionId,
 		user_id: userId,
 		space_id: spaceId,
-		space_name: null,
 		spot_id: spotId ?? null,
-		spot_name: spotName ?? null,
 		locality: locality ?? null,
 		weather: (weather as 'sunny' | 'partly' | 'overcast' | 'rainy') ?? null,
 		weather_observation_id: weatherObservationId ?? null,

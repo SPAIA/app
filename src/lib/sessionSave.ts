@@ -43,7 +43,6 @@ function buildPayload(s: SessionState, newTaps: SessionState['taps']) {
 		durationMin: s.totalDurationMin,
 		spaceId: s.spaceId,
 		spotId: s.spotId,
-		spotName: s.spotName,
 		locality: s.locality,
 		startedAt: s.startedAt,
 		clockOffsetMs: s.clockOffsetMs

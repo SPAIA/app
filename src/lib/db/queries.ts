@@ -315,9 +315,10 @@ export async function getRecentSightings(db: D1Database, limit = 30): Promise<Re
 				si.count,
 				si.tapped_at,
 				se.locality,
-				se.space_name
+				sc.name as space_name
 			FROM sightings si
 			JOIN sessions se ON si.session_id = se.id
+			LEFT JOIN spaces sc ON se.space_id = sc.id
 			LEFT JOIN insect_types it ON si.insect_type_id = it.id
 			ORDER BY si.tapped_at DESC
 			LIMIT ?
@@ -388,11 +389,19 @@ export async function getUserSessions(db: D1Database, userId: string): Promise<S
 	return result.results;
 }
 
-export async function getSessionById(db: D1Database, sessionId: string): Promise<Session | null> {
+export async function getSessionById(
+	db: D1Database,
+	sessionId: string
+): Promise<(Session & { space_name: string | null }) | null> {
 	return db
-		.prepare('SELECT * FROM sessions WHERE id = ?')
+		.prepare(`
+			SELECT sessions.*, spaces.name as space_name
+			FROM sessions
+			LEFT JOIN spaces ON spaces.id = sessions.space_id
+			WHERE sessions.id = ?
+		`)
 		.bind(sessionId)
-		.first<Session>();
+		.first<Session & { space_name: string | null }>();
 }
 
 export async function getSessionSightings(db: D1Database, sessionId: string): Promise<Sighting[]> {
@@ -441,14 +450,12 @@ export async function createSession(
 ): Promise<void> {
 	await db
 		.prepare(`
-			INSERT INTO sessions (id, user_id, space_id, space_name, spot_id, spot_name, locality, weather, weather_observation_id, condition, notes, wind_observed, focal_area, lat, lng, duration_min, started_at, clock_offset_ms, total_count)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO sessions (id, user_id, space_id, spot_id, locality, weather, weather_observation_id, condition, notes, wind_observed, focal_area, lat, lng, duration_min, started_at, clock_offset_ms, total_count)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT(id) DO UPDATE SET
 				user_id = CASE WHEN excluded.user_id NOT LIKE 'anon:%' THEN excluded.user_id ELSE sessions.user_id END,
 				space_id = excluded.space_id,
-				space_name = excluded.space_name,
 				spot_id = excluded.spot_id,
-				spot_name = excluded.spot_name,
 				locality = excluded.locality,
 				weather = excluded.weather,
 				weather_observation_id = excluded.weather_observation_id,
@@ -467,9 +474,7 @@ export async function createSession(
 			session.id,
 			session.user_id,
 			session.space_id,
-			session.space_name,
 			session.spot_id,
-			session.spot_name,
 			session.locality,
 			session.weather,
 			session.weather_observation_id,
@@ -1193,4 +1198,76 @@ export async function createWeatherObservation(db: D1Database, row: WeatherObser
 
 export async function getWeatherObservationById(db: D1Database, id: number): Promise<WeatherObservation | null> {
 	return db.prepare('SELECT * FROM weather_observations WHERE id = ?').bind(id).first<WeatherObservation>();
+}
+
+// --- CSV export queries (admin) -------------------------------------------
+
+export async function getAllSpotsForExport(db: D1Database): Promise<Record<string, unknown>[]> {
+	const result = await db.prepare('SELECT * FROM spots ORDER BY id ASC').all<Record<string, unknown>>();
+	return result.results;
+}
+
+export async function getAllSessionsForExport(db: D1Database): Promise<Record<string, unknown>[]> {
+	const result = await db.prepare('SELECT * FROM sessions ORDER BY started_at ASC').all<Record<string, unknown>>();
+	return result.results;
+}
+
+export async function getAllSightingsForExport(db: D1Database): Promise<Record<string, unknown>[]> {
+	const result = await db.prepare('SELECT * FROM sightings ORDER BY tapped_at ASC').all<Record<string, unknown>>();
+	return result.results;
+}
+
+export async function getAllWeatherObservationsForExport(db: D1Database): Promise<Record<string, unknown>[]> {
+	const result = await db
+		.prepare('SELECT * FROM weather_observations ORDER BY observed_at ASC')
+		.all<Record<string, unknown>>();
+	return result.results;
+}
+
+/** One row per sighting, joined through its session to the spot it was recorded at and the weather matched to that session — the shape data-viz comparisons across spots/weather/sightings actually want. */
+export async function getJoinedObservationsForExport(db: D1Database): Promise<Record<string, unknown>[]> {
+	const result = await db
+		.prepare(
+			`
+			SELECT
+				sightings.id AS sighting_id,
+				sightings.insect_name,
+				sightings.count,
+				sightings.tapped_at,
+				sessions.id AS session_id,
+				sessions.started_at,
+				sessions.completed_at,
+				sessions.duration_min,
+				sessions.spot_id,
+				spots.name AS spot_name,
+				spots.slug AS spot_slug,
+				spots.lat AS spot_lat,
+				spots.lng AS spot_lng,
+				sessions.space_id,
+				spaces.name AS space_name,
+				sessions.locality,
+				sessions.wind_observed,
+				sessions.condition AS session_condition,
+				weather_observations.observed_at AS weather_observed_at,
+				weather_observations.temperature_c,
+				weather_observations.precipitation_mm,
+				weather_observations.wind_speed_kmh,
+				weather_observations.wind_gust_speed_kmh,
+				weather_observations.cloud_cover_pct,
+				weather_observations.sunshine_min,
+				weather_observations.relative_humidity_pct,
+				weather_observations.pressure_msl_hpa,
+				weather_observations.condition AS weather_condition,
+				weather_observations.bucket AS weather_bucket,
+				weather_observations.windy AS weather_windy
+			FROM sightings
+			JOIN sessions ON sessions.id = sightings.session_id
+			LEFT JOIN spots ON spots.id = sessions.spot_id
+			LEFT JOIN spaces ON spaces.id = sessions.space_id
+			LEFT JOIN weather_observations ON weather_observations.id = sessions.weather_observation_id
+			ORDER BY sessions.started_at ASC, sightings.tapped_at ASC
+		`
+		)
+		.all<Record<string, unknown>>();
+	return result.results;
 }
