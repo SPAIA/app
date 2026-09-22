@@ -1,13 +1,14 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
+	import { goto, afterNavigate } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { _ } from 'svelte-i18n';
 	import { writable } from 'svelte/store';
 	import { setContext } from 'svelte';
 	import { readLocalSessionIds, clearLocalSessionIds } from '$lib/localSessions';
 	import { listLocalSnapshots, removeLocalSnapshot } from '$lib/session/snapshot';
+	import { track } from '$lib/analytics/track';
 	import type { LayoutData } from './$types';
 
 	export let data: LayoutData;
@@ -52,12 +53,23 @@
 				body: JSON.stringify(snapshot)
 			})
 				.then((res) => {
-					if (res.ok && snapshot.status === 'complete') removeLocalSnapshot(snapshot.id);
+					// 403 on a completed snapshot means it's no longer this device's to
+					// write — most likely it was already claimed by the owner through
+					// another path (email/claim-local) after this device's original,
+					// successful sync whose response never arrived. The data already
+					// landed under that write; retrying forever here would be pointless.
+					if (res.ok || (res.status === 403 && snapshot.status === 'complete')) {
+						removeLocalSnapshot(snapshot.id);
+					}
 				})
 				.catch(() => {
 					// still offline — retried on the next app load
 				});
 		}
+	});
+
+	afterNavigate(() => {
+		track('pageview');
 	});
 
 	const tabs = [

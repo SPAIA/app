@@ -31,6 +31,10 @@ function markSyncError(): void {
 
 /** Saves the current session state to localStorage right away. Call on every meaningful state change (tap, undo, notes, condition, spot, ...). */
 export function persistLocal(): void {
+	// Bumping revision here, in lockstep with every meaningful change, is what
+	// lets the server tell a genuinely newer snapshot apart from a stale one
+	// that arrives out of order — see syncSessionSnapshot.
+	sessionStore.update((s) => ({ ...s, revision: s.revision + 1 }));
 	const snapshot = toSnapshot(get(sessionStore));
 	if (snapshot) saveLocalSnapshot(snapshot);
 }

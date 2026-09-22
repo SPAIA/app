@@ -99,6 +99,9 @@
 		sessionStore.update((s) => ({
 			...s,
 			sessionId,
+			// Proves the right to sync this session id later — see $lib/session/snapshot.
+			// The id itself is exposed publicly via /share/[sessionId], so it can't double as a credential.
+			writeToken: crypto.randomUUID(),
 			spaceId: spot.space_id,
 			spotId: spot.id,
 			spotName,

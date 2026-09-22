@@ -75,7 +75,9 @@ CREATE TABLE sessions (
 	clock_offset_ms INTEGER,
 	total_count INTEGER DEFAULT 0,
 	shared INTEGER DEFAULT 0,
-	claim_email TEXT
+	claim_email TEXT,
+	revision INTEGER NOT NULL DEFAULT 0,
+	write_token TEXT
 );
 
 CREATE TABLE sightings (

@@ -19,6 +19,10 @@ export interface Tap {
 export interface SessionState {
 	/** Minted client-side the moment the observer starts a spot (see SetupStep.startProvisionalSession) — not tied to any particular sync having landed. */
 	sessionId: string | null;
+	/** Per-session write credential, minted alongside sessionId — see $lib/session/snapshot. Proves the right to sync this session id, since the id itself is exposed publicly via /share/[sessionId]. */
+	writeToken: string | null;
+	/** Bumped on every local persist — lets the server reject a stale/out-of-order sync. See $lib/session/sync.persistLocal. */
+	revision: number;
 	spaceId: number | null;
 	spotId: number | null;
 	spotName: string | null;
@@ -71,6 +75,8 @@ export interface SessionState {
 
 const initialState: SessionState = {
 	sessionId: null,
+	writeToken: null,
+	revision: 0,
 	spaceId: null,
 	spotId: null,
 	spotName: null,

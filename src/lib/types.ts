@@ -210,6 +210,10 @@ export interface Session {
 	total_count: number;
 	shared: number;
 	claim_email: string | null;
+	/** Bumped by the client on every local state change — lets the server reject an out-of-order sync. */
+	revision: number;
+	/** Per-session write credential for anonymous sessions — see syncSessionSnapshot. Never exposed on a public read. */
+	write_token: string | null;
 }
 
 /**

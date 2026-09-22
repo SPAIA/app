@@ -1,5 +1,5 @@
 import type { D1Database } from '$lib/server/db/d1';
-import type { R2Bucket } from '@cloudflare/workers-types';
+import type { AnalyticsEngineDataset, R2Bucket } from '@cloudflare/workers-types';
 
 declare global {
 	namespace App {
@@ -25,6 +25,7 @@ declare global {
 				DB: D1Database;
 				AVATARS: R2Bucket;
 				MEDIA: R2Bucket;
+				ANALYTICS: AnalyticsEngineDataset;
 				BETTER_AUTH_SECRET: string;
 				BETTER_AUTH_URL: string;
 				RESEND_API_KEY: string;

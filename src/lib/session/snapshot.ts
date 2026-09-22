@@ -10,6 +10,10 @@ import type { SessionState } from '$lib/stores/session';
  */
 export const SessionSnapshotSchema = z.object({
 	id: z.string(),
+	/** Per-session write credential, minted once at session start — see syncSessionSnapshot. */
+	writeToken: z.string().min(16),
+	/** Bumped locally on every meaningful state change — lets the server reject a stale/out-of-order sync. */
+	revision: z.number().int().nonnegative(),
 	spaceId: z.number().nullable(),
 	spotId: z.number().nullable(),
 	locality: z.string().nullable(),
@@ -44,9 +48,11 @@ export type SessionSnapshot = z.infer<typeof SessionSnapshotSchema>;
 
 /** Builds the persisted/synced snapshot from the full UI session state. Returns null before a session has started. */
 export function toSnapshot(s: SessionState): SessionSnapshot | null {
-	if (!s.sessionId) return null;
+	if (!s.sessionId || !s.writeToken) return null;
 	return {
 		id: s.sessionId,
+		writeToken: s.writeToken,
+		revision: s.revision,
 		spaceId: s.spaceId,
 		spotId: s.spotId,
 		locality: s.locality,

@@ -1,12 +1,17 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb, type TestD1Database } from './testDb';
-import { syncSessionSnapshot, claimSessionsByIds } from '$lib/server/db/sessions';
+import { syncSessionSnapshot, claimSessionsByIds, SessionWriteForbiddenError } from '$lib/server/db/sessions';
 import { getProfile } from '$lib/server/db/profiles';
 import type { SessionSnapshot } from '$lib/session/snapshot';
+
+const TOKEN = 'test-write-token-0000000000000000';
+const OTHER_TOKEN = 'someone-elses-token-0000000000000';
 
 function makeSnapshot(overrides: Partial<SessionSnapshot> = {}): SessionSnapshot {
 	return {
 		id: 'sess-1',
+		writeToken: TOKEN,
+		revision: 1,
 		spaceId: 1,
 		spotId: 1,
 		locality: 'Neukölln',
@@ -51,13 +56,13 @@ describe('syncSessionSnapshot', () => {
 
 	it('replacing sighting counts: syncing A then B leaves the database matching B', async () => {
 		const bees5 = Array.from({ length: 5 }, (_, i) => tap('bee', `2026-01-01T10:00:0${i}.000Z`));
-		await syncSessionSnapshot(db, makeSnapshot({ sightings: bees5 }), 'anon:device-1');
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1, sightings: bees5 }), null);
 
 		let rows = db.raw.prepare('SELECT COUNT(*) as n FROM sightings WHERE session_id = ?').get('sess-1') as { n: number };
 		expect(rows.n).toBe(5);
 
 		const bees4 = Array.from({ length: 4 }, (_, i) => tap('bee', `2026-01-01T10:01:0${i}.000Z`));
-		await syncSessionSnapshot(db, makeSnapshot({ sightings: bees4 }), 'anon:device-1');
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 2, sightings: bees4 }), null);
 
 		rows = db.raw.prepare('SELECT COUNT(*) as n FROM sightings WHERE session_id = ?').get('sess-1') as { n: number };
 		expect(rows.n).toBe(4);
@@ -105,6 +110,70 @@ describe('syncSessionSnapshot', () => {
 		expect(second).toEqual(first);
 	});
 
+	it('a stale (older-revision) snapshot cannot un-complete a session', async () => {
+		await syncSessionSnapshot(
+			db,
+			makeSnapshot({ revision: 5, sightings: [tap('bee', '2026-01-01T10:00:00.000Z')], status: 'complete' }),
+			null
+		);
+		const completed = db.raw.prepare('SELECT completed_at, total_count FROM sessions WHERE id = ?').get('sess-1') as {
+			completed_at: string | null;
+			total_count: number;
+		};
+		expect(completed.completed_at).not.toBeNull();
+
+		// A delayed in-progress heartbeat from before completion, arriving late.
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 3, sightings: [], status: 'in_progress' }), null);
+
+		const after = db.raw.prepare('SELECT completed_at, total_count FROM sessions WHERE id = ?').get('sess-1') as {
+			completed_at: string | null;
+			total_count: number;
+		};
+		expect(after.completed_at).toBe(completed.completed_at);
+		expect(after.total_count).toBe(completed.total_count);
+	});
+
+	it('rejects a write to an existing anonymous session with the wrong write token', async () => {
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1 }), null);
+
+		await expect(
+			syncSessionSnapshot(db, makeSnapshot({ revision: 2, writeToken: OTHER_TOKEN }), null)
+		).rejects.toBeInstanceOf(SessionWriteForbiddenError);
+
+		// The forbidden write must not have applied.
+		const session = db.raw.prepare('SELECT revision FROM sessions WHERE id = ?').get('sess-1') as { revision: number };
+		expect(session.revision).toBe(1);
+	});
+
+	it('rejects a write to a user-owned session from a different (or no) identity', async () => {
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1 }), 'user-1');
+
+		await expect(syncSessionSnapshot(db, makeSnapshot({ revision: 2 }), 'user-2')).rejects.toBeInstanceOf(
+			SessionWriteForbiddenError
+		);
+		await expect(syncSessionSnapshot(db, makeSnapshot({ revision: 2 }), null)).rejects.toBeInstanceOf(
+			SessionWriteForbiddenError
+		);
+
+		const session = db.raw.prepare('SELECT revision, user_id FROM sessions WHERE id = ?').get('sess-1') as {
+			revision: number;
+			user_id: string;
+		};
+		expect(session.revision).toBe(1);
+		expect(session.user_id).toBe('user-1');
+	});
+
+	it('the signed-in owner can keep syncing their own session regardless of write token', async () => {
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1 }), 'user-1');
+
+		await expect(
+			syncSessionSnapshot(db, makeSnapshot({ revision: 2, writeToken: OTHER_TOKEN, notes: 'still me' }), 'user-1')
+		).resolves.toBeUndefined();
+
+		const session = db.raw.prepare('SELECT notes FROM sessions WHERE id = ?').get('sess-1') as { notes: string };
+		expect(session.notes).toBe('still me');
+	});
+
 	it('derived spot aggregates (spot_insect_stats, total_minutes_observed) are recomputed, not double-counted, on repeat sync', async () => {
 		const snapshot = makeSnapshot({
 			sightings: [tap('bee', '2026-01-01T10:00:00.000Z'), tap('bee', '2026-01-01T10:00:01.000Z')],
@@ -122,11 +191,11 @@ describe('syncSessionSnapshot', () => {
 	});
 
 	it('recovers an in-progress session (a snapshot can be synced, then synced again with more taps, without losing prior fields)', async () => {
-		await syncSessionSnapshot(db, makeSnapshot({ notes: 'saw a wasp too' }), 'anon:device-1');
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1, notes: 'saw a wasp too' }), null);
 		await syncSessionSnapshot(
 			db,
-			makeSnapshot({ sightings: [tap('bee', '2026-01-01T10:05:00.000Z')], notes: 'saw a wasp too' }),
-			'anon:device-1'
+			makeSnapshot({ revision: 2, sightings: [tap('bee', '2026-01-01T10:05:00.000Z')], notes: 'saw a wasp too' }),
+			null
 		);
 
 		const session = db.raw.prepare('SELECT notes, total_count, completed_at FROM sessions WHERE id = ?').get('sess-1') as {
@@ -143,7 +212,7 @@ describe('syncSessionSnapshot', () => {
 		const snapshot = makeSnapshot({ sightings: [tap('bee', '2026-01-01T10:00:00.000Z')], status: 'complete' });
 
 		// Simulates: session completed while offline, app restarts, snapshot is resent.
-		await syncSessionSnapshot(db, snapshot, 'anon:device-1');
+		await syncSessionSnapshot(db, snapshot, null);
 
 		const session = db.raw.prepare('SELECT completed_at, total_count FROM sessions WHERE id = ?').get('sess-1') as {
 			completed_at: string | null;
@@ -153,21 +222,27 @@ describe('syncSessionSnapshot', () => {
 		expect(session.total_count).toBe(1);
 	});
 
-	it('anonymous session can be claimed by a user after authentication', async () => {
-		await syncSessionSnapshot(db, makeSnapshot({ status: 'complete' }), 'anon:device-1');
+	it('anonymous session can be claimed by a user after authentication, and their own later syncs still work', async () => {
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1, status: 'complete' }), null);
 
 		let session = db.raw.prepare('SELECT user_id FROM sessions WHERE id = ?').get('sess-1') as { user_id: string };
-		expect(session.user_id).toBe('anon:device-1');
+		expect(session.user_id.startsWith('anon:')).toBe(true);
 
 		await claimSessionsByIds(db, ['sess-1'], 'user-42');
 
 		session = db.raw.prepare('SELECT user_id FROM sessions WHERE id = ?').get('sess-1') as { user_id: string };
 		expect(session.user_id).toBe('user-42');
 
-		// A later sync (e.g. one last 30s tick in flight when sign-in happened)
-		// must not clobber the real owner with a fresh anon id.
-		await syncSessionSnapshot(db, makeSnapshot({ status: 'complete' }), 'anon:device-2');
+		// The claimed owner, now signed in, can keep syncing (e.g. a trailing edit).
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 2, status: 'complete', notes: 'final note' }), 'user-42');
 		session = db.raw.prepare('SELECT user_id FROM sessions WHERE id = ?').get('sess-1') as { user_id: string };
 		expect(session.user_id).toBe('user-42');
+
+		// An anonymous request — e.g. a stale retry from the device that never
+		// saw its own original success — is now correctly forbidden, not
+		// silently downgraded back to anon.
+		await expect(
+			syncSessionSnapshot(db, makeSnapshot({ revision: 3, status: 'complete' }), null)
+		).rejects.toBeInstanceOf(SessionWriteForbiddenError);
 	});
 });

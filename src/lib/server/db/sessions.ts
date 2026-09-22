@@ -14,20 +14,34 @@ export async function getUserSessions(db: D1Database, userId: string): Promise<S
 	return result.results;
 }
 
+/**
+ * Explicit column list, not `SELECT *` — this feeds the public
+ * /share/[sessionId] page, so it must never return claim_email (a real
+ * email address) or write_token (a write credential for the session).
+ */
 export async function getSessionById(
 	db: D1Database,
 	sessionId: string
-): Promise<(Session & { space_name: string | null }) | null> {
+): Promise<(Omit<Session, 'claim_email' | 'write_token'> & { space_name: string | null }) | null> {
 	return db
 		.prepare(`
-			SELECT sessions.*, spaces.name as space_name
+			SELECT
+				sessions.id, sessions.user_id, sessions.space_id, sessions.spot_id, sessions.locality,
+				sessions.weather, sessions.weather_observation_id, sessions.condition, sessions.notes,
+				sessions.wind_observed, sessions.focal_area, sessions.lat, sessions.lng, sessions.duration_min,
+				sessions.started_at, sessions.completed_at, sessions.clock_offset_ms, sessions.total_count,
+				sessions.shared, sessions.revision,
+				spaces.name as space_name
 			FROM sessions
 			LEFT JOIN spaces ON spaces.id = sessions.space_id
 			WHERE sessions.id = ?
 		`)
 		.bind(sessionId)
-		.first<Session & { space_name: string | null }>();
+		.first<Omit<Session, 'claim_email' | 'write_token'> & { space_name: string | null }>();
 }
+
+/** Thrown by syncSessionSnapshot when the caller isn't the session's owner (real user) or write-token holder (anonymous). */
+export class SessionWriteForbiddenError extends Error {}
 
 /**
  * Idempotent replacement sync: makes the persisted session match `snapshot`
@@ -36,40 +50,74 @@ export async function getSessionById(
  * only ever depends on the snapshot's own content, never on how many times
  * or in what order it was sent. See PUT /api/sessions/[id].
  *
- * `user_id` only ever moves from an anon owner to a real one, never back —
- * see the CASE WHEN below.
+ * Authorization: a caller may write an *existing* session only if they are
+ * its signed-in owner, or — for a still-anonymous session — hold its
+ * write_token. A brand new session id may always be created. This matters
+ * because session ids are exposed publicly via /share/[sessionId]; without
+ * it, knowing/guessing a shared id would be enough to overwrite someone
+ * else's observation. Throws SessionWriteForbiddenError otherwise.
  *
- * `completed_at` is set once, the first time a snapshot for this session
- * arrives with status 'complete', and never overwritten after — this (plus
- * full delete-and-reinsert of sightings/creatures, and aggregate recompute
- * rather than +1/-1 mutation) is what makes retrying a completed sync safe:
- * it can never double-apply observed minutes, duplicate sightings/creatures,
- * or bump a streak twice.
+ * Staleness: `snapshot.revision` must be >= the stored revision, or the
+ * whole sync is a no-op. Without this, a delayed in-progress snapshot
+ * arriving after a completion could null out completed_at (and revert other
+ * fields) — see the migration this shipped with for more. The SQL-level
+ * `WHERE excluded.revision >= sessions.revision` guard additionally covers
+ * the (rare, self-healing) case where two syncs for the same session race
+ * each other: the loser's session-row write is atomically dropped, even
+ * though its child-table writes below aren't — the next sync from either
+ * side reconciles everything again.
+ *
+ * `user_id` only ever moves from an anon owner to a real one, never back.
+ *
+ * `completed_at` is set once, the first time an accepted snapshot for this
+ * session has status 'complete', and never overwritten after (the COALESCE
+ * below) — this (plus full delete-and-reinsert of sightings/creatures, and
+ * aggregate recompute rather than +1/-1 mutation) is what makes retrying a
+ * completed sync safe: it can never double-apply observed minutes,
+ * duplicate sightings/creatures, or bump a streak twice.
  */
 export async function syncSessionSnapshot(
 	db: D1Database,
 	snapshot: SessionSnapshot,
-	userId: string
+	authUserId: string | null
 ): Promise<void> {
+	const existing = await db
+		.prepare('SELECT completed_at, revision, user_id, write_token FROM sessions WHERE id = ?')
+		.bind(snapshot.id)
+		.first<{ completed_at: string | null; revision: number; user_id: string; write_token: string | null }>();
+
+	if (existing) {
+		const ownedByRealUser = !existing.user_id.startsWith('anon:');
+		const authorized = ownedByRealUser
+			? authUserId === existing.user_id
+			: existing.write_token != null && existing.write_token === snapshot.writeToken;
+		if (!authorized) throw new SessionWriteForbiddenError(`Not authorized to write session ${snapshot.id}`);
+
+		// A newer snapshot already landed — silently drop this one rather than regress the session.
+		if (snapshot.revision < existing.revision) return;
+	}
+
 	const insectTypes = await getInsectTypes(db);
 	const insectTypeId = new Map(insectTypes.map((i) => [i.name, i.id]));
 
-	const existing = await db
-		.prepare('SELECT completed_at FROM sessions WHERE id = ?')
-		.bind(snapshot.id)
-		.first<{ completed_at: string | null }>();
 	const previousCompletedAt = existing?.completed_at ?? null;
 	const isFirstCompletion = previousCompletedAt === null && snapshot.status === 'complete';
 	const completedAt = snapshot.status === 'complete' ? (previousCompletedAt ?? sqliteNow()) : null;
 	const totalCount = snapshot.sightings.length;
+	// A brand-new row takes whichever owner is making the request (real user,
+	// or a throwaway anon id — never read again except via write_token from
+	// here on). An existing row only ever gets upgraded from anon to real,
+	// never the reverse or sideways — enforced above by the authorization
+	// check, not by this expression alone.
+	const ownerId = authUserId ?? existing?.user_id ?? `anon:${crypto.randomUUID()}`;
 
 	const statements: D1PreparedStatement[] = [
 		db
 			.prepare(`
-				INSERT INTO sessions (id, user_id, space_id, spot_id, locality, weather, weather_observation_id, condition, notes, wind_observed, focal_area, lat, lng, duration_min, started_at, clock_offset_ms, total_count, completed_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				INSERT INTO sessions (id, user_id, space_id, spot_id, locality, weather, weather_observation_id, condition, notes, wind_observed, focal_area, lat, lng, duration_min, started_at, clock_offset_ms, total_count, completed_at, revision, write_token)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				ON CONFLICT(id) DO UPDATE SET
-					user_id = CASE WHEN excluded.user_id NOT LIKE 'anon:%' THEN excluded.user_id ELSE sessions.user_id END,
+					user_id = excluded.user_id,
 					space_id = excluded.space_id,
 					spot_id = excluded.spot_id,
 					locality = excluded.locality,
@@ -85,11 +133,13 @@ export async function syncSessionSnapshot(
 					started_at = excluded.started_at,
 					clock_offset_ms = excluded.clock_offset_ms,
 					total_count = excluded.total_count,
-					completed_at = excluded.completed_at
+					completed_at = COALESCE(sessions.completed_at, excluded.completed_at),
+					revision = excluded.revision
+				WHERE excluded.revision >= sessions.revision
 			`)
 			.bind(
 				snapshot.id,
-				userId,
+				ownerId,
 				snapshot.spaceId,
 				snapshot.spotId,
 				snapshot.locality,
@@ -105,7 +155,9 @@ export async function syncSessionSnapshot(
 				snapshot.startedAt,
 				snapshot.clockOffsetMs,
 				totalCount,
-				completedAt
+				completedAt,
+				snapshot.revision,
+				snapshot.writeToken
 			),
 		db.prepare('DELETE FROM sightings WHERE session_id = ?').bind(snapshot.id),
 		...snapshot.sightings.map((tap) =>
@@ -130,13 +182,13 @@ export async function syncSessionSnapshot(
 	// Streak is a signed-in feature; don't create junk profiles for anon
 	// owners, and only bump it the one time this session actually completes —
 	// isFirstCompletion is false on every retry.
-	if (isFirstCompletion && !userId.startsWith('anon:')) {
-		const profile = await getProfile(db, userId);
+	if (isFirstCompletion && authUserId) {
+		const profile = await getProfile(db, authUserId);
 		const { newStreak, newLastDate } = updateStreak(
 			profile?.streak_days ?? 0,
 			profile?.streak_last_date ?? null
 		);
-		await upsertProfile(db, userId, { streak_days: newStreak, streak_last_date: newLastDate });
+		await upsertProfile(db, authUserId, { streak_days: newStreak, streak_last_date: newLastDate });
 	}
 }
 
