@@ -61,17 +61,21 @@ export function formatDistanceRange(km: number, accuracyMeters: number | null | 
 
 /** Nearest spot with known coordinates to the given point, or null if none have coordinates. */
 export function findNearestSpot(spots: Spot[], lat: number, lng: number): { spot: Spot; distanceKm: number } | null {
-	let nearest: { spot: Spot; distanceKm: number } | null = null;
+	return findNearestSpots(spots, lat, lng, 1)[0] ?? null;
+}
 
-	for (const spot of spots) {
-		if (spot.lat == null || spot.lng == null) continue;
-		const distanceKm = haversineKm(lat, lng, spot.lat, spot.lng);
-		if (!nearest || distanceKm < nearest.distanceKm) {
-			nearest = { spot, distanceKm };
-		}
-	}
-
-	return nearest;
+/** The `n` nearest spots with known coordinates to the given point, closest first. */
+export function findNearestSpots(
+	spots: Spot[],
+	lat: number,
+	lng: number,
+	n: number
+): { spot: Spot; distanceKm: number }[] {
+	return spots
+		.filter((spot) => spot.lat != null && spot.lng != null)
+		.map((spot) => ({ spot, distanceKm: haversineKm(lat, lng, spot.lat!, spot.lng!) }))
+		.sort((a, b) => a.distanceKm - b.distanceKm)
+		.slice(0, n);
 }
 
 /** Short human-readable area: m² under 1ha, otherwise hectares. */

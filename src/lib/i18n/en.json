@@ -49,6 +49,8 @@
   "observe.setup.proximity.continueAnyway": "Start anyway",
   "observe.setup.proximity.cancel": "Cancel",
   "observe.nearest.title": "Your nearest spot",
+  "observe.nearest.listHeading": "Spots near you",
+  "observe.nearest.back": "Back to nearby spots",
   "observe.nearest.heading": "Your nearest spot is",
   "observe.nearest.locating": "Finding spots near you...",
   "observe.nearest.error": "Couldn't get your location — enable location access and try again",
@@ -80,6 +82,7 @@
   "observe.intro.tip.Dragonflies": "Long thin body, four wings held out flat, usually near water.",
   "observe.intro.tip.Caterpillars": "Long soft body, many legs. Any grub or larva counts too.",
   "spot.add.location.label": "Where are you?",
+  "spot.add.location.search.placeholder": "Search for a place",
   "spot.add.location.gps": "Use GPS",
   "spot.add.location.pin": "Drop a pin",
   "spot.add.location.satellite": "Satellite",
@@ -341,5 +344,6 @@
   "spot.edit.name.label": "Spot name",
   "spot.edit.icon.label": "Icon",
   "spot.edit.cover.label": "Cover image",
-  "spot.edit.cover.change": "Change cover image"
+  "spot.edit.cover.change": "Change cover image",
+  "spot.edit.sign.download": "Download sign"
 }

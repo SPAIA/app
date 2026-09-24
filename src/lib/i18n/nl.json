@@ -49,6 +49,8 @@
   "observe.setup.proximity.continueAnyway": "Toch beginnen",
   "observe.setup.proximity.cancel": "Annuleren",
   "observe.nearest.title": "Jouw dichtstbijzijnde plek",
+  "observe.nearest.listHeading": "Plekken bij jou in de buurt",
+  "observe.nearest.back": "Terug naar plekken in de buurt",
   "observe.nearest.heading": "Jouw dichtstbijzijnde plek is",
   "observe.nearest.locating": "Plekken in de buurt zoeken...",
   "observe.nearest.error": "Kon je locatie niet bepalen — schakel locatietoegang in en probeer opnieuw",
@@ -62,6 +64,7 @@
   "observe.nearest.newSpot.confirm": "Ja, maak een nieuwe plek aan",
   "observe.nearest.newSpot.cancel": "Annuleren",
   "spot.add.location.label": "Waar ben je?",
+  "spot.add.location.search.placeholder": "Zoek een plek",
   "spot.add.location.gps": "GPS gebruiken",
   "spot.add.location.pin": "Speld plaatsen",
   "spot.add.location.satellite": "Satelliet",
@@ -323,5 +326,6 @@
   "spot.edit.name.label": "Spotnaam",
   "spot.edit.icon.label": "Icoon",
   "spot.edit.cover.label": "Coverfoto",
-  "spot.edit.cover.change": "Coverfoto wijzigen"
+  "spot.edit.cover.change": "Coverfoto wijzigen",
+  "spot.edit.sign.download": "Bordje downloaden"
 }

@@ -2,8 +2,10 @@
 	import { _ } from 'svelte-i18n';
 	import { enhance } from '$app/forms';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
+	import { downloadSpotSign } from '$lib/sign';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -42,6 +44,16 @@
 	let mapReady = false;
 
 	let submitting = false;
+	let signDownloading = false;
+
+	async function handleDownloadSign() {
+		signDownloading = true;
+		try {
+			await downloadSpotSign(data.spot.slug, $page.url.origin);
+		} finally {
+			signDownloading = false;
+		}
+	}
 
 	let cover: Media | null = data.cover;
 	let coverPreview = cover ? `/api/media/${cover.id}` : '';
@@ -309,9 +321,14 @@
 		<input type="hidden" name="lat" value={lat ?? ''} />
 		<input type="hidden" name="lng" value={lng ?? ''} />
 
-		<Button variant="default" class="w-full" disabled={submitting || !spotName}>
+		<Button type="submit" variant="default" class="w-full" disabled={submitting || !spotName}>
 			{#if submitting}<Spinner size="sm" />{/if}
 			{$_('spot.edit.submit')}
 		</Button>
 	</form>
+
+	<Button type="button" variant="outline" class="w-full" onclick={handleDownloadSign} disabled={signDownloading}>
+		{#if signDownloading}<Spinner size="sm" />{/if}
+		{$_('spot.edit.sign.download')}
+	</Button>
 </div>

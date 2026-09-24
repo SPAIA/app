@@ -2,8 +2,8 @@
 	import { _ } from 'svelte-i18n';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { directionsUrl, findNearestSpot, formatDistanceKm, formatDistanceRange, haversineKm } from '$lib/geo';
-	import type { Spot } from '$lib/types';
+	import { directionsUrl, findNearestSpots, formatDistanceKm, formatDistanceRange, haversineKm } from '$lib/geo';
+	import type { Spot, SpotVisionResult } from '$lib/types';
 	import type { SpotSummary } from '$lib/server/db/spots';
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
@@ -21,17 +21,35 @@
 	let userLng: number | null = null;
 
 	let open = false;
+	let sheetView: 'list' | 'detail' = 'list';
 	let selectedSpot: MapSpot | null = null;
 	let selectedDistanceKm: number | null = null;
-	let cover: { id: string } | null = null;
-	let coverLoading = false;
+	let summary: (SpotSummary & { cover: { id: string } | null }) | null = null;
+	let summaryLoading = false;
 
+	let nearbySpots: { spot: MapSpot; distanceKm: number }[] = [];
 	let nearestSpot: MapSpot | null = null;
 	let nearestDistanceKm: number | null = null;
 	let showProximityModal = false;
 	const NEW_SPOT_PROXIMITY_KM = 0.1;
 
 	$: isNearest = selectedSpot != null && nearestSpot != null && selectedSpot.id === nearestSpot.id;
+
+	// ai_description stores the full cached DeepSeek Vision read as JSON — pull out just the scene text.
+	function sceneFromDescription(aiDescription: string): string | null {
+		try {
+			return (JSON.parse(aiDescription) as SpotVisionResult).scene || null;
+		} catch {
+			return null;
+		}
+	}
+	$: selectedScene = selectedSpot?.ai_description ? sceneFromDescription(selectedSpot.ai_description) : null;
+
+	// SQLite's datetime('now') comes back space-separated with no zone; it's UTC.
+	function formatDate(sqliteDatetime: string) {
+		const iso = sqliteDatetime.includes('T') ? sqliteDatetime : `${sqliteDatetime.replace(' ', 'T')}Z`;
+		return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+	}
 
 	let mapContainer: HTMLDivElement;
 	let mapInstance: import('maplibre-gl').Map | null = null;
@@ -44,21 +62,25 @@
 
 	async function selectSpot(spot: MapSpot) {
 		selectedSpot = spot;
+		sheetView = 'detail';
 		open = true;
-		cover = null;
+		summary = null;
 		selectedDistanceKm =
 			userLat != null && userLng != null && spot.lat != null && spot.lng != null
 				? haversineKm(userLat, userLng, spot.lat, spot.lng)
 				: null;
 
-		coverLoading = true;
+		summaryLoading = true;
 		try {
 			const res = await fetch(`/api/spot/${spot.id}/summary`);
-			const result = (await res.json()) as SpotSummary & { cover: { id: string } | null };
-			cover = result.cover;
+			summary = (await res.json()) as SpotSummary & { cover: { id: string } | null };
 		} finally {
-			coverLoading = false;
+			summaryLoading = false;
 		}
+	}
+
+	function showNearbyList() {
+		sheetView = 'list';
 	}
 
 	function closeCard() {
@@ -116,11 +138,17 @@
 				accuracy = pos.coords.accuracy;
 				phase = 'located';
 
-				const nearest = findNearestSpot(data.spots as MapSpot[], userLat, userLng);
-				nearestSpot = (nearest?.spot as MapSpot) ?? null;
-				nearestDistanceKm = nearest?.distanceKm ?? null;
+				nearbySpots = findNearestSpots(data.spots as MapSpot[], userLat, userLng, 2) as {
+					spot: MapSpot;
+					distanceKm: number;
+				}[];
+				nearestSpot = nearbySpots[0]?.spot ?? null;
+				nearestDistanceKm = nearbySpots[0]?.distanceKm ?? null;
 				centerOnUser(userLat, userLng, nearestSpot);
-				if (nearest) selectSpot(nearest.spot as MapSpot);
+				if (nearbySpots.length) {
+					sheetView = 'list';
+					open = true;
+				}
 			},
 			() => {
 				phase = 'error';
@@ -221,16 +249,55 @@
 	{/if}
 </div>
 
-<!-- Spot detail drawer -->
+<!-- Nearby spots / spot detail drawer -->
 <Drawer.Root bind:open>
 	<Drawer.Content>
-		{#if selectedSpot}
-			{#if coverLoading}
+		{#if sheetView === 'list'}
+			<Drawer.Header>
+				<Drawer.Title class="text-lg font-medium">{$_('observe.nearest.listHeading')}</Drawer.Title>
+			</Drawer.Header>
+
+			<div class="flex flex-col gap-2 px-4 pb-2">
+				{#each nearbySpots as { spot, distanceKm } (spot.id)}
+					<button
+						type="button"
+						class="flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 text-left"
+						onclick={() => selectSpot(spot)}
+					>
+						<span class="text-2xl">{spot.icon}</span>
+						<span class="flex-1">
+							<span class="block text-sm font-medium text-foreground">{spot.name}</span>
+							<span class="block text-xs text-muted-foreground">
+								{$_('observe.nearest.distance', { values: { distance: formatDistanceRange(distanceKm, accuracy) } })}
+							</span>
+						</span>
+					</button>
+				{:else}
+					<p class="py-2 text-center text-xs text-muted-foreground">{$_('observe.nearest.none')}</p>
+				{/each}
+			</div>
+
+			<Drawer.Footer>
+				<Button variant="outline" class="w-full" onclick={handleCreateSpot}>
+					{$_('observe.nearest.addSpot')}
+				</Button>
+				<Button variant="ghost" size="sm" class="w-full" onclick={closeCard}>
+					{$_('explore.spot.close')}
+				</Button>
+			</Drawer.Footer>
+		{:else if selectedSpot}
+			{#if summaryLoading}
 				<div class="flex h-40 w-full items-center justify-center">
 					<Spinner size="sm" />
 				</div>
-			{:else if cover}
-				<img src="/api/media/{cover.id}" alt="" class="mb-2 h-40 w-full rounded-2xl object-cover" />
+			{:else if summary?.cover}
+				<img src="/api/media/{summary.cover.id}" alt="" class="mb-2 h-40 w-full rounded-2xl object-cover" />
+			{/if}
+
+			{#if nearbySpots.length > 1}
+				<button type="button" class="px-4 pt-2 text-left text-xs text-muted-foreground" onclick={showNearbyList}>
+					← {$_('observe.nearest.back')}
+				</button>
 			{/if}
 
 			<Drawer.Header>
@@ -245,6 +312,21 @@
 					</Drawer.Description>
 				{/if}
 			</Drawer.Header>
+
+			<div class="flex flex-col gap-2 overflow-y-auto px-4 pb-2">
+				{#if selectedScene}
+					<p class="text-sm text-muted-foreground">{selectedScene}</p>
+				{/if}
+				{#if !summaryLoading}
+					{#if summary?.lastObservedAt}
+						<p class="text-xs text-muted-foreground">
+							{$_('explore.spot.lastObserved', { values: { date: formatDate(summary.lastObservedAt) } })}
+						</p>
+					{:else if summary}
+						<p class="text-xs text-muted-foreground">{$_('explore.spot.noObservations')}</p>
+					{/if}
+				{/if}
+			</div>
 
 			<Drawer.Footer>
 				<Button variant="default" class="w-full" onclick={() => goto(`/observe/${selectedSpot!.slug}`)}>
@@ -261,9 +343,6 @@
 						{$_('observe.nearest.directions')}
 					</Button>
 				{/if}
-				<Button variant="outline" class="w-full" onclick={handleCreateSpot}>
-					{$_('observe.nearest.addSpot')}
-				</Button>
 				<Button variant="ghost" size="sm" class="w-full" onclick={closeCard}>
 					{$_('explore.spot.close')}
 				</Button>
@@ -273,7 +352,7 @@
 </Drawer.Root>
 
 {#if showProximityModal}
-	<div class="fixed inset-0 z-60 flex items-center justify-center bg-black/50 px-5">
+	<div class="fixed inset-0 z-60 flex items-center justify-center bg-black/50 px-5 pointer-events-auto">
 		<div class="flex w-full max-w-sm flex-col gap-3 rounded-xl bg-background p-5 text-center shadow-xl">
 			<span class="text-3xl">📍</span>
 			<p class="text-sm text-foreground">

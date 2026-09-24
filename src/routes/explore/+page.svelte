@@ -124,7 +124,20 @@
 					new mapLib.Marker({ element: el }).setLngLat([spot.lng, spot.lat]).addTo(map);
 				}
 
-				if (hasSpots) map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+				if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(
+						(pos) => {
+							if (cancelled) return;
+							map.jumpTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 14 });
+						},
+						() => {
+							if (hasSpots) map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+						},
+						{ enableHighAccuracy: true, timeout: 10000 }
+					);
+				} else if (hasSpots) {
+					map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+				}
 			});
 		})();
 

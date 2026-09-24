@@ -409,7 +409,7 @@
 		<input type="hidden" name="lng" value={lng ?? ''} />
 		<input type="hidden" name="boundary_geojson" value={boundary ?? ''} />
 
-		<Button variant="default" class="w-full" disabled={submitting || !spaceName}>
+		<Button type="submit" variant="default" class="w-full" disabled={submitting || !spaceName}>
 			{#if submitting}<Spinner size="sm" />{/if}
 			{$_('space.edit.submit')}
 		</Button>

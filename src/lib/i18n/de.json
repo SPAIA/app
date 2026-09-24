@@ -49,6 +49,8 @@
   "observe.setup.proximity.continueAnyway": "Trotzdem starten",
   "observe.setup.proximity.cancel": "Abbrechen",
   "observe.nearest.title": "Dein nächster Ort",
+  "observe.nearest.listHeading": "Orte in deiner Nähe",
+  "observe.nearest.back": "Zurück zu den Orten in der Nähe",
   "observe.nearest.heading": "Dein nächster Ort ist",
   "observe.nearest.locating": "Suche Orte in deiner Nähe...",
   "observe.nearest.error": "Standort konnte nicht ermittelt werden — Standortzugriff aktivieren und erneut versuchen",
@@ -62,6 +64,7 @@
   "observe.nearest.newSpot.confirm": "Ja, neuen Ort anlegen",
   "observe.nearest.newSpot.cancel": "Abbrechen",
   "spot.add.location.label": "Wo bist du?",
+  "spot.add.location.search.placeholder": "Nach einem Ort suchen",
   "spot.add.location.gps": "GPS nutzen",
   "spot.add.location.pin": "Nadel setzen",
   "spot.add.location.satellite": "Satellit",
@@ -323,5 +326,6 @@
   "spot.edit.name.label": "Spot-Name",
   "spot.edit.icon.label": "Symbol",
   "spot.edit.cover.label": "Titelbild",
-  "spot.edit.cover.change": "Titelbild ändern"
+  "spot.edit.cover.change": "Titelbild ändern",
+  "spot.edit.sign.download": "Schild herunterladen"
 }

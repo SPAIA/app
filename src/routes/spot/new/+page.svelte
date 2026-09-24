@@ -1,536 +1,672 @@
 <script lang="ts">
-	import { _ } from 'svelte-i18n';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
-	import { onMount, onDestroy, tick } from 'svelte';
-	import { reverseGeocode } from '$lib/geocode';
-	import { formatDistanceKm } from '$lib/geo';
-	import { resizeImageFile } from '$lib/media/resizeImage';
-	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
-	import ChipListEditor from '$lib/components/ChipListEditor.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import { Label } from '$lib/components/ui/label';
-	import * as Alert from '$lib/components/ui/alert';
-	import { Spinner } from '$lib/components/ui/spinner';
-	import type { SpotVisionResult } from '$lib/types';
-	import type { PageData } from './$types';
+  import { _ } from "svelte-i18n";
+  import { goto } from "$app/navigation";
+  import { page } from "$app/stores";
+  import { onMount, onDestroy, tick } from "svelte";
+  import { reverseGeocode } from "$lib/geocode";
+  import { formatDistanceKm } from "$lib/geo";
+  import { resizeImageFile } from "$lib/media/resizeImage";
+  import SegmentedToggle from "$lib/components/SegmentedToggle.svelte";
+  import ChipListEditor from "$lib/components/ChipListEditor.svelte";
+  import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import { Textarea } from "$lib/components/ui/textarea";
+  import { Label } from "$lib/components/ui/label";
+  import * as Alert from "$lib/components/ui/alert";
+  import { Spinner } from "$lib/components/ui/spinner";
+  import type { SpotVisionResult } from "$lib/types";
+  import type { PageData } from "./$types";
 
-	export let data: PageData;
+  export let data: PageData;
 
-	let verified = false;
-	let checking = true;
-	let orderId = '';
+  let verified = false;
+  let checking = true;
+  let orderId = "";
 
-	type Phase = 'location' | 'photo' | 'analyzing' | 'confirm' | 'done';
-	let phase: Phase = 'location';
+  type Phase = "location" | "photo" | "analyzing" | "confirm" | "done";
+  let phase: Phase = "location";
 
-	type LocationMode = 'gps' | 'pin';
-	let mode: LocationMode = 'gps';
-	let gpsStatus: 'idle' | 'acquiring' | 'found' | 'error' = 'idle';
-	let lat: number | null = null;
-	let lng: number | null = null;
-	let accuracy: number | null = null;
-	let locality: string | null = null;
-	let country: string | null = null;
-	let town: string | null = null;
-	let region: string | null = null;
-	let postcode: string | null = null;
-	let countryGeonameId: number | null = null;
-	let regionGeonameId: number | null = null;
-	let townGeonameId: number | null = null;
-	let localityGeonameId: number | null = null;
-	let geocoding = false;
+  interface AddressResult {
+    label: string;
+    locality: string | null;
+    country: string | null;
+    lat: number;
+    lng: number;
+  }
 
-	let spaceSlug = '';
+  type LocationMode = "gps" | "pin";
+  let mode: LocationMode = "gps";
+  let gpsStatus: "idle" | "acquiring" | "found" | "error" = "idle";
+  let lat: number | null = null;
+  let lng: number | null = null;
+  let accuracy: number | null = null;
+  let locality: string | null = null;
+  let country: string | null = null;
+  let town: string | null = null;
+  let region: string | null = null;
+  let postcode: string | null = null;
+  let countryGeonameId: number | null = null;
+  let regionGeonameId: number | null = null;
+  let townGeonameId: number | null = null;
+  let localityGeonameId: number | null = null;
+  let geocoding = false;
 
-	const SATELLITE_SOURCE_ID = 'spot-new-satellite';
-	const SATELLITE_LAYER_ID = 'spot-new-satellite-layer';
+  let searchText = "";
+  let searchResults: AddressResult[] = [];
+  let searching = false;
+  let searchTimer: ReturnType<typeof setTimeout>;
 
-	let mapContainer: HTMLDivElement;
-	let mapInstance: import('maplibre-gl').Map | null = null;
-	let markerInstance: import('maplibre-gl').Marker | null = null;
-	let mapReady = false;
-	let basemap: 'streets' | 'satellite' = 'streets';
+  let spaceSlug = "";
 
-	let spotId: number | null = null;
-	let spotSlug = '';
-	let spotName = '';
-	let photoUrl: string | null = null;
-	let mediaId: string | null = null;
-	let vision: SpotVisionResult | null = null;
-	let sceneDescription = '';
-	let editablePlants: SpotVisionResult['plants'] = [];
-	let editableFeatures: SpotVisionResult['habitat_features'] = [];
-	let fileInput: HTMLInputElement;
+  const SATELLITE_SOURCE_ID = "spot-new-satellite";
+  const SATELLITE_LAYER_ID = "spot-new-satellite-layer";
 
-	let creatingSpot = false;
-	let error = '';
+  let mapContainer: HTMLDivElement;
+  let mapInstance: import("maplibre-gl").Map | null = null;
+  let markerInstance: import("maplibre-gl").Marker | null = null;
+  let mapReady = false;
+  let basemap: "streets" | "satellite" = "streets";
 
-	async function applyLocation(newLat: number, newLng: number, zoom?: number) {
-		lat = newLat;
-		lng = newLng;
-		geocoding = true;
-		try {
-			const result = await reverseGeocode(newLat, newLng);
-			locality = result?.locality ?? null;
-			country = result?.country ?? null;
-			town = result?.town ?? null;
-			region = result?.region ?? null;
-			postcode = result?.postcode ?? null;
-			countryGeonameId = result?.countryGeonameId ?? null;
-			regionGeonameId = result?.regionGeonameId ?? null;
-			townGeonameId = result?.townGeonameId ?? null;
-			localityGeonameId = result?.localityGeonameId ?? null;
-		} finally {
-			geocoding = false;
-		}
+  let spotId: number | null = null;
+  let spotSlug = "";
+  let spotName = "";
+  let photoUrl: string | null = null;
+  let mediaId: string | null = null;
+  let vision: SpotVisionResult | null = null;
+  let sceneDescription = "";
+  let editablePlants: SpotVisionResult["plants"] = [];
+  let editableFeatures: SpotVisionResult["habitat_features"] = [];
+  let fileInput: HTMLInputElement;
 
-		if (mapInstance && markerInstance) {
-			markerInstance.setLngLat([newLng, newLat]);
-			mapInstance.flyTo({ center: [newLng, newLat], ...(zoom != null ? { zoom } : {}) });
-		}
-	}
+  let creatingSpot = false;
+  let error = "";
 
-	function locateWithGps() {
-		mode = 'gps';
-		if (!navigator.geolocation) {
-			gpsStatus = 'error';
-			return;
-		}
-		gpsStatus = 'acquiring';
-		navigator.geolocation.getCurrentPosition(
-			async (pos) => {
-				gpsStatus = 'found';
-				accuracy = pos.coords.accuracy;
-				await applyLocation(pos.coords.latitude, pos.coords.longitude, 18);
-			},
-			() => {
-				gpsStatus = 'error';
-			},
-			{ enableHighAccuracy: true, timeout: 10000 }
-		);
-	}
+  async function applyLocation(newLat: number, newLng: number, zoom?: number) {
+    lat = newLat;
+    lng = newLng;
+    geocoding = true;
+    try {
+      const result = await reverseGeocode(newLat, newLng);
+      locality = result?.locality ?? null;
+      country = result?.country ?? null;
+      town = result?.town ?? null;
+      region = result?.region ?? null;
+      postcode = result?.postcode ?? null;
+      countryGeonameId = result?.countryGeonameId ?? null;
+      regionGeonameId = result?.regionGeonameId ?? null;
+      townGeonameId = result?.townGeonameId ?? null;
+      localityGeonameId = result?.localityGeonameId ?? null;
+    } finally {
+      geocoding = false;
+    }
 
-	function toggleBasemap() {
-		basemap = basemap === 'streets' ? 'satellite' : 'streets';
-		mapInstance?.setLayoutProperty(
-			SATELLITE_LAYER_ID,
-			'visibility',
-			basemap === 'satellite' ? 'visible' : 'none'
-		);
-	}
+    if (mapInstance && markerInstance) {
+      markerInstance.setLngLat([newLng, newLat]);
+      mapInstance.flyTo({
+        center: [newLng, newLat],
+        ...(zoom != null ? { zoom } : {}),
+      });
+    }
+  }
 
-	async function initMap() {
-		if (mapReady) return;
-		mapReady = true;
+  function locateWithGps() {
+    mode = "gps";
+    if (!navigator.geolocation) {
+      gpsStatus = "error";
+      return;
+    }
+    gpsStatus = "acquiring";
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        gpsStatus = "found";
+        accuracy = pos.coords.accuracy;
+        await applyLocation(pos.coords.latitude, pos.coords.longitude, 18);
+      },
+      () => {
+        gpsStatus = "error";
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  }
 
-		const mapLib = await import('maplibre-gl');
-		await import('maplibre-gl/dist/maplibre-gl.css');
+  function onSearchInput() {
+    clearTimeout(searchTimer);
+    if (!searchText.trim()) {
+      searchResults = [];
+      return;
+    }
+    searchTimer = setTimeout(async () => {
+      searching = true;
+      const params = new URLSearchParams({ text: searchText });
+      if (lat != null && lng != null) {
+        params.set("lat", String(lat));
+        params.set("lng", String(lng));
+      }
+      try {
+        const res = await fetch(`/api/geocode/search?${params}`);
+        const data = (await res.json()) as { results: AddressResult[] };
+        searchResults = data.results;
+      } finally {
+        searching = false;
+      }
+    }, 300);
+  }
 
-		const styleUrl = data.stadiaApiKey
-			? `https://tiles.stadiamaps.com/styles/alidade_smooth.json?api_key=${data.stadiaApiKey}`
-			: 'https://demotiles.maplibre.org/style.json';
+  async function pickSearchResult(r: AddressResult) {
+    searchText = r.label;
+    searchResults = [];
+    mode = "pin";
+    accuracy = null;
+    await applyLocation(r.lat, r.lng, 18);
+  }
 
-		const center: [number, number] = lat != null && lng != null ? [lng, lat] : [0, 20];
-		const zoom = lat != null && lng != null ? 18 : 2;
+  function toggleBasemap() {
+    basemap = basemap === "streets" ? "satellite" : "streets";
+    mapInstance?.setLayoutProperty(
+      SATELLITE_LAYER_ID,
+      "visibility",
+      basemap === "satellite" ? "visible" : "none",
+    );
+  }
 
-		const map = new mapLib.Map({ container: mapContainer, style: styleUrl, center, zoom });
-		mapInstance = map;
+  async function initMap() {
+    if (mapReady) return;
+    mapReady = true;
 
-		const marker = new mapLib.Marker({ draggable: true, color: '#1B9468' }).setLngLat(center).addTo(map);
-		markerInstance = marker;
+    const mapLib = await import("maplibre-gl");
+    await import("maplibre-gl/dist/maplibre-gl.css");
 
-		marker.on('dragend', () => {
-			mode = 'pin';
-			accuracy = null;
-			const { lat: newLat, lng: newLng } = marker.getLngLat();
-			applyLocation(newLat, newLng);
-		});
+    const styleUrl = data.stadiaApiKey
+      ? `https://tiles.stadiamaps.com/styles/alidade_smooth.json?api_key=${data.stadiaApiKey}`
+      : "https://demotiles.maplibre.org/style.json";
 
-		map.on('click', (e) => {
-			mode = 'pin';
-			accuracy = null;
-			marker.setLngLat(e.lngLat);
-			applyLocation(e.lngLat.lat, e.lngLat.lng);
-		});
+    const center: [number, number] =
+      lat != null && lng != null ? [lng, lat] : [0, 20];
+    const zoom = lat != null && lng != null ? 18 : 2;
 
-		map.on('load', () => {
-			map.addSource(SATELLITE_SOURCE_ID, {
-				type: 'raster',
-				tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-				tileSize: 256,
-				maxzoom: 23,
-				attribution: 'Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
-			});
-			map.addLayer({
-				id: SATELLITE_LAYER_ID,
-				type: 'raster',
-				source: SATELLITE_SOURCE_ID,
-				layout: { visibility: 'none' }
-			});
-		});
-	}
+    const map = new mapLib.Map({
+      container: mapContainer,
+      style: styleUrl,
+      center,
+      zoom,
+    });
+    mapInstance = map;
 
-	async function handleContinue() {
-		if (lat == null || lng == null) return;
-		error = '';
-		creatingSpot = true;
+    const marker = new mapLib.Marker({ draggable: true, color: "#1B9468" })
+      .setLngLat(center)
+      .addTo(map);
+    markerInstance = marker;
 
-		try {
-			const res = await fetch('/api/spot', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					lat,
-					lng,
-					order_id: orderId,
-					locality,
-					country,
-					town,
-					region,
-					postcode,
-					countryGeonameId,
-					regionGeonameId,
-					townGeonameId,
-					localityGeonameId
-				})
-			});
-			if (!res.ok) {
-				const d = (await res.json()) as { error?: string };
-				error = d.error ?? $_('spot.buy.error.generic');
-				return;
-			}
-			const spotData = (await res.json()) as { id: number; slug: string; space_slug: string };
-			spotId = spotData.id;
-			spotSlug = spotData.slug;
-			spaceSlug = spotData.space_slug;
-			phase = 'photo';
-		} catch {
-			error = $_('spot.buy.error.generic');
-		} finally {
-			creatingSpot = false;
-		}
-	}
+    marker.on("dragend", () => {
+      mode = "pin";
+      accuracy = null;
+      const { lat: newLat, lng: newLng } = marker.getLngLat();
+      applyLocation(newLat, newLng);
+    });
 
-	function openFilePicker() {
-		fileInput?.click();
-	}
+    map.on("click", (e) => {
+      mode = "pin";
+      accuracy = null;
+      marker.setLngLat(e.lngLat);
+      applyLocation(e.lngLat.lat, e.lngLat.lng);
+    });
 
-	async function onFileSelected(e: Event) {
-		const file = (e.target as HTMLInputElement).files?.[0];
-		if (!file || spotId == null) return;
+    map.on("load", () => {
+      map.addSource(SATELLITE_SOURCE_ID, {
+        type: "raster",
+        tiles: [
+          "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        ],
+        tileSize: 256,
+        maxzoom: 23,
+        attribution:
+          "Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+      });
+      map.addLayer({
+        id: SATELLITE_LAYER_ID,
+        type: "raster",
+        source: SATELLITE_SOURCE_ID,
+        layout: { visibility: "none" },
+      });
+    });
+  }
 
-		phase = 'analyzing';
-		error = '';
+  async function handleContinue() {
+    if (lat == null || lng == null) return;
+    error = "";
+    creatingSpot = true;
 
-		const resized = await resizeImageFile(file);
+    try {
+      const res = await fetch("/api/spot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lat,
+          lng,
+          order_id: orderId,
+          locality,
+          country,
+          town,
+          region,
+          postcode,
+          countryGeonameId,
+          regionGeonameId,
+          townGeonameId,
+          localityGeonameId,
+        }),
+      });
+      if (!res.ok) {
+        const d = (await res.json()) as { error?: string };
+        error = d.error ?? $_("spot.buy.error.generic");
+        return;
+      }
+      const spotData = (await res.json()) as {
+        id: number;
+        slug: string;
+        space_slug: string;
+      };
+      spotId = spotData.id;
+      spotSlug = spotData.slug;
+      spaceSlug = spotData.space_slug;
+      phase = "photo";
+    } catch {
+      error = $_("spot.buy.error.generic");
+    } finally {
+      creatingSpot = false;
+    }
+  }
 
-		const form = new FormData();
-		form.append('file', resized);
-		if (locality) form.append('locality', locality);
+  function openFilePicker() {
+    fileInput?.click();
+  }
 
-		try {
-			const res = await fetch(`/api/spot/${spotId}/photo`, { method: 'POST', body: form });
-			if (!res.ok) throw new Error('upload failed');
-			const result = (await res.json()) as {
-				media: { id: string; url: string };
-				spot: { slug: string; name: string };
-				vision: SpotVisionResult | null;
-			};
-			photoUrl = result.media.url;
-			mediaId = result.media.id;
-			vision = result.vision;
-			spotSlug = result.spot.slug;
-			spotName = result.spot.name;
-			if (vision) {
-				sceneDescription = vision.scene;
-				editablePlants = [...vision.plants];
-				editableFeatures = [...vision.habitat_features];
-			}
-		} catch {
-			error = $_('spot.buy.error.generic');
-		} finally {
-			phase = 'confirm';
-		}
-	}
+  async function onFileSelected(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file || spotId == null) return;
 
-	function skipPhoto() {
-		phase = 'confirm';
-	}
+    phase = "analyzing";
+    error = "";
 
-	function removePlant(index: number) {
-		editablePlants = editablePlants.filter((_, i) => i !== index);
-	}
+    const resized = await resizeImageFile(file);
 
-	function addPlant(name: string) {
-		editablePlants = [...editablePlants, { name, rank: 'type' }];
-	}
+    const form = new FormData();
+    form.append("file", resized);
+    if (locality) form.append("locality", locality);
 
-	function removeFeature(index: number) {
-		editableFeatures = editableFeatures.filter((_, i) => i !== index);
-	}
+    try {
+      const res = await fetch(`/api/spot/${spotId}/photo`, {
+        method: "POST",
+        body: form,
+      });
+      if (!res.ok) throw new Error("upload failed");
+      const result = (await res.json()) as {
+        media: { id: string; url: string };
+        spot: { slug: string; name: string };
+        vision: SpotVisionResult | null;
+      };
+      photoUrl = result.media.url;
+      mediaId = result.media.id;
+      vision = result.vision;
+      spotSlug = result.spot.slug;
+      spotName = result.spot.name;
+      if (vision) {
+        sceneDescription = vision.scene;
+        editablePlants = [...vision.plants];
+        editableFeatures = [...vision.habitat_features];
+      }
+    } catch {
+      error = $_("spot.buy.error.generic");
+    } finally {
+      phase = "confirm";
+    }
+  }
 
-	function addFeature(label: string) {
-		editableFeatures = [...editableFeatures, { category: 'other', label }];
-	}
+  function skipPhoto() {
+    phase = "confirm";
+  }
 
-	async function confirmSpot() {
-		const finalName = spotName.trim() || $_('spot.add.confirm.name.default');
-		spotName = finalName;
+  function removePlant(index: number) {
+    editablePlants = editablePlants.filter((_, i) => i !== index);
+  }
 
-		if (spotId != null) {
-			try {
-				const res = await fetch(`/api/spot/${spotId}`, {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ name: finalName })
-				});
-				if (res.ok) {
-					const d = (await res.json()) as { slug: string };
-					spotSlug = d.slug;
-				}
-			} catch {
-				// non-blocking — the placeholder/AI name still stands server-side
-			}
-		}
+  function addPlant(name: string) {
+    editablePlants = [...editablePlants, { name, rank: "type" }];
+  }
 
-		if (spotId != null && mediaId != null) {
-			try {
-				await fetch(`/api/spot/${spotId}/vision`, {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ mediaId, plants: editablePlants, habitat_features: editableFeatures })
-				});
-			} catch {
-				// non-blocking — the AI-guessed plants/features still stand server-side
-			}
-		}
+  function removeFeature(index: number) {
+    editableFeatures = editableFeatures.filter((_, i) => i !== index);
+  }
 
-		phase = 'done';
-	}
+  function addFeature(label: string) {
+    editableFeatures = [...editableFeatures, { category: "other", label }];
+  }
 
-	function startObserving() {
-		goto(`/observe/${spotSlug}`);
-	}
+  async function confirmSpot() {
+    const finalName = spotName.trim() || $_("spot.add.confirm.name.default");
+    spotName = finalName;
 
-	onMount(async () => {
-		const sessionId = $page.url.searchParams.get('order');
-		if (!sessionId) {
-			goto('/space-pack');
-			return;
-		}
+    if (spotId != null) {
+      try {
+        const res = await fetch(`/api/spot/${spotId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: finalName }),
+        });
+        if (res.ok) {
+          const d = (await res.json()) as { slug: string };
+          spotSlug = d.slug;
+        }
+      } catch {
+        // non-blocking — the placeholder/AI name still stands server-side
+      }
+    }
 
-		const res = await fetch(`/api/stripe/verify?session_id=${sessionId}`);
-		const verifyData = (await res.json()) as { paid: boolean; spaceOrderId: string };
-		if (!verifyData.paid) {
-			goto('/space-pack');
-			return;
-		}
+    if (spotId != null && mediaId != null) {
+      try {
+        await fetch(`/api/spot/${spotId}/vision`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mediaId,
+            plants: editablePlants,
+            habitat_features: editableFeatures,
+          }),
+        });
+      } catch {
+        // non-blocking — the AI-guessed plants/features still stand server-side
+      }
+    }
 
-		orderId = verifyData.spaceOrderId;
-		verified = true;
-		checking = false;
+    phase = "done";
+  }
 
-		await tick();
-		locateWithGps();
-		initMap();
-	});
+  function startObserving() {
+    goto(`/observe/${spotSlug}`);
+  }
 
-	onDestroy(() => {
-		mapInstance?.remove();
-	});
+  onMount(async () => {
+    const sessionId = $page.url.searchParams.get("order");
+    if (!sessionId) {
+      goto("/space-pack");
+      return;
+    }
+
+    const res = await fetch(`/api/stripe/verify?session_id=${sessionId}`);
+    const verifyData = (await res.json()) as {
+      paid: boolean;
+      spaceOrderId: string;
+    };
+    if (!verifyData.paid) {
+      goto("/space-pack");
+      return;
+    }
+
+    orderId = verifyData.spaceOrderId;
+    verified = true;
+    checking = false;
+
+    await tick();
+    locateWithGps();
+    initMap();
+  });
+
+  onDestroy(() => {
+    mapInstance?.remove();
+  });
 </script>
 
 <svelte:head>
-	<title>{$_('spot.buy.title')} — {$_('app.name')}</title>
+  <title>{$_("spot.buy.title")} — {$_("app.name")}</title>
 </svelte:head>
 
 {#if checking}
-	<div class="flex items-center justify-center py-12">
-		<Spinner size="lg" class="text-primary" />
-	</div>
+  <div class="flex items-center justify-center py-12">
+    <Spinner size="lg" class="text-primary" />
+  </div>
 {:else if verified}
-	{#if phase === 'location'}
-		<div class="absolute inset-0 flex flex-col">
-			<div class="absolute inset-0">
-				<div bind:this={mapContainer} class="h-full w-full"></div>
-			</div>
+  {#if phase === "location"}
+    <div class="absolute inset-0 flex flex-col">
+      <div class="absolute inset-0">
+        <div bind:this={mapContainer} class="h-full w-full"></div>
+      </div>
 
-			<div
-				class="relative z-10 flex flex-col gap-2 bg-gradient-to-b from-background/95 to-transparent px-5 pb-8 pt-[calc(env(safe-area-inset-top)+1rem)]"
-			>
-				<div class="flex items-center justify-between gap-2">
-					<h1 class="text-xl font-medium text-foreground">{$_('spot.buy.title')}</h1>
-					<Button type="button" variant="outline" size="sm" class="bg-background" onclick={toggleBasemap}>
-						{basemap === 'satellite' ? $_('spot.add.location.map') : $_('spot.add.location.satellite')}
-					</Button>
-				</div>
-				{#if error}
-					<Alert.Root variant="destructive" class="text-sm">{error}</Alert.Root>
-				{/if}
-			</div>
+      <div
+        class="relative z-10 flex flex-col gap-2 bg-gradient-to-b from-background/95 to-transparent px-5 pb-8 pt-[calc(env(safe-area-inset-top)+1rem)]"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <h1 class="text-xl font-medium text-foreground">
+            {$_("spot.buy.title")}
+          </h1>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            class="bg-background"
+            onclick={toggleBasemap}
+          >
+            {basemap === "satellite"
+              ? $_("spot.add.location.map")
+              : $_("spot.add.location.satellite")}
+          </Button>
+        </div>
+        {#if error}
+          <Alert.Root variant="destructive" class="text-sm">{error}</Alert.Root>
+        {/if}
+      </div>
 
-			<div
-				class="relative z-10 mt-auto flex flex-col gap-3 rounded-t-2xl border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
-			>
-				<div>
-					<p class="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-						{$_('spot.add.location.label')}
-					</p>
+      <div
+        class="relative z-10 mt-auto flex flex-col gap-3 rounded-t-2xl border-t border-border bg-background px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-4 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+      >
+        <div>
+          <p
+            class="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground"
+          >
+            {$_("spot.add.location.label")}
+          </p>
 
-					<SegmentedToggle
-						value={mode}
-						options={[
-							{ value: 'gps', label: $_('spot.add.location.gps'), onSelect: locateWithGps },
-							{ value: 'pin', label: $_('spot.add.location.pin'), onSelect: () => (mode = 'pin') }
-						]}
-					/>
+          <div class="relative">
+            <Input
+              type="text"
+              placeholder={$_("spot.add.location.search.placeholder")}
+              bind:value={searchText}
+              oninput={onSearchInput}
+            />
+            {#if searching}
+              <Spinner size="xs" class="absolute right-3 top-3" />
+            {/if}
+            {#if searchResults.length > 0}
+              <ul
+                class="absolute z-10 mt-1 w-full rounded-lg border border-border bg-background"
+              >
+                {#each searchResults as r}
+                  <li>
+                    <button
+                      type="button"
+                      class="w-full px-3 py-2 text-left text-sm hover:bg-accent"
+                      onclick={() => pickSearchResult(r)}
+                    >
+                      {r.label}
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
 
-					{#if mode === 'gps'}
-						{#if gpsStatus === 'acquiring'}
-							<p class="mt-2 text-xs text-muted-foreground">{$_('spot.add.location.locating')}</p>
-						{:else if gpsStatus === 'error'}
-							<p class="mt-2 text-xs text-destructive">{$_('spot.add.location.gps.error')}</p>
-						{/if}
-					{:else}
-						<p class="mt-2 text-xs text-muted-foreground">{$_('spot.add.location.pin.hint')}</p>
-					{/if}
+          {#if geocoding}
+            <p class="mt-2 text-xs text-muted-foreground">
+              {$_("spot.add.location.resolving")}
+            </p>
+          {:else if locality}
+            <p class="mt-2 text-xs text-muted-foreground">📍 {locality}</p>
+          {/if}
+          {#if mode === "gps" && accuracy != null}
+            <p class="mt-1 text-xs text-muted-foreground">
+              {$_("spot.add.location.accuracy", {
+                values: { range: formatDistanceKm(accuracy / 1000) },
+              })}
+            </p>
+          {/if}
+        </div>
 
-					{#if geocoding}
-						<p class="mt-2 text-xs text-muted-foreground">{$_('spot.add.location.resolving')}</p>
-					{:else if locality}
-						<p class="mt-2 text-xs text-muted-foreground">📍 {locality}</p>
-					{/if}
-					{#if mode === 'gps' && accuracy != null}
-						<p class="mt-1 text-xs text-muted-foreground">
-							{$_('spot.add.location.accuracy', { values: { range: formatDistanceKm(accuracy / 1000) } })}
-						</p>
-					{/if}
-				</div>
+        <Button
+          variant="default"
+          class="w-full"
+          onclick={handleContinue}
+          disabled={lat == null || lng == null || creatingSpot}
+        >
+          {#if creatingSpot}<Spinner size="sm" />{/if}
+          {$_("spot.add.location.continue")}
+        </Button>
+      </div>
+    </div>
+  {:else if phase === "photo"}
+    <div class="flex flex-col items-center gap-4 px-5 py-10 text-center">
+      <span class="text-4xl">📷</span>
+      <div>
+        <p class="text-base font-medium text-foreground">
+          {$_("spot.add.photo.label")}
+        </p>
+        <p class="mt-1 text-sm text-muted-foreground">
+          {$_("spot.add.photo.hint")}
+        </p>
+      </div>
 
-				<Button
-					variant="default"
-					class="w-full"
-					onclick={handleContinue}
-					disabled={lat == null || lng == null || creatingSpot}
-				>
-					{#if creatingSpot}<Spinner size="sm" />{/if}
-					{$_('spot.add.location.continue')}
-				</Button>
-			</div>
-		</div>
-	{:else if phase === 'photo'}
-		<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">
-			<span class="text-4xl">📷</span>
-			<div>
-				<p class="text-base font-medium text-foreground">{$_('spot.add.photo.label')}</p>
-				<p class="mt-1 text-sm text-muted-foreground">{$_('spot.add.photo.hint')}</p>
-			</div>
+      <input
+        bind:this={fileInput}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        class="sr-only"
+        onchange={onFileSelected}
+      />
 
-			<input
-				bind:this={fileInput}
-				type="file"
-				accept="image/*"
-				capture="environment"
-				class="sr-only"
-				onchange={onFileSelected}
-			/>
+      <Button variant="default" class="w-full" onclick={openFilePicker}>
+        {$_("spot.add.photo.cta")}
+      </Button>
+      <Button variant="ghost" size="sm" onclick={skipPhoto}>
+        {$_("spot.add.photo.skip")}
+      </Button>
+    </div>
+  {:else if phase === "analyzing"}
+    <div class="flex flex-col items-center gap-4 px-5 py-16 text-center">
+      <Spinner size="lg" class="text-primary" />
+      <p class="text-sm text-muted-foreground">{$_("spot.add.analyzing")}</p>
+    </div>
+  {:else if phase === "confirm"}
+    <div class="flex flex-col gap-4 px-5 py-6">
+      {#if photoUrl}
+        <img
+          src={photoUrl}
+          alt=""
+          class="h-40 w-full rounded-xl object-cover"
+        />
+        <p class="-mt-2 text-xs text-muted-foreground">
+          {$_("spot.add.photo.cover_note")}
+        </p>
+      {/if}
 
-			<Button variant="default" class="w-full" onclick={openFilePicker}>
-				{$_('spot.add.photo.cta')}
-			</Button>
-			<Button variant="ghost" size="sm" onclick={skipPhoto}>
-				{$_('spot.add.photo.skip')}
-			</Button>
-		</div>
-	{:else if phase === 'analyzing'}
-		<div class="flex flex-col items-center gap-4 px-5 py-16 text-center">
-			<Spinner size="lg" class="text-primary" />
-			<p class="text-sm text-muted-foreground">{$_('spot.add.analyzing')}</p>
-		</div>
-	{:else if phase === 'confirm'}
-		<div class="flex flex-col gap-4 px-5 py-6">
-			{#if photoUrl}
-				<img src={photoUrl} alt="" class="h-40 w-full rounded-xl object-cover" />
-				<p class="-mt-2 text-xs text-muted-foreground">{$_('spot.add.photo.cover_note')}</p>
-			{/if}
+      {#if error}
+        <Alert.Root variant="destructive" class="text-sm">{error}</Alert.Root>
+      {/if}
 
-			{#if error}
-				<Alert.Root variant="destructive" class="text-sm">{error}</Alert.Root>
-			{/if}
+      <div class="flex flex-col gap-1.5">
+        <Label>{$_("spot.add.confirm.name.label")}</Label>
+        <Input
+          type="text"
+          placeholder={$_("spot.add.confirm.name.default")}
+          bind:value={spotName}
+        />
+      </div>
 
-			<div class="flex flex-col gap-1.5">
-				<Label>{$_('spot.add.confirm.name.label')}</Label>
-				<Input
-					type="text"
-					placeholder={$_('spot.add.confirm.name.default')}
-					bind:value={spotName}
-				/>
-			</div>
+      {#if vision}
+        {#if vision.scene}
+          <div class="flex flex-col gap-1.5">
+            <Label
+              class="text-xs font-medium uppercase tracking-widest text-muted-foreground"
+            >
+              {$_("spot.add.confirm.scene.label")}
+            </Label>
+            <Textarea class="text-sm" rows={2} bind:value={sceneDescription}
+            ></Textarea>
+          </div>
+        {/if}
 
-			{#if vision}
-				{#if vision.scene}
-					<div class="flex flex-col gap-1.5">
-						<Label class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-							{$_('spot.add.confirm.scene.label')}
-						</Label>
-						<Textarea class="text-sm" rows={2} bind:value={sceneDescription}
-						></Textarea>
-					</div>
-				{/if}
+        <div>
+          <p
+            class="mb-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground"
+          >
+            {$_("spot.add.confirm.plants.label")}
+          </p>
+          <ChipListEditor
+            items={editablePlants.map((p) => p.name)}
+            addPlaceholder={$_("spot.add.confirm.plants.addPlaceholder")}
+            removeLabel={$_("spot.add.confirm.remove")}
+            chipClass="bg-accent text-primary"
+            chipRemoveClass="text-primary/60 hover:text-primary"
+            onAdd={addPlant}
+            onRemove={removePlant}
+          />
+        </div>
 
-				<div>
-					<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-						{$_('spot.add.confirm.plants.label')}
-					</p>
-					<ChipListEditor
-						items={editablePlants.map((p) => p.name)}
-						addPlaceholder={$_('spot.add.confirm.plants.addPlaceholder')}
-						removeLabel={$_('spot.add.confirm.remove')}
-						chipClass="bg-accent text-primary"
-						chipRemoveClass="text-primary/60 hover:text-primary"
-						onAdd={addPlant}
-						onRemove={removePlant}
-					/>
-				</div>
+        <div>
+          <p
+            class="mb-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground"
+          >
+            {$_("spot.add.confirm.habitat_features.label")}
+          </p>
+          <ChipListEditor
+            items={editableFeatures.map((f) => f.label)}
+            addPlaceholder={$_(
+              "spot.add.confirm.habitat_features.addPlaceholder",
+            )}
+            removeLabel={$_("spot.add.confirm.remove")}
+            onAdd={addFeature}
+            onRemove={removeFeature}
+          />
+        </div>
+      {/if}
 
-				<div>
-					<p class="mb-1.5 text-xs font-medium uppercase tracking-widest text-muted-foreground">
-						{$_('spot.add.confirm.habitat_features.label')}
-					</p>
-					<ChipListEditor
-						items={editableFeatures.map((f) => f.label)}
-						addPlaceholder={$_('spot.add.confirm.habitat_features.addPlaceholder')}
-						removeLabel={$_('spot.add.confirm.remove')}
-						onAdd={addFeature}
-						onRemove={removeFeature}
-					/>
-				</div>
-			{/if}
+      <Button
+        variant="default"
+        class="w-full"
+        onclick={confirmSpot}
+        disabled={!spotName.trim()}
+      >
+        {$_("spot.add.confirm.cta")}
+      </Button>
+    </div>
+  {:else if phase === "done"}
+    <div class="flex flex-col items-center gap-4 px-5 py-16 text-center">
+      <span class="text-4xl">🎉</span>
+      <h1 class="text-xl font-medium text-foreground">{spotName}</h1>
+      <p class="text-sm text-muted-foreground">
+        {$_("spot.buy.done.subtitle")}
+      </p>
 
-			<Button variant="default" class="w-full" onclick={confirmSpot} disabled={!spotName.trim()}>
-				{$_('spot.add.confirm.cta')}
-			</Button>
-		</div>
-	{:else if phase === 'done'}
-		<div class="flex flex-col items-center gap-4 px-5 py-16 text-center">
-			<span class="text-4xl">🎉</span>
-			<h1 class="text-xl font-medium text-foreground">{spotName}</h1>
-			<p class="text-sm text-muted-foreground">{$_('spot.buy.done.subtitle')}</p>
+      <p class="mt-2 text-sm font-medium text-foreground">
+        {$_("spot.buy.done.observe.prompt")}
+      </p>
+      <Button variant="default" class="w-full" onclick={startObserving}>
+        {$_("spot.buy.done.observe.cta")}
+      </Button>
 
-			<p class="mt-2 text-sm font-medium text-foreground">{$_('spot.buy.done.observe.prompt')}</p>
-			<Button variant="default" class="w-full" onclick={startObserving}>
-				{$_('spot.buy.done.observe.cta')}
-			</Button>
-
-			<Button variant="outline" size="sm" class="w-full" href={`/space/${spaceSlug}/spot/${spotSlug}/edit`}>
-				{$_('spot.buy.done.manage')}
-			</Button>
-			<Button variant="ghost" size="sm" class="w-full" onclick={() => goto('/explore')}>
-				{$_('spot.buy.done.explore')}
-			</Button>
-		</div>
-	{/if}
+      <Button
+        variant="outline"
+        size="sm"
+        class="w-full"
+        href={`/space/${spaceSlug}/spot/${spotSlug}/edit`}
+      >
+        {$_("spot.buy.done.manage")}
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        class="w-full"
+        onclick={() => goto("/explore")}
+      >
+        {$_("spot.buy.done.explore")}
+      </Button>
+    </div>
+  {/if}
 {/if}

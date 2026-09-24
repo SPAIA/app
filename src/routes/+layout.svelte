@@ -69,7 +69,11 @@
 	});
 
 	afterNavigate(() => {
-		track('pageview');
+		// Printed signs link with ?utm_source=qr so scans are distinguishable from
+		// other traffic in analytics — folded into the pageview's props rather than
+		// a dedicated event, so any future utm_source value works without new code.
+		const utmSource = new URLSearchParams(location.search).get('utm_source');
+		track('pageview', utmSource ? { utm_source: utmSource } : undefined);
 	});
 
 	const tabs = [
