@@ -30,25 +30,33 @@
 	<h2 class="text-xl font-medium text-foreground">{$_('sightings.subtitle')}</h2>
 	<p class="text-sm text-muted-foreground">{$_('sightings.description')}</p>
 
-	<div class="flex flex-col gap-1.5">
-		{#each data.sightings as sighting}
-			<div class="flex items-center gap-3 rounded-xl border border-border bg-background px-3.5 py-2.5">
-				<span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-lg">
-					{sighting.icon ?? '🐞'}
+	<div class="flex flex-col gap-2">
+		{#each data.sessions as session (session.id)}
+			<button
+				type="button"
+				class="flex w-full items-center overflow-hidden rounded-xl border border-border bg-muted text-left"
+				onclick={() => goto(`/share/${session.id}`)}
+			>
+				<!-- The fixed square sets the row height; one-line text keeps the row from outgrowing it -->
+				<span class="size-20 shrink-0 bg-border">
+					{#if session.image_id}
+						<img src="/api/media/{session.image_id}" alt="" loading="lazy" class="h-full w-full object-cover" />
+					{/if}
 				</span>
-				<div class="min-w-0 flex-1">
-					<div class="truncate text-sm font-medium text-foreground">
-						{sighting.insect_name}
-					</div>
-					<div class="truncate text-xs text-muted-foreground">
-						{sighting.space_name ?? sighting.locality ?? ''}
-						· {timeAgo(sighting.tapped_at)}
-					</div>
-				</div>
-				<span class="shrink-0 text-xs font-medium text-primary">
-					+{sighting.count}
+				<span class="flex min-w-0 flex-1 flex-col justify-center px-3">
+					<span class="block truncate text-sm font-medium text-foreground">
+						{session.spot_name ?? session.space_name ?? session.locality ?? ''}
+					</span>
+					<span class="block truncate text-xs text-muted-foreground">
+						{$_('sightings.session.counts', {
+							values: { count: session.total_count, species: session.species_count }
+						})}
+					</span>
+					<span class="block truncate text-xs text-muted-foreground">
+						{timeAgo(session.completed_at)}
+					</span>
 				</span>
-			</div>
+			</button>
 		{:else}
 			<p class="py-8 text-center text-sm text-muted-foreground">{$_('sightings.empty')}</p>
 		{/each}

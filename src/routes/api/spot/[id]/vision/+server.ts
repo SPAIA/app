@@ -14,6 +14,8 @@ interface VisionEditBody {
 	mediaId: string;
 	plants: { name: string; rank: PlantRank }[];
 	habitat_features: { category: HabitatFeatureCategory; label: string }[];
+	/** The observer's edit of the "since last time" read — omitted to leave the AI's version alone. */
+	changes?: string | null;
 }
 
 // Lets the user correct the AI-identified plants/habitat features for a photo
@@ -55,7 +57,7 @@ export const PATCH: RequestHandler = async ({ params, request, platform }) => {
 	const vision: SpotVisionResult = {
 		name: cached?.name ?? spot.name,
 		scene: cached?.scene ?? '',
-		changes: cached?.changes ?? null,
+		changes: body.changes !== undefined ? body.changes?.trim() || null : (cached?.changes ?? null),
 		area_mismatch: cached?.area_mismatch ?? false,
 		plants,
 		habitat_features: habitatFeatures

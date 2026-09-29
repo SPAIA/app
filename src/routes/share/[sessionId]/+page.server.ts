@@ -4,8 +4,9 @@ import { getSessionSightingsAggregated } from '$lib/server/db/sightings';
 import { getMediaForEntity } from '$lib/server/db/media';
 import type { D1Database } from '$lib/server/db/d1';
 import { error } from '@sveltejs/kit';
+import QRCode from 'qrcode';
 
-export const load: PageServerLoad = async ({ params, platform }) => {
+export const load: PageServerLoad = async ({ params, platform, url }) => {
 	const db = platform?.env?.DB as D1Database | undefined;
 	if (!db) throw error(503, 'Database unavailable');
 
@@ -20,5 +21,19 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 	const media = await getMediaForEntity(db, 'session', params.sessionId);
 	const image = media[0] ?? null;
 
-	return { session, sightings, image };
+	// SVG rather than a PNG data URL: node-qrcode's PNG path needs canvas/zlib,
+	// the SVG path is pure JS and runs on Workers. Rendered as an <img> so
+	// html2canvas picks it up in "save as image".
+	const qrSvg = await QRCode.toString(`${url.origin}${url.pathname}`, {
+		type: 'svg',
+		margin: 0,
+		errorCorrectionLevel: 'M',
+		color: { dark: '#0C2464', light: '#FFFFFF' }
+	});
+	const qrDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`;
+
+	// Picked up by the root layout's og:image tag in place of the default logo.
+	const ogImage = image ? `${url.origin}/api/media/${image.id}` : null;
+
+	return { session, sightings, image, qrDataUrl, ogImage };
 };

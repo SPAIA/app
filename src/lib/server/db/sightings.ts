@@ -1,25 +1,34 @@
-import type { RecentSighting, InsectType, Sighting } from '$lib/types';
+import type { RecentSession, InsectType, Sighting } from '$lib/types';
 import type { D1Database } from './d1';
 
-export async function getRecentSightings(db: D1Database, limit = 30): Promise<RecentSighting[]> {
+/**
+ * Latest completed sessions for the /sightings feed — one row per session with
+ * its tap total, distinct species count and first session photo.
+ */
+export async function getRecentSessions(db: D1Database, limit = 30): Promise<RecentSession[]> {
 	const result = await db
 		.prepare(`
 			SELECT
-				si.insect_name,
-				it.icon,
-				si.count,
-				si.tapped_at,
+				se.id,
+				se.completed_at,
+				se.duration_min,
 				se.locality,
-				sc.name as space_name
-			FROM sightings si
-			JOIN sessions se ON si.session_id = se.id
+				sp.name as spot_name,
+				sc.name as space_name,
+				COALESCE((SELECT SUM(si.count) FROM sightings si WHERE si.session_id = se.id), 0) as total_count,
+				(SELECT COUNT(DISTINCT si.insect_name) FROM sightings si WHERE si.session_id = se.id) as species_count,
+				(SELECT m.id FROM media m
+					WHERE m.entity_type = 'session' AND m.entity_id = se.id
+					ORDER BY m.sort_order ASC, m.created_at ASC LIMIT 1) as image_id
+			FROM sessions se
+			LEFT JOIN spots sp ON se.spot_id = sp.id
 			LEFT JOIN spaces sc ON se.space_id = sc.id
-			LEFT JOIN insect_types it ON si.insect_type_id = it.id
-			ORDER BY si.tapped_at DESC
+			WHERE se.completed_at IS NOT NULL
+			ORDER BY se.completed_at DESC
 			LIMIT ?
 		`)
 		.bind(limit)
-		.all<RecentSighting>();
+		.all<RecentSession>();
 	return result.results;
 }
 

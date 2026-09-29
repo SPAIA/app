@@ -73,6 +73,10 @@
 		{/each}
 	</div>
 
+	<p class="rounded-2xl bg-muted px-4 py-3 text-center text-sm text-foreground">
+		{$_('tutorial.guess')}
+	</p>
+
 	<Button variant="default" class="w-full" onclick={done}>
 		{$_('tutorial.done')}
 	</Button>

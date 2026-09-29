@@ -13,6 +13,23 @@
 
 	export let spot: Spot & { locality: string };
 	export let cover: { id: string } | null = null;
+	export let lastObservedAt: string | null = null;
+
+	// ai_description stores the full cached DeepSeek Vision read as JSON — pull out just the scene text.
+	function sceneFromDescription(aiDescription: string): string | null {
+		try {
+			return (JSON.parse(aiDescription) as SpotVisionResult).scene || null;
+		} catch {
+			return null;
+		}
+	}
+	$: scene = spot.ai_description ? sceneFromDescription(spot.ai_description) : null;
+
+	// SQLite's datetime('now') comes back space-separated with no zone; it's UTC.
+	function formatDate(sqliteDatetime: string) {
+		const iso = sqliteDatetime.includes('T') ? sqliteDatetime : `${sqliteDatetime.replace(' ', 'T')}Z`;
+		return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+	}
 
 	// If you're far from the spot we just warn — doesn't block observing.
 	const PROXIMITY_THRESHOLD_KM = 0.1;
@@ -272,15 +289,27 @@
 
 {#if phase === 'overview'}
 	<div class="flex flex-col">
+		<a href="/observe" class="px-5 pt-3 pb-2 text-left text-xs text-muted-foreground">
+			← {$_('observe.nearest.back')}
+		</a>
 		{#if cover}
 			<img src="/api/media/{cover.id}" alt="" class="h-56 w-full object-cover" />
 		{/if}
 		<div class="flex flex-col items-center gap-3 px-5 pb-8 pt-6 text-center">
-			<span class="text-3xl">{spot.icon}</span>
 			<div>
 				<h1 class="text-xl font-medium text-foreground">{spot.name}</h1>
 				<p class="text-sm text-muted-foreground">{spot.locality}</p>
 			</div>
+			{#if scene}
+				<p class="text-sm text-muted-foreground">{scene}</p>
+			{/if}
+			<p class="text-xs text-muted-foreground">
+				{#if lastObservedAt}
+					{$_('explore.spot.lastObserved', { values: { date: formatDate(lastObservedAt) } })}
+				{:else}
+					{$_('explore.spot.noObservations')}
+				{/if}
+			</p>
 			<Button variant="default" size="lg" class="mt-2 w-full" onclick={checkProximity}>
 				{$_('observe.overview.cta')}
 			</Button>
@@ -291,7 +320,6 @@
 	</div>
 {:else if phase === 'locating'}
 	<div class="flex flex-col items-center gap-4 px-5 py-10 text-center">
-		<span class="text-3xl">{spot.icon}</span>
 		<h1 class="text-lg font-medium text-foreground">{spot.name}</h1>
 		<Spinner size="lg" class="text-primary" />
 		<p class="text-sm text-muted-foreground">{$_('observe.setup.proximity.checking')}</p>

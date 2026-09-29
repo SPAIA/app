@@ -28,6 +28,8 @@ export async function findNearbyWeatherObservation(
 			WHERE lat BETWEEN ? AND ?
 				AND lng BETWEEN ? AND ?
 				AND fetched_at >= datetime('now', ?)
+				-- An observer's correction belongs to their session alone, never a cache hit for someone else's.
+				AND source != 'manual'
 			ORDER BY fetched_at DESC
 			LIMIT 20
 		`)
@@ -67,6 +69,7 @@ export async function findWeatherObservationForHour(
 			WHERE lat BETWEEN ? AND ?
 				AND lng BETWEEN ? AND ?
 				AND observed_at = ?
+				AND source != 'manual'
 			LIMIT 20
 		`)
 		.bind(params.lat - latPad, params.lat + latPad, params.lng - lngPad, params.lng + lngPad, params.observedAt)

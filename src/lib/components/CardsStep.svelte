@@ -5,7 +5,7 @@
 	import { sessionStore } from '$lib/stores/session';
 	import type { WeatherOption, WindOption } from '$lib/stores/session';
 	import InsectCard from './InsectCard.svelte';
-	import type { HabitatFeatureCategory, InsectType, SpotSessionComparison, SpotVisionResult } from '$lib/types';
+	import type { HabitatFeatureCategory, InsectType, SpotSessionComparison, SpotVisionResult, WeatherObservation } from '$lib/types';
 	import { completeSessionSync } from '$lib/session/sync';
 	import ChipListEditor from '$lib/components/ChipListEditor.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -79,6 +79,8 @@
 		rainy: '🌧️'
 	};
 
+	const weatherBuckets: WeatherOption[] = ['sunny', 'partly', 'overcast', 'rainy'];
+
 	// Paired with the automatic DWD wind_speed_kmh reading (see the windy badge below) —
 	// wind inside a food forest is not wind at the station, so neither overwrites the other.
 	const windOptions: { key: WindOption; labelKey: string }[] = [
@@ -104,6 +106,14 @@
 	let editablePlants: { name: string; rank: SpotVisionResult['plants'][number]['rank'] }[] = [];
 	let editableFeatures: { category: HabitatFeatureCategory; label: string }[] = [];
 	let sceneDescription = $sessionStore.focalArea ?? '';
+	let changesText = '';
+	// Starts from the fetched reading; editing it saves a separate manual reading
+	// for this session only (see POST /api/weather/manual). With no reading at all
+	// (offline, no GPS, API down) the editor is open from the start.
+	let editingWeather = !$sessionStore.weatherObservation;
+	let weatherBucket: WeatherOption | null = $sessionStore.weatherObservation?.bucket ?? $sessionStore.weather;
+	let weatherTemp: number | null = $sessionStore.weatherObservation?.temperature_c ?? null;
+	let weatherWindy = $sessionStore.windy;
 	let selectedCreatures: string[] = $sessionStore.otherCreatures.map((c) => c.creature).filter((c) => c !== 'other');
 	let otherCreatureLabel = $sessionStore.otherCreatures.find((c) => c.creature === 'other')?.label ?? '';
 	let showOtherCreatureInput = !!otherCreatureLabel;
@@ -115,8 +125,11 @@
 	$: mediaId = $sessionStore.mediaId;
 	$: isNewSpot = $sessionStore.isNewSpot;
 	$: spotId = $sessionStore.spotId;
-	$: windy = $sessionStore.windy;
 	$: weatherObservation = $sessionStore.weatherObservation;
+	// A previous visit's photo was compared against — the only case where "since last time" means anything.
+	$: hasPreviousPhoto = !!vision && (vision.changes != null || vision.area_mismatch);
+	$: shownTemp = parseTemp(weatherTemp);
+	$: weatherIsEdited = weatherEdited(weatherObservation, weatherBucket, shownTemp, weatherWindy);
 	// The station name/distance are real fields off the Bright Sky reading, not a
 	// static "auto" label — falls back to a generic label only if a reading somehow
 	// carries no station (current_weather always returns one in practice). Visual
@@ -137,6 +150,7 @@
 		editableFeatures = [...vision.habitat_features];
 		if (isNewSpot) spotName = vision.name;
 		if (vision.scene) sceneDescription = vision.scene;
+		changesText = vision.changes ?? '';
 	}
 
 	function removePlant(index: number) {
@@ -164,6 +178,60 @@
 	function toggleOtherCreature() {
 		showOtherCreatureInput = !showOtherCreatureInput;
 		if (!showOtherCreatureInput) otherCreatureLabel = '';
+	}
+
+	/** The number input's value, or null when empty/cleared. */
+	function parseTemp(value: unknown): number | null {
+		return typeof value === 'number' && Number.isFinite(value) ? value : null;
+	}
+
+	function weatherEdited(
+		original: WeatherObservation | null,
+		bucket: WeatherOption | null,
+		temp: number | null,
+		isWindy: boolean
+	): boolean {
+		if (!bucket) return false;
+		if (!original) return true;
+		return bucket !== original.bucket || temp !== original.temperature_c || isWindy !== !!original.windy;
+	}
+
+	async function saveWeatherEdit() {
+		const original = $sessionStore.weatherObservation;
+		if (!weatherBucket || !weatherEdited(original, weatherBucket, shownTemp, weatherWindy)) return;
+		const bucket = weatherBucket;
+
+		// The bucket travels in the session snapshot itself, so it survives even
+		// if the manual reading below can't be saved (offline) — only the
+		// temperature/windy correction would be lost then.
+		sessionStore.update((s) => ({ ...s, weather: bucket, windy: weatherWindy }));
+
+		const { lat, lng } = $sessionStore;
+		if (lat == null || lng == null) return;
+		try {
+			const res = await fetch('/api/weather/manual', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					basedOnId: original?.id ?? null,
+					lat,
+					lng,
+					temperature_c: shownTemp,
+					bucket,
+					windy: weatherWindy
+				})
+			});
+			if (!res.ok) return;
+			const data = (await res.json()) as { observation: WeatherObservation | null };
+			if (!data.observation) return;
+			sessionStore.update((s) => ({
+				...s,
+				weatherObservationId: data.observation!.id,
+				weatherObservation: data.observation
+			}));
+		} catch {
+			// non-blocking — the corrected bucket is already in the session
+		}
 	}
 
 	async function saveObservation() {
@@ -207,13 +275,19 @@
 				await fetch(`/api/spot/${spotId}/vision`, {
 					method: 'PATCH',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ mediaId, plants: editablePlants, habitat_features: editableFeatures })
+					body: JSON.stringify({
+						mediaId,
+						plants: editablePlants,
+						habitat_features: editableFeatures,
+						...(hasPreviousPhoto ? { changes: changesText.trim() || null } : {})
+					})
 				});
 			} catch {
 				// non-blocking — the AI-guessed plants/features still stand server-side
 			}
 		}
 
+		await saveWeatherEdit();
 		await completeSessionSync();
 
 		saving = false;
@@ -351,14 +425,23 @@
 		</div>
 	{:else if visionStatus === 'done'}
 		<p class="text-xs text-muted-foreground">{$_('spot.add.confirm.photoRead')}</p>
-		{#if vision?.changes}
-			<p class="rounded-lg bg-accent px-3 py-2.5 text-sm text-accent-foreground">
-				{$_('spot.add.confirm.changes.label')}: {vision.changes}
-			</p>
-		{:else if vision?.area_mismatch}
-			<p class="rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-muted-foreground">
-				{$_('spot.add.confirm.area_mismatch')}
-			</p>
+		{#if hasPreviousPhoto}
+			<div class="flex flex-col gap-1.5">
+				<Label class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+					{$_('spot.add.confirm.changes.label')}
+				</Label>
+				{#if vision?.area_mismatch && !vision.changes}
+					<p class="rounded-lg border border-border bg-muted px-3 py-2.5 text-sm text-muted-foreground">
+						{$_('spot.add.confirm.area_mismatch')}
+					</p>
+				{/if}
+				<Textarea
+					class="text-sm"
+					rows={2}
+					placeholder={$_('spot.add.confirm.changes.placeholder')}
+					bind:value={changesText}
+				></Textarea>
+			</div>
 		{/if}
 		{#if vision?.scene}
 			<div class="flex flex-col gap-1.5">
@@ -418,22 +501,73 @@
 		{$_('spot.confirm.section.conditions')}
 	</p>
 
-	{#if weatherObservation}
+	{#if editingWeather}
+		<div class="spaia-inset flex flex-col gap-3">
+			{#if !weatherObservation}
+				<p class="text-xs text-muted-foreground">{$_('weather.edit.missing')}</p>
+			{/if}
+			<div class="grid grid-cols-2 gap-2">
+				{#each weatherBuckets as b}
+					<button
+						type="button"
+						class="flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs transition-all"
+						class:border-primary={weatherBucket === b}
+						class:bg-accent={weatherBucket === b}
+						class:text-primary={weatherBucket === b}
+						class:border-border={weatherBucket !== b}
+						class:bg-background={weatherBucket !== b}
+						onclick={() => (weatherBucket = b)}
+					>
+						<span>{weatherIcons[b]}</span>
+						{$_('weather.' + b)}
+					</button>
+				{/each}
+			</div>
+			<div class="flex items-end gap-3">
+				<div class="flex flex-1 flex-col gap-1.5">
+					<Label for="weather-temp" class="text-xs">{$_('weather.edit.temperature')}</Label>
+					<Input id="weather-temp" type="number" step="0.5" inputmode="decimal" class="text-sm" bind:value={weatherTemp} />
+				</div>
+				<button
+					type="button"
+					class="h-9 rounded-lg border px-3 text-xs transition-all"
+					class:border-primary={weatherWindy}
+					class:bg-accent={weatherWindy}
+					class:text-primary={weatherWindy}
+					class:border-border={!weatherWindy}
+					class:bg-background={!weatherWindy}
+					aria-pressed={weatherWindy}
+					onclick={() => (weatherWindy = !weatherWindy)}
+				>
+					💨 {$_('weather.windy')}
+				</button>
+			</div>
+			{#if weatherObservation}
+				<Button variant="ghost" size="sm" class="self-end text-muted-foreground" onclick={() => (editingWeather = false)}>
+					{$_('weather.edit.done')}
+				</Button>
+			{/if}
+		</div>
+	{:else if weatherObservation}
+		{@const shownBucket = weatherBucket ?? weatherObservation.bucket}
 		<div class="spaia-inset">
 			<div class="flex flex-wrap items-center gap-3">
 				<span class="spaia-inset-value text-primary">
-					{Math.round(weatherObservation.temperature_c ?? 0)}°C
+					{shownTemp != null ? `${Math.round(shownTemp)}°C` : '–'}
 				</span>
 				<span class="flex items-center gap-1.5 text-sm font-medium text-foreground">
-					<span>{weatherIcons[weatherObservation.bucket]}</span>
-					{$_('weather.' + weatherObservation.bucket)}
+					<span>{weatherIcons[shownBucket]}</span>
+					{$_('weather.' + shownBucket)}
 				</span>
-				{#if windy}
+				{#if weatherWindy}
 					<Badge variant="secondary">💨 {$_('weather.windy')}</Badge>
 				{/if}
+				<Button variant="ghost" size="sm" class="ml-auto text-muted-foreground" onclick={() => (editingWeather = true)}>
+					{$_('weather.edit.cta')}
+				</Button>
 			</div>
 			<p class="spaia-inset-label mt-1.5">
-				{weatherSourceLabel}
+				{weatherIsEdited ? $_('weather.source.manual') : weatherSourceLabel}
 			</p>
 		</div>
 	{/if}

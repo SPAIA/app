@@ -54,19 +54,30 @@ export async function getSpotsByOwner(
 	return result.results;
 }
 
-/** Every located spot, with its parent space's name — for the /explore full-screen map. */
-export async function getSpotsForMap(
-	db: D1Database
-): Promise<Array<Spot & { space_name: string }>> {
+export type MapSpot = Spot & {
+	space_name: string;
+	last_observed_at: string | null;
+	cover_id: string | null;
+};
+
+/**
+ * Every located spot, with its parent space's name, last completed observation
+ * and cover photo — for the /explore and /observe full-screen maps.
+ */
+export async function getSpotsForMap(db: D1Database): Promise<MapSpot[]> {
 	const result = await db
 		.prepare(`
-			SELECT sp.*, sc.name as space_name
+			SELECT sp.*, sc.name as space_name,
+				(SELECT MAX(se.completed_at) FROM sessions se WHERE se.spot_id = sp.id AND se.completed_at IS NOT NULL) as last_observed_at,
+				(SELECT m.id FROM media m
+					WHERE m.entity_type = 'spot' AND m.entity_id = CAST(sp.id AS TEXT) AND m.media_type = 'header_image'
+					ORDER BY m.sort_order ASC, m.created_at ASC LIMIT 1) as cover_id
 			FROM spots sp
 			JOIN spaces sc ON sc.id = sp.space_id
 			WHERE sp.active = 1 AND sc.active = 1 AND sp.lat IS NOT NULL AND sp.lng IS NOT NULL
 			ORDER BY sp.name ASC
 		`)
-		.all<Spot & { space_name: string }>();
+		.all<MapSpot>();
 	return result.results;
 }
 
@@ -225,6 +236,30 @@ export async function createSpot(
 		)
 		.run() as { success: boolean; meta: { last_row_id: number } };
 	return result.meta.last_row_id;
+}
+
+/**
+ * Moves a spot to another space, taking its session history with it so the
+ * new space's dashboard counts everything observed there.
+ */
+export async function moveSpotToSpace(db: D1Database, spotId: number, spaceId: number): Promise<void> {
+	await db.batch([
+		db.prepare('UPDATE spots SET space_id = ? WHERE id = ?').bind(spaceId, spotId),
+		db.prepare('UPDATE sessions SET space_id = ? WHERE spot_id = ?').bind(spaceId, spotId)
+	]);
+}
+
+/**
+ * Soft-deletes a spot: its sessions, sightings and media stay intact for the
+ * space's history and exports. The slug is suffixed because idx_spots_slug
+ * covers inactive rows too, while uniqueSlug only sees active ones — without
+ * freeing it, a new spot with the same name would hit the unique index.
+ */
+export async function deactivateSpot(db: D1Database, spotId: number): Promise<void> {
+	await db
+		.prepare("UPDATE spots SET active = 0, slug = slug || '-deleted-' || id WHERE id = ?")
+		.bind(spotId)
+		.run();
 }
 
 /** Renames a spot (and re-slugs it), e.g. when the user edits the AI-suggested name. */

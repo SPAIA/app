@@ -201,7 +201,7 @@
 						<div class="flex items-center gap-2.5 px-3.5 py-2.5">
 							<span class="text-base">{spot.icon}</span>
 							<span class="flex-1 min-w-0 truncate text-xs text-muted-foreground">{spot.name}</span>
-							<a href="/space/{spot.space_slug}/spot/{spot.slug}/edit" class="shrink-0 text-[11px] font-medium text-primary">
+							<a href="/spot/{spot.slug}/edit" class="shrink-0 text-[11px] font-medium text-primary">
 								{$_('profile.spaces.edit')}
 							</a>
 						</div>

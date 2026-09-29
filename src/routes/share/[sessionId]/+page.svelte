@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import type { PageData } from './$types';
 	import { insectImage } from '$lib/insectImage';
+	import { Spinner } from '$lib/components/ui/spinner';
 
 	export let data: PageData;
 
@@ -14,26 +15,63 @@
 	$: imageUrl = image ? `${$page.url.origin}/api/media/${image.id}` : null;
 	$: topSighting = sightings[0] ?? null;
 
+	type Action = 'image' | 'share' | 'copy';
+	let busy: Action | null = null;
+	/** The action that just succeeded, with its confirmation label — cleared after a moment. */
+	let done: { action: Action; label: string } | null = null;
+	let doneTimer: ReturnType<typeof setTimeout> | undefined;
+
+	function confirm(action: Action, label: string) {
+		clearTimeout(doneTimer);
+		done = { action, label };
+		doneTimer = setTimeout(() => (done = null), 2000);
+	}
+
+	async function run(action: Action, fn: () => Promise<string | null>) {
+		if (busy) return;
+		busy = action;
+		try {
+			const label = await fn();
+			if (label) confirm(action, label);
+		} finally {
+			busy = null;
+		}
+	}
+
 	async function saveAsImage() {
 		const { default: html2canvas } = await import('html2canvas');
 		const card = document.getElementById('share-card');
-		if (!card) return;
+		if (!card) return null;
 		const canvas = await html2canvas(card, { scale: 2, useCORS: true });
 		const link = document.createElement('a');
 		link.download = `spaia-session.png`;
 		link.href = canvas.toDataURL('image/png');
 		link.click();
+		return $_('share.action.saved');
 	}
 
-	async function shareToStories() {
-		if (navigator.share) {
+	async function share() {
+		// No Web Share API (most desktop browsers) — copying the link is the closest equivalent.
+		if (!navigator.share) return copyLink();
+		try {
 			await navigator.share({ title: 'SPAIA session', url });
+			return $_('share.action.shared');
+		} catch {
+			// Dismissing the share sheet rejects with AbortError — not worth a confirmation.
+			return null;
 		}
 	}
 
-	function copyLink() {
-		navigator.clipboard.writeText(url);
+	async function copyLink() {
+		await navigator.clipboard.writeText(url);
+		return $_('share.action.copied');
 	}
+
+	const actions: { action: Action; icon: string; label: string; fn: () => Promise<string | null> }[] = [
+		{ action: 'image', icon: '🖼️', label: 'share.action.image', fn: saveAsImage },
+		{ action: 'share', icon: '📤', label: 'share.action.share', fn: share },
+		{ action: 'copy', icon: '📋', label: 'share.action.copy', fn: copyLink }
+	];
 </script>
 
 <svelte:head>
@@ -41,16 +79,12 @@
 	<meta property="og:title" content="SPAIA: {session.total_count} insects in {session.duration_min} min" />
 	<meta property="og:description" content="{session.total_count} sightings{session.locality ? ` in ${session.locality}` : ''}. Join the insect observation network." />
 	<meta property="og:url" content={url} />
-	{#if imageUrl}
-		<meta property="og:image" content={imageUrl} />
-		<meta name="twitter:card" content="summary_large_image" />
-	{/if}
 </svelte:head>
 
 <div class="flex flex-col gap-4 px-5 py-6">
-	<p class="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-		{$_('nav.profile')} · {$_('share.cta')}
-	</p>
+	<a href="/sightings" class="self-start text-xs text-muted-foreground">
+		← {$_('share.back')}
+	</a>
 
 	<!-- Share card — a fixed navy/mint brand look, independent of the viewer's light/dark
 	     theme (this is a shareable graphic, not an app screen: it needs to read the same
@@ -119,28 +153,37 @@
 			<div class="text-[10px] leading-relaxed text-white/40">
 				#{(session.space_name ?? session.locality ?? '').replace(/\s/g, '')}<br>#SPAIA
 			</div>
-			<div class="flex h-11 w-11 items-center justify-center rounded-md bg-white text-[10px] font-medium text-[#0C2464]">QR</div>
+			<div class="rounded-md bg-white p-1">
+				<img src={data.qrDataUrl} alt="" class="block h-14 w-14" />
+			</div>
 		</div>
 	</div>
 
 	<!-- Action buttons -->
-	<div class="grid grid-cols-2 gap-2">
-		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background py-3 text-xs font-medium text-foreground" onclick={saveAsImage}>
-			<span class="text-lg">🖼️</span>
-			{$_('share.action.image')}
-		</button>
-		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background py-3 text-xs font-medium text-foreground" onclick={shareToStories}>
-			<span class="text-lg">📤</span>
-			{$_('share.action.stories')}
-		</button>
-		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background py-3 text-xs font-medium text-foreground" onclick={copyLink}>
-			<span class="text-lg">📋</span>
-			{$_('share.action.copy')}
-		</button>
-		<button class="flex flex-col items-center gap-1.5 rounded-xl border border-border bg-background py-3 text-xs font-medium text-foreground">
-			<span class="text-lg">💬</span>
-			{$_('share.action.friend')}
-		</button>
+	<div class="grid grid-cols-3 gap-2">
+		{#each actions as { action, icon, label, fn } (action)}
+			{@const isDone = done?.action === action}
+			<button
+				type="button"
+				class="flex flex-col items-center gap-1.5 rounded-xl border py-3 text-xs font-medium transition-[transform,background-color,border-color] duration-150 active:scale-95 active:bg-muted disabled:opacity-60 {isDone
+					? 'border-primary bg-primary/10 text-primary'
+					: 'border-border bg-background text-foreground'}"
+				disabled={busy != null && busy !== action}
+				aria-busy={busy === action}
+				onclick={() => run(action, fn)}
+			>
+				<span class="flex h-7 items-center text-lg">
+					{#if busy === action}
+						<Spinner size="sm" />
+					{:else if isDone}
+						✓
+					{:else}
+						{icon}
+					{/if}
+				</span>
+				<span aria-live="polite">{isDone ? done?.label : $_(label)}</span>
+			</button>
+		{/each}
 	</div>
 
 	<p class="text-center text-[11px] text-muted-foreground">{$_('share.footer')}</p>

@@ -115,7 +115,10 @@ export async function syncSessionSnapshot(
 		db
 			.prepare(`
 				INSERT INTO sessions (id, user_id, space_id, spot_id, locality, weather, weather_observation_id, condition, notes, wind_observed, focal_area, lat, lng, duration_min, started_at, clock_offset_ms, total_count, completed_at, revision, write_token)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				-- space_id follows the spot's current space rather than the client's
+				-- copy, so an offline session synced after its spot was moved to
+				-- another space still lands in the new one.
+				VALUES (?, ?, COALESCE((SELECT space_id FROM spots WHERE id = ?), ?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				ON CONFLICT(id) DO UPDATE SET
 					user_id = excluded.user_id,
 					space_id = excluded.space_id,
@@ -140,6 +143,7 @@ export async function syncSessionSnapshot(
 			.bind(
 				snapshot.id,
 				ownerId,
+				snapshot.spotId,
 				snapshot.spaceId,
 				snapshot.spotId,
 				snapshot.locality,

@@ -272,13 +272,16 @@ export interface RedeemCodeUse {
 	used_at: string;
 }
 
-export interface RecentSighting {
-	insect_name: string;
-	icon: string | null;
-	count: number;
-	tapped_at: string;
+export interface RecentSession {
+	id: string;
+	completed_at: string;
+	duration_min: number;
 	locality: string | null;
+	spot_name: string | null;
 	space_name: string | null;
+	total_count: number;
+	species_count: number;
+	image_id: string | null;
 }
 
 export interface LiveSpaceData {

@@ -3,16 +3,14 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { directionsUrl, findNearestSpots, formatDistanceKm, formatDistanceRange, haversineKm } from '$lib/geo';
-	import type { Spot, SpotVisionResult } from '$lib/types';
-	import type { SpotSummary } from '$lib/server/db/spots';
+	import type { SpotVisionResult } from '$lib/types';
+	import type { MapSpot, SpotSummary } from '$lib/server/db/spots';
 	import type { PageData } from './$types';
 	import { Button } from '$lib/components/ui/button';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import * as Drawer from '$lib/components/ui/drawer';
 
 	export let data: PageData;
-
-	type MapSpot = Spot & { space_name: string };
 
 	type Phase = 'locating' | 'located' | 'error';
 	let phase: Phase = 'locating';
@@ -261,14 +259,26 @@
 				{#each nearbySpots as { spot, distanceKm } (spot.id)}
 					<button
 						type="button"
-						class="flex w-full items-center gap-3 rounded-xl border border-border bg-muted px-3 py-2.5 text-left"
-						onclick={() => selectSpot(spot)}
+						class="flex w-full items-center overflow-hidden rounded-xl border border-border bg-muted text-left"
+						onclick={() => goto(`/observe/${spot.slug}`)}
 					>
-						<span class="text-2xl">{spot.icon}</span>
-						<span class="flex-1">
-							<span class="block text-sm font-medium text-foreground">{spot.name}</span>
-							<span class="block text-xs text-muted-foreground">
+						<!-- The fixed square sets the row height; one-line text keeps the row from outgrowing it -->
+						<span class="size-20 shrink-0 bg-border">
+							{#if spot.cover_id}
+								<img src="/api/media/{spot.cover_id}" alt="" loading="lazy" class="h-full w-full object-cover" />
+							{/if}
+						</span>
+						<span class="flex min-w-0 flex-1 flex-col justify-center px-3">
+							<span class="block truncate text-sm font-medium text-foreground">{spot.name}</span>
+							<span class="block truncate text-xs text-muted-foreground">
 								{$_('observe.nearest.distance', { values: { distance: formatDistanceRange(distanceKm, accuracy) } })}
+							</span>
+							<span class="block truncate text-xs text-muted-foreground">
+								{#if spot.last_observed_at}
+									{$_('explore.spot.lastObserved', { values: { date: formatDate(spot.last_observed_at) } })}
+								{:else}
+									{$_('explore.spot.noObservations')}
+								{/if}
 							</span>
 						</span>
 					</button>

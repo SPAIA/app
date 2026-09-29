@@ -56,7 +56,6 @@
   let searching = false;
   let searchTimer: ReturnType<typeof setTimeout>;
 
-  let spaceSlug = "";
 
   const SATELLITE_SOURCE_ID = "spot-new-satellite";
   const SATELLITE_LAYER_ID = "spot-new-satellite-layer";
@@ -267,7 +266,6 @@
       };
       spotId = spotData.id;
       spotSlug = spotData.slug;
-      spaceSlug = spotData.space_slug;
       phase = "photo";
     } catch {
       error = $_("spot.buy.error.generic");
@@ -655,7 +653,7 @@
         variant="outline"
         size="sm"
         class="w-full"
-        href={`/space/${spaceSlug}/spot/${spotSlug}/edit`}
+        href={`/spot/${spotSlug}/edit`}
       >
         {$_("spot.buy.done.manage")}
       </Button>

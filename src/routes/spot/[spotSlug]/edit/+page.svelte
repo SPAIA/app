@@ -10,6 +10,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import * as Alert from '$lib/components/ui/alert';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import type { PageData, ActionData } from './$types';
 	import type { Media, SpotVisionResult } from '$lib/types';
@@ -45,6 +46,12 @@
 
 	let submitting = false;
 	let signDownloading = false;
+	let moveOpen = false;
+	let moving = false;
+	let moveTarget = '';
+	let newSpaceName = '';
+	let deleteOpen = false;
+	let deleting = false;
 
 	async function handleDownloadSign() {
 		signDownloading = true;
@@ -186,7 +193,7 @@
 		}
 
 		if (result.spot.slug !== data.spot.slug) {
-			await goto(`/space/${data.space.slug}/spot/${result.spot.slug}/edit`, { invalidateAll: true });
+			await goto(`/spot/${result.spot.slug}/edit`, { invalidateAll: true });
 			return;
 		}
 
@@ -331,4 +338,98 @@
 		{#if signDownloading}<Spinner size="sm" />{/if}
 		{$_('spot.edit.sign.download')}
 	</Button>
+
+	<Button type="button" variant="outline" class="w-full" onclick={() => (moveOpen = true)}>
+		{$_('spot.edit.move')}
+	</Button>
+
+	<Button type="button" variant="ghost" class="w-full text-destructive" onclick={() => (deleteOpen = true)}>
+		{$_('spot.edit.delete')}
+	</Button>
 </div>
+
+<Dialog.Root bind:open={moveOpen}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>{$_('spot.edit.move.title')}</Dialog.Title>
+			<Dialog.Description>{$_('spot.edit.move.body', { values: { name: data.spot.name } })}</Dialog.Description>
+		</Dialog.Header>
+		<form method="POST" action="?/move" use:enhance={() => {
+			moving = true;
+			return async ({ update }) => {
+				await update();
+				moving = false;
+				moveOpen = false;
+			};
+		}} class="flex flex-col gap-4">
+			{#if data.moveTargets.length > 0}
+				<div class="flex flex-col gap-2">
+					{#each data.moveTargets as target}
+						<label
+							class="flex cursor-pointer items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm has-checked:border-primary has-checked:bg-primary/10"
+						>
+							<input
+								type="radio"
+								name="targetSpace"
+								value={target.slug}
+								bind:group={moveTarget}
+								onchange={() => (newSpaceName = '')}
+								class="accent-primary"
+							/>
+							<span>{target.icon}</span>
+							<span class="flex-1">{target.name}</span>
+						</label>
+					{/each}
+				</div>
+			{/if}
+
+			<div class="flex flex-col gap-1.5">
+				<Label>{$_('spot.edit.move.new.label')}</Label>
+				<Input
+					type="text"
+					name="newSpaceName"
+					placeholder={$_('spot.edit.move.new.placeholder')}
+					bind:value={newSpaceName}
+					oninput={() => (moveTarget = '')}
+				/>
+			</div>
+
+			<Dialog.Footer>
+				<Button type="button" variant="outline" onclick={() => (moveOpen = false)} disabled={moving}>
+					{$_('spot.edit.delete.cancel')}
+				</Button>
+				<Button type="submit" disabled={moving || (!moveTarget && !newSpaceName.trim())}>
+					{#if moving}<Spinner size="sm" />{/if}
+					{$_('spot.edit.move.confirm')}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={deleteOpen}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>{$_('spot.edit.delete.title')}</Dialog.Title>
+			<Dialog.Description>{$_('spot.edit.delete.body', { values: { name: data.spot.name } })}</Dialog.Description>
+		</Dialog.Header>
+		<form method="POST" action="?/delete" use:enhance={() => {
+			deleting = true;
+			return async ({ update }) => {
+				await update();
+				deleting = false;
+				deleteOpen = false;
+			};
+		}}>
+			<Dialog.Footer>
+				<Button type="button" variant="outline" onclick={() => (deleteOpen = false)} disabled={deleting}>
+					{$_('spot.edit.delete.cancel')}
+				</Button>
+				<Button type="submit" variant="destructive" disabled={deleting}>
+					{#if deleting}<Spinner size="sm" />{/if}
+					{$_('spot.edit.delete.confirm')}
+				</Button>
+			</Dialog.Footer>
+		</form>
+	</Dialog.Content>
+</Dialog.Root>

@@ -8,6 +8,10 @@ export async function getSpaceBySlug(db: D1Database, slug: string): Promise<Spac
 		.first<Space>();
 }
 
+export async function getSpaceById(db: D1Database, id: number): Promise<Space | null> {
+	return db.prepare('SELECT * FROM spaces WHERE id = ? AND active = 1').bind(id).first<Space>();
+}
+
 export async function getSpacesByOwner(db: D1Database, ownerId: string): Promise<Space[]> {
 	const result = await db
 		.prepare('SELECT * FROM spaces WHERE owner_id = ? AND active = 1 ORDER BY name ASC')

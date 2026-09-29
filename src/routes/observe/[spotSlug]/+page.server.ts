@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 import { getInsectTypes } from '$lib/server/db/sightings';
 import { getMediaForEntity } from '$lib/server/db/media';
-import { getSpotBySlug } from '$lib/server/db/spots';
+import { getSpotBySlug, getSpotSummary } from '$lib/server/db/spots';
 import type { D1Database } from '$lib/server/db/d1';
 
 export const load: PageServerLoad = async ({ params, platform }) => {
@@ -12,11 +12,17 @@ export const load: PageServerLoad = async ({ params, platform }) => {
 	const spot = await getSpotBySlug(db, params.spotSlug);
 	if (!spot) throw error(404, 'Spot not found');
 
-	const [insectTypes, media] = await Promise.all([
+	const [insectTypes, media, summary] = await Promise.all([
 		getInsectTypes(db),
-		getMediaForEntity(db, 'spot', String(spot.id))
+		getMediaForEntity(db, 'spot', String(spot.id)),
+		getSpotSummary(db, spot.id)
 	]);
 	const cover = media.find((m) => m.media_type === 'header_image') ?? null;
 
-	return { spot, insectTypes, cover: cover ? { id: cover.id } : null };
+	return {
+		spot,
+		insectTypes,
+		cover: cover ? { id: cover.id } : null,
+		lastObservedAt: summary.lastObservedAt
+	};
 };

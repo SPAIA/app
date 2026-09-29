@@ -32,7 +32,7 @@
 </svelte:head>
 
 {#if step === 'setup'}
-	<SetupStep spot={data.spot} cover={data.cover} />
+	<SetupStep spot={data.spot} cover={data.cover} lastObservedAt={data.lastObservedAt} />
 {:else if step === 'observe'}
 	<ObserveStep insectTypes={data.insectTypes} />
 {:else if step === 'thankyou'}

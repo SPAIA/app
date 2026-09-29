@@ -95,11 +95,15 @@
 		{
 			href: '/profile',
 			labelKey: 'nav.profile',
-			svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path d="M11.644 1.59a.75.75 0 0 1 .712 0l9.75 5.25a.75.75 0 0 1 0 1.32l-9.75 5.25a.75.75 0 0 1-.712 0l-9.75-5.25a.75.75 0 0 1 0-1.32l9.75-5.25Z"/><path d="m3.265 10.602 7.668 4.129a2.25 2.25 0 0 0 2.134 0l7.668-4.13 1.37.739a.75.75 0 0 1 0 1.32l-9.75 5.25a.75.75 0 0 1-.71 0l-9.75-5.25a.75.75 0 0 1 0-1.32l1.37-.738Z"/><path d="m10.933 19.231-7.668-4.13-1.37.739a.75.75 0 0 0 0 1.32l9.75 5.25c.221.12.489.12.71 0l9.75-5.25a.75.75 0 0 0 0-1.32l-1.37-.738-7.668 4.13a2.25 2.25 0 0 1-2.134-.001Z"/></svg>`
+			svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><path fill-rule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clip-rule="evenodd"/></svg>`
 		}
 	];
 
 	$: currentPath = $page.url.pathname;
+
+	// Pages can set `ogImage` (absolute URL) in their load data to override the default logo.
+	$: ogImage =
+		$page.data.ogImage ?? `${$page.url.origin}/${encodeURIComponent('SPAIA logo blue 2023 transparent-06.svg')}`;
 
 	function isActive(href: string, path: string) {
 		return path === href || path.startsWith(href + '/');
@@ -110,6 +114,11 @@
 
 	$: hideTabBar = isFullscreenRoute;
 </script>
+
+<svelte:head>
+	<meta property="og:image" content={ogImage} />
+	<meta name="twitter:card" content={$page.data.ogImage ? 'summary_large_image' : 'summary'} />
+</svelte:head>
 
 <div class="flex min-h-dvh flex-col items-center bg-muted">
 	<div class="relative flex w-full max-w-[420px] flex-1 flex-col bg-background">
