@@ -76,8 +76,6 @@
 
 <svelte:head>
 	<title>{$_('app.name')}{session.locality ? ` — ${session.total_count} sightings in ${session.locality}` : ''}</title>
-	<meta property="og:title" content="SPAIA: {session.total_count} insects in {session.duration_min} min" />
-	<meta property="og:description" content="{session.total_count} sightings{session.locality ? ` in ${session.locality}` : ''}. Join the insect observation network." />
 	<meta property="og:url" content={url} />
 </svelte:head>
 

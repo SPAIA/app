@@ -101,9 +101,13 @@
 
 	$: currentPath = $page.url.pathname;
 
-	// Pages can set `ogImage` (absolute URL) in their load data to override the default logo.
-	$: ogImage =
-		$page.data.ogImage ?? `${$page.url.origin}/${encodeURIComponent('SPAIA logo blue 2023 transparent-06.svg')}`;
+	// Pages can set `ogTitle`, `ogDescription` and `ogImage` (absolute URL) in their load data
+	// to override these site-wide defaults.
+	$: ogTitle = $page.data.ogTitle ?? 'SPAIA — Turn a walk into a wildlife count.';
+	$: ogDescription =
+		$page.data.ogDescription ??
+		'Take five minutes to get to know one small patch of the planet. Together, we can understand the pulse of the living systems around us.';
+	$: ogImage = $page.data.ogImage ?? `${$page.url.origin}/spaia_logo.png`;
 
 	function isActive(href: string, path: string) {
 		return path === href || path.startsWith(href + '/');
@@ -116,6 +120,8 @@
 </script>
 
 <svelte:head>
+	<meta property="og:title" content={ogTitle} />
+	<meta property="og:description" content={ogDescription} />
 	<meta property="og:image" content={ogImage} />
 	<meta name="twitter:card" content={$page.data.ogImage ? 'summary_large_image' : 'summary'} />
 </svelte:head>

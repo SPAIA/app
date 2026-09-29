@@ -32,8 +32,14 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 	});
 	const qrDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvg)}`;
 
-	// Picked up by the root layout's og:image tag in place of the default logo.
+	// Picked up by the root layout's og tags in place of the site defaults.
 	const ogImage = image ? `${url.origin}/api/media/${image.id}` : null;
+	const ogTitle = `SPAIA: ${session.total_count} insects in ${session.duration_min} min`;
+	const ogDescription =
+		`Spotted ${session.total_count} ${session.total_count === 1 ? 'insect' : 'insects'}` +
+		` of ${sightings.length} ${sightings.length === 1 ? 'kind' : 'kinds'}` +
+		(session.locality ? ` in ${session.locality}` : '') +
+		` in ${session.duration_min} minutes. Try SPAIA — turn a walk into a wildlife count.`;
 
-	return { session, sightings, image, qrDataUrl, ogImage };
+	return { session, sightings, image, qrDataUrl, ogImage, ogTitle, ogDescription };
 };
