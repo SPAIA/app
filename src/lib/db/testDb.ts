@@ -60,7 +60,6 @@ CREATE TABLE sessions (
 	user_id TEXT NOT NULL,
 	space_id INTEGER,
 	spot_id INTEGER,
-	locality TEXT,
 	weather TEXT,
 	weather_observation_id INTEGER,
 	condition TEXT,
@@ -77,7 +76,8 @@ CREATE TABLE sessions (
 	shared INTEGER DEFAULT 0,
 	claim_email TEXT,
 	revision INTEGER NOT NULL DEFAULT 0,
-	write_token TEXT
+	write_token TEXT,
+	last_active_at TEXT
 );
 
 CREATE TABLE sightings (

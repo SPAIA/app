@@ -55,6 +55,26 @@ export interface Spot {
 	total_minutes_observed: number;
 }
 
+/** One upload from a field device mounted at a spot, covering [start_time, end_time]. */
+export interface DeviceReading {
+	id: number;
+	device_id: string;
+	spot_id: number;
+	insect_count: number;
+	/** JSON string: the device's raw array of tracked insect trails, stored as sent. */
+	trails: string;
+	/** ISO 8601 UTC. */
+	start_time: string;
+	/** ISO 8601 UTC. */
+	end_time: string;
+	/** Optional on-device sensors; null when the device has none. */
+	temperature_c: number | null;
+	relative_humidity_pct: number | null;
+	/** Station pressure, not reduced to sea level. */
+	pressure_hpa: number | null;
+	created_at: string;
+}
+
 /** Running per-spot, per-insect tally — one row per insect ever spotted there. */
 export interface SpotInsectStat {
 	spot_id: number;
@@ -189,7 +209,6 @@ export interface Session {
 	user_id: string;
 	space_id: number | null;
 	spot_id: number | null;
-	locality: string | null;
 	weather: 'sunny' | 'partly' | 'overcast' | 'rainy' | null;
 	/** The real weather reading `weather` was derived from — null for sessions predating this or not yet backfilled. */
 	weather_observation_id: number | null;

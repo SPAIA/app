@@ -39,7 +39,7 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 		`Spotted ${session.total_count} ${session.total_count === 1 ? 'insect' : 'insects'}` +
 		` of ${sightings.length} ${sightings.length === 1 ? 'kind' : 'kinds'}` +
 		(session.locality ? ` in ${session.locality}` : '') +
-		` in ${session.duration_min} minutes. Try SPAIA — turn a walk into a wildlife count.`;
+		` in ${session.duration_min} minutes. Try SPAIA — together we can understand the pulse of the planet.`;
 
 	return { session, sightings, image, qrDataUrl, ogImage, ogTitle, ogDescription };
 };

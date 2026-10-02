@@ -14,7 +14,9 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 // Uploads a spot's defining photo, then asks DeepSeek Vision to read the scene
 // (plants/habitat features/name) from it. The vision call is best-effort: if
 // it fails or no API key is configured, the photo still saves and the spot
-// keeps its placeholder name for the caller to fill in by hand.
+// keeps its placeholder name for the caller to fill in by hand. Callers that
+// only want to swap the cover image (spot edit) send `vision=skip` to bypass
+// the vision call entirely, leaving name, slug and description untouched.
 export const POST: RequestHandler = async ({ params, request, locals, platform }) => {
 	const bucket = platform?.env?.MEDIA;
 	const db = platform?.env?.DB;
@@ -33,6 +35,7 @@ export const POST: RequestHandler = async ({ params, request, locals, platform }
 	if (file.size > MAX_BYTES) throw error(413, 'Image too large (max 10 MB)');
 
 	const locality = (form.get('locality') as string | null) || null;
+	const skipVision = form.get('vision') === 'skip';
 
 	const bytes = await file.arrayBuffer();
 	const dimensions = getImageDimensions(bytes, file.type);
@@ -60,7 +63,7 @@ export const POST: RequestHandler = async ({ params, request, locals, platform }
 	const media = { id: mediaId, url: `/api/media/${mediaId}`, width: dimensions?.width ?? null, height: dimensions?.height ?? null };
 
 	const apiKey = platform?.env?.DEEPSEEK_API_KEY;
-	if (!apiKey) {
+	if (skipVision || !apiKey) {
 		return json({ media, spot: { id: spot.id, slug: spot.slug, name: spot.name }, vision: null });
 	}
 

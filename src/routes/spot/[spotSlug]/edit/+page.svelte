@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { _ } from 'svelte-i18n';
 	import { enhance } from '$app/forms';
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount, onDestroy, tick } from 'svelte';
 	import SegmentedToggle from '$lib/components/SegmentedToggle.svelte';
@@ -13,7 +12,7 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import type { PageData, ActionData } from './$types';
-	import type { Media, SpotVisionResult } from '$lib/types';
+	import type { Media } from '$lib/types';
 
 	export let data: PageData;
 	export let form: ActionData;
@@ -67,7 +66,6 @@
 	let coverUploading = false;
 	let coverError = '';
 	let coverInput: HTMLInputElement;
-	let coverVision: SpotVisionResult | null = null;
 
 	function applyLocation(newLat: number, newLng: number) {
 		lat = newLat;
@@ -152,20 +150,20 @@
 		mapInstance?.remove();
 	});
 
-	// Uploads via the spot's photo endpoint (not the generic /api/media one) so
-	// the new cover also runs through DeepSeek Vision, which records habitat
-	// features and plant observations for this spot and may rename it.
+	// Uploads via the spot's photo endpoint with vision skipped: changing the
+	// cover only swaps the picture and never renames the spot or rewrites its
+	// description.
 	async function handleCoverChange(e: Event) {
 		const file = (e.target as HTMLInputElement).files?.[0];
 		if (!file) return;
 
 		coverUploading = true;
 		coverError = '';
-		coverVision = null;
 		coverPreview = URL.createObjectURL(file);
 
 		const body = new FormData();
 		body.append('file', file);
+		body.append('vision', 'skip');
 
 		const res = await fetch(`/api/spot/${data.spot.id}/photo`, { method: 'POST', body });
 
@@ -178,27 +176,15 @@
 
 		const result = (await res.json()) as {
 			media: { id: string; url: string };
-			spot: { id: number; slug: string; name: string };
-			vision: SpotVisionResult | null;
 		};
 
 		const previous = cover;
 		cover = { id: result.media.id } as Media;
 		coverPreview = result.media.url;
 		coverUploading = false;
-		coverVision = result.vision;
 
 		if (previous) {
 			await fetch(`/api/media/${previous.id}`, { method: 'DELETE' });
-		}
-
-		if (result.spot.slug !== data.spot.slug) {
-			await goto(`/spot/${result.spot.slug}/edit`, { invalidateAll: true });
-			return;
-		}
-
-		if (result.vision) {
-			spotName = result.spot.name;
 		}
 	}
 </script>
@@ -239,9 +225,6 @@
 		</div>
 		{#if coverError}
 			<p class="text-xs text-destructive">{coverError}</p>
-		{/if}
-		{#if coverVision?.scene}
-			<p class="text-xs text-muted-foreground">{coverVision.scene}</p>
 		{/if}
 		<Button
 			type="button"

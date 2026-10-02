@@ -26,7 +26,7 @@ export interface SessionState {
 	spaceId: number | null;
 	spotId: number | null;
 	spotName: string | null;
-	/** Neighbourhood/locality reverse-geocoded from the session GPS fix. */
+	/** The spot's space locality, for display only — not synced; the server reads it from spaces via space_id. */
 	locality: string | null;
 	weather: WeatherOption | null;
 	/** The real weather reading `weather` was derived from — set in the background once geolocation resolves, see SetupStep. */

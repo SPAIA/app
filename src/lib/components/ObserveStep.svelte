@@ -3,7 +3,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { sessionStore } from '$lib/stores/session';
 	import { nowISO } from '$lib/time';
-	import { persistLocal } from '$lib/session/sync';
+	import { completeSessionSync, persistLocal } from '$lib/session/sync';
 	import { insectImage } from '$lib/insectImage';
 	import type { InsectType } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
@@ -12,6 +12,8 @@
 
 	let timeLeft = $sessionStore.durationMin * 60;
 	let totalSeconds = timeLeft;
+	/** Seconds this timer leg actually ran — what gets recorded, not the length it was set to. */
+	let elapsedSeconds = 0;
 	let interval: ReturnType<typeof setInterval>;
 	let buttonScales: Record<string, number> = {};
 
@@ -26,15 +28,32 @@
 	function tick() {
 		if (timeLeft > 0) {
 			timeLeft -= 1;
+			elapsedSeconds += 1;
 		} else {
 			clearInterval(interval);
 			advance();
 		}
 	}
 
+	// The count is done the moment the timer ends or the observer finishes
+	// early — mark it complete now rather than after the cards step, so a
+	// dead battery or closed tab between here and the summary can't leave it
+	// stuck as in_progress (and missing from the feed). Not awaited: the local
+	// snapshot is already saved as complete, and startup recovery resends it
+	// if this request never lands.
+	//
+	// Records the time actually observed, so finishing early (or adjusting the
+	// timer) doesn't report the full planned length. Earlier legs from "add
+	// time" are kept; only this leg's planned minutes are swapped for its real
+	// ones.
 	function advance() {
-		sessionStore.update((s) => ({ ...s, step: 'thankyou' }));
-		persistLocal();
+		const legMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
+		sessionStore.update((s) => ({
+			...s,
+			totalDurationMin: s.totalDurationMin - s.durationMin + legMinutes,
+			step: 'thankyou'
+		}));
+		void completeSessionSync();
 	}
 
 	function adjustTime(deltaMinutes: number) {

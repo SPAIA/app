@@ -36,6 +36,8 @@ declare global {
 				STRIPE_SECRET_KEY: string;
 				STRIPE_WEBHOOK_SECRET: string;
 				STRIPE_PRICE_ID: string;
+				/** Shared bearer token field devices send to POST /api/device/readings. */
+				DEVICE_API_KEY: string;
 			};
 		}
 	}

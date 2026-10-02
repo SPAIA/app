@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb, type TestD1Database } from './testDb';
-import { syncSessionSnapshot, claimSessionsByIds, SessionWriteForbiddenError } from '$lib/server/db/sessions';
+import { syncSessionSnapshot, claimSessionsByIds, completeExpiredSessions, SessionWriteForbiddenError } from '$lib/server/db/sessions';
 import { getProfile } from '$lib/server/db/profiles';
 import type { SessionSnapshot } from '$lib/session/snapshot';
 
@@ -14,7 +14,6 @@ function makeSnapshot(overrides: Partial<SessionSnapshot> = {}): SessionSnapshot
 		revision: 1,
 		spaceId: 1,
 		spotId: 1,
-		locality: 'Neukölln',
 		lat: 52.48,
 		lng: 13.43,
 		startedAt: '2026-01-01T10:00:00.000Z',
@@ -244,5 +243,149 @@ describe('syncSessionSnapshot', () => {
 		await expect(
 			syncSessionSnapshot(db, makeSnapshot({ revision: 3, status: 'complete' }), null)
 		).rejects.toBeInstanceOf(SessionWriteForbiddenError);
+	});
+});
+
+describe('completed_at timing', () => {
+	let db: TestD1Database;
+
+	beforeEach(async () => {
+		db = createTestDb();
+		await seedSpot(db);
+		await seedInsectType(db, 'bee');
+	});
+
+	it('a completion uploaded long after the count is stamped with the timer end, not the upload time', async () => {
+		await syncSessionSnapshot(
+			db,
+			makeSnapshot({ sightings: [tap('bee', '2026-01-01T10:01:00.000Z')], status: 'complete' }),
+			null
+		);
+
+		const session = db.raw.prepare('SELECT completed_at FROM sessions WHERE id = ?').get('sess-1') as { completed_at: string };
+		expect(session.completed_at).toBe('2026-01-01 10:05:00');
+	});
+
+	it('finishing early is stamped with the actual finish time, not the scheduled end', async () => {
+		const startedAt = new Date(Date.now() - 60_000).toISOString();
+		await syncSessionSnapshot(db, makeSnapshot({ startedAt, status: 'complete' }), null);
+
+		const session = db.raw.prepare('SELECT completed_at FROM sessions WHERE id = ?').get('sess-1') as { completed_at: string };
+		const scheduledEnd = Date.parse(startedAt) + 5 * 60_000;
+		expect(Date.parse(session.completed_at.replace(' ', 'T') + 'Z')).toBeLessThan(scheduledEnd - 60_000);
+	});
+});
+
+describe('completeExpiredSessions', () => {
+	let db: TestD1Database;
+
+	beforeEach(async () => {
+		db = createTestDb();
+		await seedSpot(db);
+		await seedInsectType(db, 'bee');
+	});
+
+	it('completes an abandoned in-progress count as of its scheduled end, with totals and spot minutes', async () => {
+		await syncSessionSnapshot(
+			db,
+			makeSnapshot({ sightings: [tap('bee', '2026-01-01T10:01:00.000Z'), tap('bee', '2026-01-01T10:02:00.000Z')] }),
+			null
+		);
+
+		expect(await completeExpiredSessions(db)).toBe(1);
+
+		const session = db.raw.prepare('SELECT completed_at, total_count FROM sessions WHERE id = ?').get('sess-1') as {
+			completed_at: string;
+			total_count: number;
+		};
+		expect(session.completed_at).toBe('2026-01-01 10:05:00');
+		expect(session.total_count).toBe(2);
+
+		const spot = db.raw.prepare('SELECT total_minutes_observed FROM spots WHERE id = 1').get() as { total_minutes_observed: number };
+		expect(spot.total_minutes_observed).toBe(5);
+	});
+
+	it('a count abandoned early ends at its last sync, with duration set to the time actually observed', async () => {
+		await syncSessionSnapshot(db, makeSnapshot({ sightings: [tap('bee', '2026-01-01T10:00:40.000Z'), tap('bee', '2026-01-01T10:00:50.000Z')] }), null);
+		// Last heartbeat 1m30s in, then the battery died.
+		db.raw.prepare("UPDATE sessions SET last_active_at = '2026-01-01 10:01:30' WHERE id = ?").run('sess-1');
+
+		await completeExpiredSessions(db);
+
+		const session = db.raw.prepare('SELECT completed_at, duration_min FROM sessions WHERE id = ?').get('sess-1') as {
+			completed_at: string;
+			duration_min: number;
+		};
+		expect(session.completed_at).toBe('2026-01-01 10:01:30');
+		expect(session.duration_min).toBe(2);
+
+		const spot = db.raw.prepare('SELECT total_minutes_observed FROM spots WHERE id = 1').get() as { total_minutes_observed: number };
+		expect(spot.total_minutes_observed).toBe(2);
+	});
+
+	it('falls back to the last tap for sessions synced before last_active_at existed', async () => {
+		await syncSessionSnapshot(db, makeSnapshot({ sightings: [tap('bee', '2026-01-01T10:00:10.000Z'), tap('bee', '2026-01-01T10:00:55.000Z')] }), null);
+		db.raw.prepare('UPDATE sessions SET last_active_at = NULL WHERE id = ?').run('sess-1');
+
+		await completeExpiredSessions(db);
+
+		const session = db.raw.prepare('SELECT completed_at, duration_min FROM sessions WHERE id = ?').get('sess-1') as {
+			completed_at: string;
+			duration_min: number;
+		};
+		expect(session.completed_at).toBe('2026-01-01 10:00:55');
+		expect(session.duration_min).toBe(1);
+	});
+
+	it("the dead device's in-progress backup, resent later, doesn't restore the planned duration", async () => {
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1, sightings: [tap('bee', '2026-01-01T10:00:40.000Z')] }), null);
+		db.raw.prepare("UPDATE sessions SET last_active_at = '2026-01-01 10:01:00' WHERE id = ?").run('sess-1');
+		await completeExpiredSessions(db);
+
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1, sightings: [tap('bee', '2026-01-01T10:00:40.000Z')] }), null);
+
+		const session = db.raw.prepare('SELECT completed_at, duration_min FROM sessions WHERE id = ?').get('sess-1') as {
+			completed_at: string;
+			duration_min: number;
+		};
+		expect(session.completed_at).toBe('2026-01-01 10:01:00');
+		expect(session.duration_min).toBe(1);
+	});
+
+	it('leaves counts still inside their timer + grace window, and setups with no taps, alone', async () => {
+		const recentStart = new Date(Date.now() - 10 * 60_000).toISOString();
+		await syncSessionSnapshot(
+			db,
+			makeSnapshot({ id: 'running', startedAt: recentStart, sightings: [tap('bee', recentStart)] }),
+			null
+		);
+		await syncSessionSnapshot(db, makeSnapshot({ id: 'no-taps' }), null);
+
+		expect(await completeExpiredSessions(db)).toBe(0);
+
+		const open = db.raw.prepare('SELECT COUNT(*) as n FROM sessions WHERE completed_at IS NULL').get() as { n: number };
+		expect(open.n).toBe(2);
+	});
+
+	it('a late sync from the device after the sweep keeps the swept completed_at and its newer taps', async () => {
+		await syncSessionSnapshot(db, makeSnapshot({ revision: 1, sightings: [tap('bee', '2026-01-01T10:01:00.000Z')] }), null);
+		await completeExpiredSessions(db);
+
+		await syncSessionSnapshot(
+			db,
+			makeSnapshot({
+				revision: 2,
+				sightings: [tap('bee', '2026-01-01T10:01:00.000Z'), tap('bee', '2026-01-01T10:04:30.000Z')],
+				status: 'complete'
+			}),
+			null
+		);
+
+		const session = db.raw.prepare('SELECT completed_at, total_count FROM sessions WHERE id = ?').get('sess-1') as {
+			completed_at: string;
+			total_count: number;
+		};
+		expect(session.completed_at).toBe('2026-01-01 10:05:00');
+		expect(session.total_count).toBe(2);
 	});
 });

@@ -105,10 +105,18 @@ export async function completeSessionSync(): Promise<void> {
 	await syncNow();
 }
 
+// While the timer runs, sync every tick even with nothing new — the server
+// stamps last_active_at on each sync, which is how completeExpiredSessions
+// knows how long an abandoned count really lasted. Otherwise, only on change.
+function syncTick(): void {
+	if (get(sessionStore).step === 'observe') void syncNow();
+	else void syncIfDirty();
+}
+
 /** Starts the 30s background sync while an observation is active. Call once when the observe page mounts; pair with stopSessionSync on unmount. */
 export function startSessionSync(): void {
 	stopSessionSync();
-	timer = setInterval(() => void syncIfDirty(), SYNC_INTERVAL_MS);
+	timer = setInterval(syncTick, SYNC_INTERVAL_MS);
 	if (browser) document.addEventListener('visibilitychange', onVisibilityChange);
 }
 

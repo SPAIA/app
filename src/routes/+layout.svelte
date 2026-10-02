@@ -103,7 +103,7 @@
 
 	// Pages can set `ogTitle`, `ogDescription` and `ogImage` (absolute URL) in their load data
 	// to override these site-wide defaults.
-	$: ogTitle = $page.data.ogTitle ?? 'SPAIA — Turn a walk into a wildlife count.';
+	$: ogTitle = $page.data.ogTitle ?? 'SPAIA — Together we can understand the pulse of the planet.';
 	$: ogDescription =
 		$page.data.ogDescription ??
 		'Take five minutes to get to know one small patch of the planet. Together, we can understand the pulse of the living systems around us.';

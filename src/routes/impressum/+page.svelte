@@ -23,29 +23,61 @@
 	</div>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Company Information</h2>
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Provider</h2>
 		<p class="text-foreground">
 			Playstate UG (haftungsbeschränkt)<br />
-			Thomas Cox<br />
+			Schönholzer Straße 8A<br />
+			13187 Berlin<br />
+			Germany
+		</p>
+	</section>
+
+	<section class="flex flex-col gap-2">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Represented by</h2>
+		<p class="text-foreground">Thomas Cox, Managing Director (Geschäftsführer)</p>
+	</section>
+
+	<section class="flex flex-col gap-2">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Contact</h2>
+		<p class="text-foreground">
 			Email: <a href="mailto:hello@playstateprojects.com" class="text-primary hover:underline cursor-pointer">hello@playstateprojects.com</a><br />
 			Phone: <a href="tel:+4917680690803" class="text-primary hover:underline cursor-pointer">+49 176 80690803</a>
 		</p>
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Legal Information</h2>
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Register entry</h2>
 		<p class="text-foreground">
-			Registration Number: HRB 249133 B<br />
-			VAT Number: DE359100327<br />
-			Tax Number: 37/473/51397
+			Registered in the commercial register (Handelsregister)<br />
+			Register court: Amtsgericht Charlottenburg (Berlin)<br />
+			Registration number: HRB 249133 B
 		</p>
 	</section>
 
 	<section class="flex flex-col gap-2">
-		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Responsible for Content</h2>
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">VAT ID</h2>
 		<p class="text-foreground">
-			Thomas Cox<br />
-			Email: <a href="mailto:hello@playstateprojects.com" class="text-primary hover:underline cursor-pointer">hello@playstateprojects.com</a>
+			VAT identification number under § 27a UStG: DE359100327
 		</p>
 	</section>
+
+	<section class="flex flex-col gap-2">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Responsible for content</h2>
+		<p class="text-foreground">
+			Responsible under § 18 (2) MStV:<br />
+			Thomas Cox, Schönholzer Straße 8A, 13187 Berlin, Germany
+		</p>
+	</section>
+
+	<section class="flex flex-col gap-2">
+		<h2 class="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Consumer dispute resolution</h2>
+		<p class="text-foreground">
+			We are not willing or obliged to take part in dispute resolution proceedings before a
+			consumer arbitration board.
+		</p>
+	</section>
+
+	<p class="text-sm text-muted-foreground">
+		See also our <a href="/privacy" class="text-primary hover:underline cursor-pointer">Privacy Policy</a>.
+	</p>
 </div>
