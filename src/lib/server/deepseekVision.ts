@@ -12,8 +12,8 @@ const HABITAT_FEATURE_CATEGORIES: HabitatFeatureCategory[] = [
 	'other'
 ];
 
-const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
-const VISION_MODEL = 'deepseek-v4-flash-vision-exp';
+export const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
+export const VISION_MODEL = 'deepseek-v4-flash-vision-exp';
 
 const SYSTEM_PROMPT = `You analyze monitoring-spot photographs for a citizen-science insect observation app.
 
@@ -222,7 +222,7 @@ function parseVisionResult(content: string): SpotVisionResult {
 	return { name, scene, plants, habitat_features: habitatFeatures, changes, area_mismatch: areaMismatch };
 }
 
-function toDataUri(buffer: ArrayBuffer, mimeType: string): string {
+export function toDataUri(buffer: ArrayBuffer, mimeType: string): string {
 	return `data:${mimeType};base64,${arrayBufferToBase64(buffer)}`;
 }
 
