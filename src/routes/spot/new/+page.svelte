@@ -243,6 +243,7 @@
           lat,
           lng,
           order_id: orderId,
+          place_type: $page.url.searchParams.get("type"),
           locality,
           country,
           town,

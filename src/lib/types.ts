@@ -53,6 +53,8 @@ export interface Spot {
 	order_id: string | null;
 	/** Running total across all completed sessions at this spot, kept up to date on session save. */
 	total_minutes_observed: number;
+	/** The /ort "what kind of place" choice (see $lib/placeTypes), when the spot was added through that flow. */
+	place_type: string | null;
 }
 
 /** One upload from a field device mounted at a spot, covering [start_time, end_time]. */

@@ -4,6 +4,7 @@
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import LegalFooter from '$lib/components/LegalFooter.svelte';
+	import LanguageSelect from '$lib/components/LanguageSelect.svelte';
 	import { authClient } from '$lib/auth-client';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -31,7 +32,13 @@
 	<meta name="description" content={$_('landing.hero.subheadline')} />
 </svelte:head>
 
-<div class="flex min-h-dvh flex-col overflow-y-auto">
+<div class="relative flex min-h-dvh flex-col overflow-y-auto">
+	{#if !$authUser}
+		<!-- Pinned to the corner, out of the flow, so it doesn't push the hero down. -->
+		<div class="absolute top-3 right-5 z-10">
+			<LanguageSelect compact />
+		</div>
+	{/if}
 	<div class="flex flex-1 flex-col gap-10 px-5 py-10">
 		{#if $authUser}
 			<div class="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
@@ -64,6 +71,19 @@
 					</Button>
 				{/if}
 			</div>
+		</div>
+
+		<!-- Quick habitat score -->
+		<div class="flex flex-col items-center gap-3 rounded-2xl bg-accent px-5 py-7 text-center text-accent-foreground">
+			<span class="text-4xl" aria-hidden="true">📸</span>
+			<h2 class="spaia-title text-xl leading-tight">{$_('landing.score.title')}</h2>
+			<p class="text-[15px] leading-[1.55]">{$_('landing.score.body')}</p>
+			<Button variant="default" size="lg" class="mt-1 h-12 w-full max-w-xs text-[14.5px] font-semibold" href="/habitat">
+				{$_('landing.score.cta')}
+			</Button>
+			<a href="/naturlabor" class="text-[13px] font-medium underline underline-offset-4">
+				{$_('landing.score.naturlabor')}
+			</a>
 		</div>
 
 		<!-- How it works -->

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { _, locale } from 'svelte-i18n';
+	import { _ } from 'svelte-i18n';
 	import { goto } from '$app/navigation';
 	import { LEVEL_TITLE_KEYS } from '$lib/gamification';
 	import { authClient } from '$lib/auth-client';
 	import LegalFooter from '$lib/components/LegalFooter.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import * as Select from '$lib/components/ui/select';
+	import LanguageSelect from '$lib/components/LanguageSelect.svelte';
 	import { Spinner } from '$lib/components/ui/spinner';
 	import type { PageData } from './$types';
 
@@ -29,17 +29,6 @@
 		} finally {
 			backfillRunning = false;
 		}
-	}
-
-	const languages = [
-		{ code: 'en', label: 'English' },
-		{ code: 'de', label: 'Deutsch' },
-		{ code: 'nl', label: 'Nederlands' }
-	];
-
-	function setLanguage(code: string) {
-		locale.set(code);
-		localStorage.setItem('locale', code);
 	}
 
 	async function handleLogout() {
@@ -213,16 +202,7 @@
 		<!-- Language selector -->
 		<div class="flex items-center justify-between rounded-xl border border-border bg-background px-3.5 py-3">
 			<p class="text-sm font-medium text-foreground">{$_('profile.language.label')}</p>
-			<Select.Root type="single" value={$locale ?? undefined} onValueChange={(v) => v && setLanguage(v)}>
-				<Select.Trigger size="sm">
-					{languages.find((lang) => lang.code === $locale)?.label ?? $locale}
-				</Select.Trigger>
-				<Select.Content>
-					{#each languages as lang}
-						<Select.Item value={lang.code} label={lang.label}>{lang.label}</Select.Item>
-					{/each}
-				</Select.Content>
-			</Select.Root>
+			<LanguageSelect />
 		</div>
 
 		<!-- Admin tools -->

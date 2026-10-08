@@ -19,6 +19,11 @@
 			table: 'weather_observations',
 			label: 'Weather observations',
 			description: 'Raw weather readings (Bright Sky for Germany, Visual Crossing elsewhere).'
+		},
+		{
+			table: 'email_signups',
+			label: 'Email signups',
+			description: 'Addresses left on no-account pages (e.g. /naturlabor), with the page they came from.'
 		}
 	];
 </script>

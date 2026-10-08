@@ -5,6 +5,7 @@ import { getAllSpotsForExport } from '$lib/server/db/spots';
 import { getAllSessionsForExport } from '$lib/server/db/sessions';
 import { getAllSightingsForExport, getJoinedObservationsForExport } from '$lib/server/db/sightings';
 import { getAllWeatherObservationsForExport } from '$lib/server/db/weather';
+import { getAllEmailSignupsForExport } from '$lib/server/db/emailSignups';
 import { toCsv } from '$lib/server/csv';
 
 const EXPORTS = {
@@ -12,7 +13,8 @@ const EXPORTS = {
 	sessions: getAllSessionsForExport,
 	sightings: getAllSightingsForExport,
 	weather_observations: getAllWeatherObservationsForExport,
-	observations: getJoinedObservationsForExport
+	observations: getJoinedObservationsForExport,
+	email_signups: getAllEmailSignupsForExport
 } as const;
 
 type ExportTable = keyof typeof EXPORTS;

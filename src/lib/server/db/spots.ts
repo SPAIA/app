@@ -89,6 +89,22 @@ export interface SpotSummary {
 	insectCounts: { name: string; icon: string | null; count: number }[];
 }
 
+/** All-time totals for a spot: completed sessions and the insects counted across them. */
+export async function getSpotObservationTotals(
+	db: D1Database,
+	spotId: number
+): Promise<{ sessions: number; insects: number }> {
+	const row = await db
+		.prepare(`
+			SELECT COUNT(*) as sessions, COALESCE(SUM(total_count), 0) as insects
+			FROM sessions
+			WHERE spot_id = ? AND completed_at IS NOT NULL
+		`)
+		.bind(spotId)
+		.first<{ sessions: number; insects: number }>();
+	return { sessions: row?.sessions ?? 0, insects: row?.insects ?? 0 };
+}
+
 /** Stats shown on a spot's map card: how many observations, when last, what's most seen. */
 export async function getSpotSummary(db: D1Database, spotId: number): Promise<SpotSummary> {
 	const stats = await db
@@ -217,12 +233,13 @@ export async function updateSpotFields(
 
 export async function createSpot(
 	db: D1Database,
-	spot: Pick<Spot, 'space_id' | 'slug' | 'name' | 'icon' | 'lat' | 'lng'> & Partial<Pick<Spot, 'owner_id' | 'order_id'>>
+	spot: Pick<Spot, 'space_id' | 'slug' | 'name' | 'icon' | 'lat' | 'lng'> &
+		Partial<Pick<Spot, 'owner_id' | 'order_id' | 'place_type'>>
 ): Promise<number> {
 	const result = await db
 		.prepare(`
-			INSERT INTO spots (space_id, slug, name, icon, lat, lng, owner_id, order_id)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			INSERT INTO spots (space_id, slug, name, icon, lat, lng, owner_id, order_id, place_type)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`)
 		.bind(
 			spot.space_id,
@@ -232,7 +249,8 @@ export async function createSpot(
 			spot.lat,
 			spot.lng,
 			spot.owner_id ?? null,
-			spot.order_id ?? null
+			spot.order_id ?? null,
+			spot.place_type ?? null
 		)
 		.run() as { success: boolean; meta: { last_row_id: number } };
 	return result.meta.last_row_id;

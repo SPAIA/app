@@ -10,7 +10,8 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import { Spinner } from '$lib/components/ui/spinner';
 
-	let activeTab: 'email' | 'magic' | 'signup' = 'email';
+	// ?tab=signup lets other pages (e.g. the /habitat scan limit) link straight to sign-up.
+	let activeTab: 'email' | 'magic' | 'signup' = $page.url.searchParams.get('tab') === 'signup' ? 'signup' : 'email';
 	let email = '';
 	let password = '';
 	let confirmPassword = '';

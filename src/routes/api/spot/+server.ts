@@ -6,12 +6,15 @@ import { getSpaceOrder } from '$lib/server/db/orders';
 import type { D1Database } from '$lib/server/db/d1';
 import { findContainingSpace } from '$lib/geo';
 import { uniqueSlug } from '$lib/slug';
+import { isPlaceType } from '$lib/placeTypes';
 
 interface CreateSpotBody {
 	lat: number;
 	lng: number;
 	/** A paid/redeemed space_orders id — required, minted via /spot-pack -> /spot/new. */
 	order_id: string;
+	/** From the /ort flow — one of $lib/placeTypes; anything else is dropped. */
+	place_type?: string | null;
 	/** Reverse-geocoded from the spot's position; used only if a new space needs creating. */
 	locality?: string | null;
 	country?: string | null;
@@ -118,7 +121,8 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		lat: lat as number,
 		lng: lng as number,
 		owner_id: ownerId,
-		order_id: order_id ?? null
+		order_id: order_id ?? null,
+		place_type: isPlaceType(body.place_type) ? body.place_type : null
 	});
 
 	return json({ id, slug, space_slug: space.slug });

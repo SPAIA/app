@@ -15,6 +15,23 @@ export async function createSpaceOrder(
 		.run();
 }
 
+/**
+ * Every account gets one free spot. Its order id is derived from the user id,
+ * so it can only ever exist once per account (the primary key enforces it,
+ * even under double-clicks) and /api/spot's one-spot-per-order check then
+ * caps it at one spot. Returns the order id, or null if the free spot has
+ * already been used.
+ */
+export async function claimFreeSpotOrder(db: D1Database, userId: string): Promise<string | null> {
+	const orderId = `free-${userId}`;
+	await db
+		.prepare(`INSERT INTO space_orders (id, user_id, stripe_status) VALUES (?, ?, 'paid') ON CONFLICT(id) DO NOTHING`)
+		.bind(orderId, userId)
+		.run();
+	const used = await db.prepare('SELECT 1 FROM spots WHERE order_id = ?').bind(orderId).first();
+	return used ? null : orderId;
+}
+
 export async function getSpaceOrder(db: D1Database, orderId: string): Promise<SpaceOrder | null> {
 	return db
 		.prepare('SELECT * FROM space_orders WHERE id = ?')
